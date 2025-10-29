@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Welcome to BetRivals</h2>
+<p>This is the home page of our Flask-based database project.</p>
+
+<section>
+    <h3>Project Overview</h3>
+    <p>
+        BetRivals is an ITU BLG 317E Database Systems course project,
+        where we design and implement a betting management platform
+        using Flask and SQL-based data storage.
+    </p>
+</section>
+
+<a href="{{ url_for('about') }}">Learn more about us →</a>
+{% endblock %}

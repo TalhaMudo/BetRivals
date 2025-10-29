@@ -1,0 +1,28 @@
+body {
+    font-family: "Segoe UI", sans-serif;
+    background-color: #fafafa;
+    color: #222;
+    margin: 40px auto;
+    width: 80%;
+    line-height: 1.6;
+}
+
+header h1 {
+    margin-bottom: 5px;
+}
+
+nav a {
+    color: #0074D9;
+    text-decoration: none;
+    margin: 0 5px;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+footer {
+    text-align: center;
+    font-size: 0.9em;
+    color: #666;
+}
