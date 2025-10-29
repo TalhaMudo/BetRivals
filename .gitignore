@@ -1,1 +1,71 @@
 .DS_Store
+# =========================================
+# 🐍 Python / Flask .gitignore
+# =========================================
+
+# --- Virtual environments ---
+venv/
+env/
+ENV/
+.venv/
+.pyenv/
+pip-wheel-metadata/
+Pipfile.lock
+poetry.lock
+
+# --- Python cache / build ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# --- Flask instance & config ---
+instance/
+*.db
+*.sqlite3
+*.sqlite
+config.py
+*.log
+
+# --- Environment files ---
+.env
+.env.*
+*.secret
+*.key
+*.pem
+
+# --- Coverage / test ---
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+.pytest_cache/
+
+# --- Jupyter Notebook ---
+.ipynb_checkpoints/
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Docker / Compose ---
+*.pid
+*.pid.lock
+docker-compose.override.yml
+
+# --- Misc ---
+*.bak
+*.tmp
