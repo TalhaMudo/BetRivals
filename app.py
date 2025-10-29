@@ -6,7 +6,7 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for
 app = Flask(__name__)
 
 # Gizli anahtar (örnek)
-app.config["SECRET_KEY"] = "dev-secret-key"
+app.config["SECRET_KEY"] = "bet-rivals-bostanXXX"
 
 # -------------------------------------------------
 #  Örnek Rotalar
@@ -23,25 +23,6 @@ def about():
     """Hakkında sayfası"""
     return render_template("about.html", title="About Us")
 
-
-@app.route("/api/data", methods=["GET"])
-def api_data():
-    """Basit bir API endpoint"""
-    sample_data = {
-        "status": "success",
-        "message": "Hello from Flask API!",
-        "data": [1, 2, 3, 4]
-    }
-    return jsonify(sample_data)
-
-
-@app.route("/form", methods=["GET", "POST"])
-def form_example():
-    """Form örneği"""
-    if request.method == "POST":
-        name = request.form.get("name")
-        return render_template("form.html", submitted=True, name=name)
-    return render_template("form.html", submitted=False)
 
 
 # -------------------------------------------------
