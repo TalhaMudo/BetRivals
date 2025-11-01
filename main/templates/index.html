@@ -1,16 +1,69 @@
 {% extends "base.html" %}
+
 {% block content %}
-<h2>Welcome to BetRivals</h2>
-<p>This is the home page of our Flask-based database project.</p>
+<div class="hero-section">
+    <h2>⚽ Advanced Football Analytics Platform</h2>
+    <p>Welcome to BetRivals - your comprehensive source for football statistics, player performance analysis, and match insights. Our platform integrates multiple datasets to provide deep analytics on players, teams, matches, and predictions.</p>
+</div>
 
-<section>
-    <h3>Project Overview</h3>
-    <p>
-        BetRivals is an ITU BLG 317E Database Systems course project,
-        where we design and implement a betting management platform
-        using Flask and SQL-based data storage.
-    </p>
-</section>
+<div class="dataset-grid">
+    <div class="dataset-card">
+        <h3>📦 Player Statistics</h3>
+        <p class="description">Comprehensive player performance data including goals, assists, xG, shots, and key passes across multiple seasons.</p>
+        <span class="stats-badge">Season Stats</span>
+        <span class="stats-badge">Performance Metrics</span>
+    </div>
 
-<a href="{{ url_for('about') }}">Learn more about us →</a>
+    <div class="dataset-card">
+        <h3>⚽ Match Information</h3>
+        <p class="description">Detailed match data with home/away statistics, xG analysis, and PPDA (Passes Per Defensive Action) metrics.</p>
+        <span class="stats-badge">Live Results</span>
+        <span class="stats-badge">Historical Data</span>
+    </div>
+
+    <div class="dataset-card">
+        <h3>🏟️ Team Database</h3>
+        <p class="description">Complete team profiles with season performance, league standings, and comprehensive team statistics.</p>
+        <span class="stats-badge">Team Profiles</span>
+        <span class="stats-badge">League Tables</span>
+    </div>
+
+    <div class="dataset-card">
+        <h3>🧾 Match Analytics</h3>
+        <p class="description">In-depth match analysis with expected goals (xG) breakdowns and detailed scoreline information.</p>
+        <span class="stats-badge">xG Analysis</span>
+        <span class="stats-badge">Score Tracking</span>
+    </div>
+
+    <div class="dataset-card">
+        <h3>🎮 FIFA 23 Ratings</h3>
+        <p class="description">FIFA 23 player ratings including pace, shooting, passing, dribbling, defense, and physical attributes.</p>
+        <span class="stats-badge">Player Ratings</span>
+        <span class="stats-badge">Attribute Stats</span>
+    </div>
+
+    <div class="dataset-card">
+        <h3>📊 Season Overview</h3>
+        <p class="description">Season-long team performance metrics including xG, points, wins, draws, and comprehensive standings.</p>
+        <span class="stats-badge">Season Stats</span>
+        <span class="stats-badge">League Analysis</span>
+    </div>
+
+    <div class="dataset-card">
+        <h3>🎯 Shot Data</h3>
+        <p class="description">Detailed shot-by-shot analysis with coordinates, xG values, situations, and match-level shot tracking.</p>
+        <span class="stats-badge">Shot Maps</span>
+        <span class="stats-badge">xG Breakdown</span>
+    </div>
+</div>
+
+<div class="team-section">
+    <h2>👥 Meet Our Team</h2>
+    <div class="team-grid">
+        <div class="team-member">Bilge</div>
+        <div class="team-member">Talha</div>
+        <div class="team-member">Osman</div>
+        <div class="team-member">Abdullah</div>
+    </div>
+</div>
 {% endblock %}
