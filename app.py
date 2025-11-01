@@ -3,7 +3,7 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for
 # -------------------------------------------------
 #  Flask Uygulaması Oluşturma
 # -------------------------------------------------
-app = Flask(__name__)
+app = Flask(__name__, template_folder='main/templates', static_folder='main/static')
 
 # Gizli anahtar (örnek)
 app.config["SECRET_KEY"] = "bet-rivals-bostanXXX"
@@ -24,20 +24,32 @@ def about():
     return render_template("about.html", title="About Us")
 
 
+@app.route("/bilge")
+def bilge():
+    """Bilge sayfası"""
+    return render_template("bilge.html", title="Bilge")
 
-# -------------------------------------------------
-#  Error Handling
-# -------------------------------------------------
-@app.errorhandler(404)
-def not_found(error):
-    """404 - Sayfa bulunamadı hatası"""
-    return render_template("404.html", title="Page Not Found"), 404
+@app.route("/talha")
+def talha():
+    """Talha sayfası"""
+    return render_template("talha.html", title="Talha")
+
+@app.route("/osman")
+def osman():
+    """Osman sayfası"""
+    return render_template("osman.html", title="Osman")
+
+@app.route("/abdullah")
+def abdullah():
+    """Abdullah sayfası"""
+    return render_template("abdullah.html", title="Abdullah")
+
+@app.route("/api")
+def api_data():
+    """API verileri sayfası"""
+    return jsonify({"message": "API endpoint", "status": "ok"})
 
 
-@app.errorhandler(500)
-def internal_error(error):
-    """500 - Sunucu hatası"""
-    return render_template("500.html", title="Internal Server Error"), 500
 
 
 # -------------------------------------------------
