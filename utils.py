@@ -1,5 +1,4 @@
 import mysql.connector
-from mysql.connector import pooling, Error
 import os
 
 class DatabaseConnector: # a bridge between Flask and MySQL Database using connection pooling 
@@ -21,16 +20,15 @@ class DatabaseConnector: # a bridge between Flask and MySQL Database using conne
                 pool_size=5, 
                 **self.poolconfig
             )
-            print("Veritabanı bağlantı havuzu başarıyla oluşturuldu.")
 
-        except Error as err:
+        except mysql.connector.Error as err:
             print(f"Error while connecting database: {err}")
             raise
 
     def _get_connection(self):
         try:
             return self.pool.get_connection()
-        except Error as err:
+        except mysql.connector.Error as err:
             print(f"Error while getting connection from pool: {err}")
             raise
 
@@ -55,7 +53,7 @@ class DatabaseConnector: # a bridge between Flask and MySQL Database using conne
             else:
                 conn.commit() # INSERT, UPDATE, DELETE
                 
-        except Error as err:
+        except mysql.connector.Error as err:
             print(f"QUERY ERROR: {err}")
             if conn:
                 conn.rollback() # if there is an error, rollback the transaction
@@ -88,7 +86,7 @@ class DatabaseConnector: # a bridge between Flask and MySQL Database using conne
         except FileNotFoundError:
             print(f"Error: SQL script file couldn't found: {filepath}")
             raise
-        except Error as err:
+        except mysql.connector.Error as err:
             print(f"Error while executing sql script: {err}")
             if conn:
                 conn.rollback()
