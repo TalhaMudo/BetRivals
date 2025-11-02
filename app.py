@@ -1,16 +1,17 @@
 from flask import Flask, render_template, jsonify, request, redirect, url_for
+import os
+from dotenv import load_dotenv
+from utils import DatabaseConnector
 
-# -------------------------------------------------
-#  Flask Uygulaması Oluşturma
-# -------------------------------------------------
+load_dotenv()
+SECRET_KEY = os.getenv("secret_key", "bet-rivals-bostanXXX")
+
 app = Flask(__name__, template_folder='main/templates', static_folder='main/static')
 
-# Gizli anahtar (örnek)
-app.config["SECRET_KEY"] = "bet-rivals-bostanXXX"
+app.config["SECRET_KEY"] = SECRET_KEY
 
-# -------------------------------------------------
-#  Örnek Rotalar
-# -------------------------------------------------
+# Bridge between Flask and Database
+db = DatabaseConnector()
 
 @app.route("/")
 def home():
