@@ -1,9 +1,11 @@
 from flask import Flask, render_template, jsonify, request, redirect, url_for
 import os
+import logging
 from dotenv import load_dotenv
 from utils import DatabaseConnector
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 SECRET_KEY = os.getenv("secret_key", "bet-rivals-bostanXXX")
 
 app = Flask(__name__, template_folder='main/templates', static_folder='main/static')
@@ -40,10 +42,10 @@ def osman():
     """Osman sayfası"""
     return render_template("osman.html", title="Osman")
 
-@app.route("/abdullah")
-def abdullah():
-    """Abdullah sayfası"""
-    return render_template("abdullah.html", title="Abdullah")
+@app.route("/matches")
+def matches():
+    """Matches sayfası"""
+    return render_template("matches.html", title="matches")
 
 @app.route("/api")
 def api_data():
@@ -51,6 +53,34 @@ def api_data():
     return jsonify({"message": "API endpoint", "status": "ok"})
 
 
+@app.route("/api/matches", methods=['POST'])
+def api_matches():
+    """execute query and return matches filtered by supplied JSON filters."""
+    filters = request.get_json(silent=True) or {}
+    
+    sql = [
+        # query here
+    ]
+    params = []
+
+    if filters.get('team_home'):
+        sql.append("AND mi.team_h = %s")
+        params.append(filters['team_home'])
+    
+    if filters.get('team_away'):
+        sql.append("AND mi.team_a = %s")
+        params.append(filters['team_away'])
+    
+    # others filters
+
+    query = " ".join(sql)
+
+    try:
+        matches = db.execute_query(query, params=params)
+        return jsonify({"matches": matches or []})
+    except Exception as e:
+        logger.exception("Error fetching matches: %s", e)
+        return jsonify({"error": "Database error", "matches": []}), 500
 
 
 # -------------------------------------------------
