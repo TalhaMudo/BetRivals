@@ -55,6 +55,147 @@ def osman():
 #--------------OSMAN-START-----------------------------
 
 
+@app.route('/shot/<int:shot_id>')
+def shot_detail(shot_id):
+    """Display detailed shot information"""
+    try:
+        # Get shot details with match information
+        shot_query = """
+            SELECT 
+                s.shot_id,
+                s.minute,
+                s.result,
+                s.X,
+                s.Y,
+                s.xG,
+                s.player,
+                s.h_a,
+                s.player_id,
+                s.situation,
+                s.season,
+                s.shotType,
+                s.match_id,
+                s.h_team,
+                s.a_team,
+                s.h_goals,
+                s.a_goals,
+                s.date,
+                s.player_assisted,
+                s.lastAction,
+                m.league,
+                m.h_xg,
+                m.a_xg
+            FROM shot_data s
+            LEFT JOIN match_info m ON s.match_id = m.match_id
+            WHERE s.shot_id = %s
+        """
+        
+        shot_results = db.execute_query(shot_query, (shot_id,), fetch_all=True)
+        
+        if not shot_results:
+            return render_template('error.html', 
+                                 error="Shot not found", 
+                                 message=f"No shot found with ID {shot_id}"), 404
+        
+        shot = shot_results[0]
+        
+        # Get player information from player table
+        player_query = """
+            SELECT 
+                p.season_player_id,
+                p.player_id,
+                p.player_name,
+                p.games,
+                p.time,
+                p.goals,
+                p.xG,
+                p.assists,
+                p.xA,
+                p.shots,
+                p.key_passes,
+                p.yellow_cards,
+                p.red_cards,
+                p.position,
+                p.team_title,
+                p.npg,
+                p.npxG,
+                p.xGChain,
+                p.xGBuildup,
+                p.year
+            FROM player p
+            WHERE p.player_id = %s AND p.year = %s
+        """
+        
+        player_results = db.execute_query(
+            player_query, 
+            (shot['player_id'], shot['season']), 
+            fetch_all=True
+        )
+        
+        player = player_results[0] if player_results else None
+        
+        # Get other shots by this player in the same match
+        other_shots_query = """
+            SELECT 
+                shot_id,
+                minute,
+                result,
+                xG,
+                situation,
+                shotType
+            FROM shot_data
+            WHERE player_id = %s 
+            AND match_id = %s 
+            AND shot_id != %s
+            ORDER BY minute ASC
+        """
+        
+        other_shots = db.execute_query(
+            other_shots_query,
+            (shot['player_id'], shot['match_id'], shot_id),
+            fetch_all=True
+        )
+        
+        # Get player's season statistics for comparison
+        season_stats_query = """
+            SELECT 
+                COUNT(*) as total_shots,
+                SUM(CASE WHEN result = 'Goal' THEN 1 ELSE 0 END) as goals_scored,
+                AVG(xG) as avg_xg,
+                SUM(xG) as total_xg
+            FROM shot_data
+            WHERE player_id = %s AND season = %s
+        """
+        
+        season_stats_results = db.execute_query(
+            season_stats_query,
+            (shot['player_id'], shot['season']),
+            fetch_all=True
+        )
+        
+        season_stats = season_stats_results[0] if season_stats_results else None
+        
+        return render_template('shot_detail.html',
+                             shot=shot,
+                             player=player,
+                             other_shots=other_shots,
+                             season_stats=season_stats)
+        
+    except Exception as e:
+        logger.exception(f"Error fetching shot {shot_id}: {e}")
+        return render_template('error.html',
+                             error="Database Error",
+                             message=str(e)), 500
+
+
+    
+
+
+
+
+
+
+
 
 
 #--------------OSMAN-END-------------------------------
