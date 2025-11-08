@@ -2,22 +2,285 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ title or "Flask App" }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title or "BetRivals - Football Analytics" }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e14;
+            min-height: 100vh;
+            color: #e8e8e8;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("{{ url_for('static', filename='stadium.jpg') }}") center center/cover no-repeat;
+            opacity: 0.15;
+            z-index: -1;
+        }
+
+        header {
+            background: rgba(15, 20, 25, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+            border-bottom: 2px solid #2ecc71;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-shadow: 0 0 20px rgba(46, 204, 113, 0.3);
+        }
+
+        nav {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            padding: 0.6rem 1.2rem;
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: #0f1419;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        nav a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.5);
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem 4rem;
+        }
+
+        .hero-section {
+            background: rgba(15, 20, 25, 0.9);
+            border-radius: 16px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-section h2 {
+            color: #2ecc71;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+            text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+
+        .hero-section p {
+            color: #b8b8b8;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .dataset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .dataset-card {
+            background: rgba(15, 20, 25, 0.9);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-top: 4px solid #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .dataset-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3);
+            border: 1px solid rgba(46, 204, 113, 0.5);
+        }
+
+        .dataset-card h3 {
+            color: #2ecc71;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .dataset-card .description {
+            color: #b8b8b8;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .stats-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: #0f1419;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .team-section {
+            background: rgba(15, 20, 25, 0.9);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .team-section h2 {
+            color: #2ecc71;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 1.8rem;
+            text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .team-member {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: #0f1419;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .team-member:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.5);
+        }
+
+        .content-section {
+            background: rgba(15, 20, 25, 0.9);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .content-section h3 {
+            color: #2ecc71;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .content-section p, .content-section ul {
+            color: #b8b8b8;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .content-section ul {
+            padding-left: 2rem;
+        }
+
+        .content-section li {
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            background: rgba(15, 20, 25, 0.95);
+            padding: 2rem;
+            text-align: center;
+            margin-top: 3rem;
+            border-top: 2px solid #2ecc71;
+        }
+
+        footer p {
+            color: #b8b8b8;
+            font-weight: 500;
+        }
+
+        hr {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .hero-section {
+                padding: 2rem;
+            }
+
+            nav {
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
-        <h1>🏆 BetRivals</h1>
-        <nav>
-            <a href="{{ url_for('home') }}">Home</a> |
-            <a href="{{ url_for('about') }}">About</a> |
-            <a href="{{ url_for('bilge') }}">Bilge</a> |
-            <a href="{{ url_for('talha') }}">Talha</a> |
-            <a href="{{ url_for('osman') }}">Osman</a> |
-            <a href="{{ url_for('abdullah') }}">Abdullah</a> |
-            <a href="{{ url_for('api_data') }}">API</a>
-        </nav>
-        <hr>
+        <div class="header-content">
+            <h1>🏆 BetRivals</h1>
+            <nav>
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="{{ url_for('about') }}">About</a>
+                <a href="{{ url_for('bilge') }}">Bilge</a>
+                <a href="{{ url_for('talha') }}">Talha</a>
+                <a href="{{ url_for('osman') }}">Osman</a>
+                <a href="{{ url_for('matches') }}">Matches</a>
+                <a href="{{ url_for('api_data') }}">API</a>
+            </nav>
+        </div>
     </header>
 
     <main>
@@ -25,8 +288,7 @@
     </main>
 
     <footer>
-        <hr>
-        <p>&copy; 2025 BetRivals Team</p>
+        <p>&copy; 2025 BetRivals Team | Advanced Football Analytics</p>
     </footer>
 </body>
 </html>

@@ -1,0 +1,20 @@
+CREATE TABLE shot_data_cleaned (
+    shot_id SERIAL PRIMARY KEY,
+    match_id INT,
+    player_id INT,
+    minute INT,
+    X FLOAT,
+    Y FLOAT,
+    xG FLOAT,
+    h_team VARCHAR(100),
+    a_team VARCHAR(100),
+    result VARCHAR(50),
+    situation VARCHAR(50),
+    season VARCHAR(50),
+    date DATE,
+    FOREIGN KEY (player_id) REFERENCES player_cleaned(player_id),
+    FOREIGN KEY (player_id) REFERENCES fut23_cleaned(player_id),
+    FOREIGN KEY (match_id) REFERENCES match_data_cleaned(match_id),
+    FOREIGN KEY (h_team) REFERENCES teams_cleaned(team_name),
+    FOREIGN KEY (a_team) REFERENCES teams_cleaned(team_name)
+);

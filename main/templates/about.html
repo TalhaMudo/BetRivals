@@ -1,17 +1,116 @@
 {% extends "base.html" %}
+
 {% block content %}
-<h2>About the Team</h2>
-<p>
-    We are a group of Computer Engineering students from Istanbul Technical University (ITU),
-    collaborating on a database-backed web application as part of the BLG 317E course.
-</p>
+<div class="hero-section">
+    <h2>📊 About BetRivals</h2>
+    <p>BetRivals is a comprehensive football analytics platform developed as a database management project. We combine multiple data sources to provide deep insights into player performance, team statistics, and match outcomes through a carefully designed relational database system.</p>
+</div>
 
-<ul>
-    <li><strong>Osman Yahya Akıncı</strong> — Backend & Database Integration</li>
-    <li><strong>Bilge Bostanbaşı</strong> — Frontend & UI Design</li>
-    <li><strong>Abdullah</strong> — Data Modeling & Optimization</li>
-    <li><strong>Talha</strong> — Testing & Deployment</li>
-</ul>
+<div class="content-section">
+    <h3>🎯 Project Overview</h3>
+    <p>Our platform integrates seven interconnected databases with robust foreign key relationships, enabling complex queries and comprehensive football analysis. Each team member has taken ownership of specific datasets, ensuring data quality and expertise in their respective domains.</p>
+</div>
 
-<a href="{{ url_for('home') }}">← Back to Home</a>
+<div class="team-section">
+    <h2>👥 Meet Our Team</h2>
+    
+    <div style="display: grid; gap: 2rem; margin-top: 2rem;">
+        
+        <div class="dataset-card">
+            <h3>👨‍💻 Osman Yahya Akıncı</h3>
+            <p class="description" style="color: #2ecc71; font-weight: 600; margin-bottom: 0.5rem;">Student ID: 150230106</p>
+            <p class="description"><strong>Database Responsibilities:</strong></p>
+            <ul style="color: #b8b8b8; padding-left: 1.5rem; margin-top: 0.5rem;">
+                <li><strong>shot_data_cleaned:</strong> Manages detailed shot-by-shot analysis including shot coordinates (X, Y), xG values, match context, results, situations, and temporal data</li>
+                <li><strong>Users Database:</strong> Handles user management and authentication systems</li>
+            </ul>
+            <div style="margin-top: 1rem;">
+                <span class="stats-badge">Shot Analytics</span>
+                <span class="stats-badge">User Management</span>
+                <span class="stats-badge">Spatial Data</span>
+            </div>
+        </div>
+
+        <div class="dataset-card">
+            <h3>👨‍💻 Bilge Bostanbaşı</h3>
+            <p class="description" style="color: #2ecc71; font-weight: 600; margin-bottom: 0.5rem;">Student ID: 150230081</p>
+            <p class="description"><strong>Database Responsibilities:</strong></p>
+            <ul style="color: #b8b8b8; padding-left: 1.5rem; margin-top: 0.5rem;">
+                <li><strong>season_cleaned:</strong> Oversees season-long team performance metrics including xG, xGA, npxG, npxGA, points, wins, draws, and losses</li>
+                <li><strong>teams_cleaned:</strong> Manages the central teams database that serves as a reference point for multiple other tables</li>
+            </ul>
+            <div style="margin-top: 1rem;">
+                <span class="stats-badge">Season Stats</span>
+                <span class="stats-badge">Team Database</span>
+                <span class="stats-badge">Performance Metrics</span>
+            </div>
+        </div>
+
+        <div class="dataset-card">
+            <h3>👨‍💻 Abdullah Akcan</h3>
+            <p class="description" style="color: #2ecc71; font-weight: 600; margin-bottom: 0.5rem;">Student ID: 150220051</p>
+            <p class="description"><strong>Database Responsibilities:</strong></p>
+            <ul style="color: #b8b8b8; padding-left: 1.5rem; margin-top: 0.5rem;">
+                <li><strong>match_data_cleaned:</strong> Maintains core match statistics including home and away team IDs, goals, and expected goals (xG) for both sides</li>
+                <li><strong>match_info_cleaned:</strong> Handles detailed match information including dates, leagues, seasons, and PPDA metrics</li>
+            </ul>
+            <div style="margin-top: 1rem;">
+                <span class="stats-badge">Match Data</span>
+                <span class="stats-badge">xG Analysis</span>
+                <span class="stats-badge">Match Info</span>
+            </div>
+        </div>
+
+        <div class="dataset-card">
+            <h3>👨‍💻 Talha Müderrisoğlu</h3>
+            <p class="description" style="color: #2ecc71; font-weight: 600; margin-bottom: 0.5rem;">Student ID: 820230335</p>
+            <p class="description"><strong>Database Responsibilities:</strong></p>
+            <ul style="color: #b8b8b8; padding-left: 1.5rem; margin-top: 0.5rem;">
+                <li><strong>player_cleaned:</strong> Administers comprehensive player statistics including games played, time, goals, xG, assists, shots, key passes, cards, and positions across seasons</li>
+                <li><strong>fut23_cleaned:</strong> Manages FIFA 23 player ratings database with attributes like pace, shooting, passing, dribbling, defense, and physical stats</li>
+            </ul>
+            <div style="margin-top: 1rem;">
+                <span class="stats-badge">Player Stats</span>
+                <span class="stats-badge">FIFA Ratings</span>
+                <span class="stats-badge">Performance Data</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="content-section">
+    <h3>🔗 Database Architecture</h3>
+    <p>Our relational database system features carefully designed foreign key relationships that ensure data integrity and enable powerful cross-table queries:</p>
+    <ul>
+        <li><strong>Player-Match Integration:</strong> Links player performance data with specific matches and teams</li>
+        <li><strong>Team Relationships:</strong> Central teams table referenced by season stats, match data, and player records</li>
+        <li><strong>Temporal Tracking:</strong> Year and season fields enable historical analysis and trend identification</li>
+        <li><strong>Match Analytics:</strong> Connected match_data and match_info tables provide comprehensive match insights</li>
+        <li><strong>Shot-Level Detail:</strong> Granular shot data linked to players, matches, and teams for advanced analytics</li>
+    </ul>
+</div>
+
+<div class="content-section">
+    <h3>📈 Key Features</h3>
+    <p>BetRivals provides advanced football analytics through:</p>
+    <ul>
+        <li><strong>Expected Goals (xG):</strong> Statistical measure of shot quality across players, teams, and matches</li>
+        <li><strong>PPDA Analysis:</strong> Passes Per Defensive Action metrics to evaluate pressing intensity</li>
+        <li><strong>FIFA Integration:</strong> Combines real-world performance with FIFA ratings for holistic player evaluation</li>
+        <li><strong>Shot Maps:</strong> Spatial analysis of shot locations and quality</li>
+        <li><strong>Season Tracking:</strong> Historical performance data spanning multiple seasons</li>
+        <li><strong>Multi-dimensional Analysis:</strong> Cross-reference players, teams, matches, and seasons seamlessly</li>
+    </ul>
+</div>
+
+<div class="content-section">
+    <h3>🚀 Technologies & Implementation</h3>
+    <p>The platform is built using Flask as the web framework, with a normalized relational database design following best practices in database management. Our implementation emphasizes data integrity through primary and foreign key constraints, efficient query performance, and scalable architecture.</p>
+</div>
+
+<div class="content-section">
+    <h3>💡 Project Goals</h3>
+    <p>Through BetRivals, we aim to demonstrate proficiency in database design, implementation, and management while creating a practical application that football enthusiasts and analysts can use to gain deeper insights into the beautiful game. Each team member's contribution ensures comprehensive coverage of football analytics domains.</p>
+</div>
 {% endblock %}

@@ -1,0 +1,134 @@
+/* Match visualization page styles */
+.controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.controls input,
+.controls select {
+    width: 100%;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    background: #0f1419;
+    color: #e8e8e8;
+    border-radius: 6px;
+    border: 1px solid #333;
+}
+
+.controls input[type="search"] {
+    padding: 0.6rem;
+}
+
+.controls input[type="date"] {
+    padding: 0.45rem;
+}
+
+.team-selection {
+    margin-top: 1.25rem;
+}
+
+.team-selection h3 {
+    color: #2ecc71;
+}
+
+.team-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.button-primary {
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    border: none;
+    background: #2ecc71;
+    color: #0f1419;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 0.2rem;
+}
+
+.button-secondary {
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    border: none;
+    background: #27ae60;
+    color: #0f1419;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 0.2rem;
+}
+
+.button-reset {
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: transparent;
+    color: #e8e8e8;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 0.2rem;
+}
+
+#results {
+    margin-top: 1.5rem;
+}
+
+/* Results table styles */
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #e8e8e8;
+}
+
+.results-table th {
+    text-align: left;
+    padding: 0.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.results-table td {
+    padding: 0.6rem;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.results-container {
+    overflow: auto;
+    padding: 0;
+    border-radius: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .controls > div {
+        flex: 1 1 100%;
+    }
+    
+    .team-controls > div {
+        flex: 1 1 100%;
+    }
+}
+
+/* Form field containers */
+.field-container {
+    flex: 1;
+    min-width: 260px;
+}
+
+.field-container.small {
+    min-width: 200px;
+}
+
+.field-container.medium {
+    min-width: 220px;
+}
+
+/* Labels */
+label {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #e8e8e8;
+}

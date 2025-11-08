@@ -1,0 +1,220 @@
+Name,player_id,Team,team_id,Country,League,Rating,Position,Other_Positions,Run_type,Price,Skill,Weak_foot,Attack_rate,Defense_rate,Pace,Shoot,Pass,Drible,Defense,Physical,Body_type,Height_cm,Weight,Popularity,Base_Stats,In_Game_Stats
+Luka Modric,2250.0,Real Madrid,150.0,Croatia,LaLiga Santander,96,CM,,Explosive,1.4M,4,4,M,M,85,86,97,97,85,83,Lean,172,66.0,3255,533,2602
+Thibaut Courtois,680.0,Real Madrid,150.0,Belgium,LaLiga Santander,96,GK,,Controlled,418K,1,3,M,M,90,95,85,97,60,95,Courtois,199,96.0,2492,522,1002
+Robert Lewandowski,227.0,Barcelona,148.0,Poland,LaLiga Santander,93,ST,CF,Controlled,197K,4,4,H,M,79,93,82,88,47,85,Unique,185,81.0,1477,474,2315
+Vinícius Júnior,7008.0,Real Madrid,150.0,Brazil,LaLiga Santander,91,LW,LM,Explosive,2.58M,5,4,H,M,99,86,82,94,34,76,Lean,176,73.0,1055,471,2213
+Pedri,8935.0,Barcelona,148.0,Spain,LaLiga Santander,91,CM,LW,Controlled,404.8K,4,5,H,H,88,79,88,92,78,84,Lean,174,61.0,-1347,509,2399
+David Alaba,391.0,Real Madrid,150.0,Austria,LaLiga Santander,91,CB,,Controlled,1.22M,3,4,M,M,85,76,89,88,92,88,Average,180,78.0,693,518,2511
+Toni Kroos,2369.0,Real Madrid,150.0,Germany,LaLiga Santander,91,CM,,Controlled,296.65K,5,5,M,M,80,85,93,86,79,76,Average,183,76.0,5257,499,2386
+Marcos Llorente,2518.0,Atletico Madrid,143.0,Spain,LaLiga Santander,90,CM,"RB,RM",Controlled,1.32M,3,4,H,M,93,84,87,88,84,86,Lean,184,74.0,716,522,2433
+Memphis Depay,555.0,Atletico Madrid,143.0,Netherlands,LaLiga Santander,90,CF,"ST,LW",Controlled,371.9K,5,3,H,L,90,89,89,91,36,86,Unique,176,78.0,2954,481,2292
+Ronald Araujo,8091.0,Barcelona,148.0,Uruguay,LaLiga Santander,90,CB,RB,Lengthy,877K,2,4,M,H,86,57,75,73,90,90,High & Average,192,91.0,1410,471,2175
+Frenkie de Jong,7781.0,Barcelona,148.0,Netherlands,LaLiga Santander,90,CM,,Controlled,336K,4,3,H,M,86,74,90,90,82,84,Unique,180,74.0,1591,506,2408
+Erik Lamela,644.0,Sevilla,138.0,Argentina,LaLiga Santander,89,RW,"RM,CAM",Controlled,41K,4,3,H,H,90,89,90,92,62,87,Lean,181,79.0,706,510,2448
+Federico Valverde,6241.0,Real Madrid,150.0,Uruguay,LaLiga Santander,89,CM,"RM,RW",Controlled,928K,4,4,H,H,92,80,86,86,85,87,Unique,182,78.0,1309,516,2421
+João Félix,7892.0,Atletico Madrid,143.0,Portugal,LaLiga Santander,89,RW,"RM,CF,ST",Controlled,485K,5,4,M,M,90,85,86,92,45,74,Unique,181,70.0,1013,472,2283
+Ángel Correa,2275.0,Atletico Madrid,143.0,Argentina,LaLiga Santander,89,ST,"RM,CF",Explosive,215.95K,4,4,H,M,90,89,85,92,57,82,Average,171,70.0,3448,495,2343
+Antoine Griezmann,2270.0,Atletico Madrid,143.0,France,LaLiga Santander,89,ST,"CF,RW",Explosive,608K,5,5,M,M,87,89,89,92,60,85,Unique,176,73.0,2330,502,2490
+Antonio Rüdiger,1822.0,Real Madrid,150.0,Germany,LaLiga Santander,89,CB,,Lengthy,395K,2,3,H,H,84,55,75,71,88,87,High & Average+,190,85.0,980,460,2112
+Jan Oblak,2261.0,Atletico Madrid,143.0,Slovenia,LaLiga Santander,89,GK,,Controlled,40K,1,3,M,M,86,90,78,89,49,87,Unique,188,87.0,169,479,1040
+Brais Méndez,6227.0,Real Sociedad,140.0,Spain,LaLiga Santander,88,CAM,"RM,RW",Controlled,0,4,3,M,M,85,85,89,88,66,79,High & Average+,187,76.0,-385,492,2354
+Juan Miranda González,7286.0,Real Betis,153.0,Spain,LaLiga Santander,88,LB,LWB,Controlled,66.5K,3,3,M,M,91,71,84,88,88,84,High & Average+,185,79.0,948,506,2372
+Dani Ceballos,2446.0,Real Madrid,150.0,Spain,LaLiga Santander,88,CM,"CDM,CAM",Controlled,157.1K,4,4,H,H,84,84,88,90,80,82,Lean,179,68.0,524,508,2409
+Nahuel Molina,8963.0,Atletico Madrid,143.0,Argentina,LaLiga Santander,88,RWB,"RB,RM",Controlled,114.8K,3,3,H,H,92,76,82,86,85,85,Lean,175,70.0,887,506,2367
+Fernando Reges,615.0,Sevilla,138.0,Brazil,LaLiga Santander,88,CDM,CB,Lengthy,43.5K,3,4,M,H,81,66,80,78,89,88,Lean,183,76.0,497,482,2258
+Sergi Darder,2621.0,Espanyol,141.0,Spain,LaLiga Santander,88,CM,"CDM,CAM",Controlled,208.4K,3,4,M,M,88,80,88,90,80,83,Lean,180,71.0,-1564,509,2408
+Viktor Tsygankov,11322.0,Girona,223.0,Ukraine,LaLiga Santander,88,RM,RW,Explosive,29K,4,4,H,M,93,84,86,88,54,69,Lean,178,72.0,249,474,2249
+Joselu,866.0,Espanyol,141.0,Spain,LaLiga Santander,88,ST,CF,Controlled,0,5,4,H,M,88,89,80,88,40,85,High & Average+,192,80.0,765,470,2267
+Raphinha,8026.0,Barcelona,148.0,Brazil,LaLiga Santander,88,RW,RM,Explosive,75K,4,4,H,H,95,84,83,89,57,80,Lean,176,68.0,1215,488,2319
+Ferrán Torres,6441.0,Barcelona,148.0,Spain,LaLiga Santander,88,LW,"LM,ST",Controlled,58K,4,4,H,M,90,86,86,90,40,75,Lean,184,77.0,516,467,2249
+Alexander Sørloth,6531.0,Real Sociedad,140.0,Norway,LaLiga Santander,88,ST,CF,Lengthy,88.35K,3,4,H,M,92,87,83,87,46,94,High & Average,194,90.0,2364,489,2295
+Nabil Fekir,3667.0,Real Betis,153.0,France,LaLiga Santander,88,CAM,,Controlled,34K,4,4,H,M,87,87,88,88,41,85,Stocky,173,75.0,201,476,2272
+Gerard Moreno,2120.0,Villarreal,154.0,Spain,LaLiga Santander,88,ST,CF,Controlled,30K,3,4,H,M,84,89,82,87,49,77,Average,180,77.0,892,468,2251
+Marcos Acuña,8939.0,Sevilla,138.0,Argentina,LaLiga Santander,88,LB,"LWB,LM",Controlled,64.45K,3,3,H,H,85,80,86,90,83,86,Stocky,172,69.0,362,510,2445
+Ivan Rakitic,2094.0,Sevilla,138.0,Croatia,LaLiga Santander,88,CF,CM,Controlled,32.5K,4,4,M,M,76,84,90,82,80,72,Average,184,78.0,433,484,2314
+Rodrigo Riquelme Reche,8002.0,Girona,223.0,Spain,LaLiga Santander,87,CAM,"LM,CF,LW",Explosive,81.95K,5,3,M,M,96,84,84,88,55,67,Lean,174,66.0,1521,474,2261
+Jules Koundé,6433.0,Barcelona,148.0,France,LaLiga Santander,87,RB,RWB,Controlled,74.5K,2,3,H,H,87,48,68,78,88,83,Average,181,75.0,107,452,2056
+Iago Aspas,2290.0,Celta Vigo,152.0,Spain,LaLiga Santander,87,ST,CF,Explosive,22.5K,3,4,H,H,87,90,83,90,37,75,Lean,176,67.0,212,462,2250
+Álex Fernández,4177.0,Cadiz,261.0,Spain,LaLiga Santander,87,CAM,"CM,LM",Controlled,40.2K,4,4,M,M,84,85,88,86,79,78,Lean,182,72.0,-1057,500,2392
+Oihan Sancet Tirapu,7779.0,Athletic Club,147.0,Spain,LaLiga Santander,87,ST,"CAM,CF",Controlled,25K,4,4,H,M,87,88,82,86,60,79,High & Average+,188,72.0,-87,482,2276
+David Soria,2415.0,Getafe,142.0,Spain,LaLiga Santander,87,GK,,Lengthy,25.5K,1,3,M,M,88,87,80,88,49,87,High & Average+,192,85.0,89,479,949
+Juan Foyth,6306.0,Villarreal,154.0,Argentina,LaLiga Santander,87,CB,"RWB,RB,CDM",Controlled,0,3,3,M,H,84,54,77,81,88,85,High & Average+,187,69.0,849,469,2187
+Lucas Vázquez,2253.0,Real Madrid,150.0,Spain,LaLiga Santander,87,RB,"RWB,RW",Explosive,50K,4,4,H,M,88,80,85,86,82,81,Average,173,70.0,894,502,2393
+William Carvalho,6926.0,Real Betis,153.0,Portugal,LaLiga Santander,87,CDM,,Lengthy,45.85K,3,4,M,M,78,75,84,82,84,91,High & Average,187,79.0,-382,494,2312
+Anssumane Fati,7967.0,Barcelona,148.0,Spain,LaLiga Santander,87,ST,CF,Explosive,317.3K,4,4,H,M,92,85,81,87,36,63,Unique,178,66.0,-2137,444,2158
+Andreas Christensen,200.0,Barcelona,148.0,Denmark,LaLiga Santander,87,CB,,Lengthy,0,2,3,L,H,80,40,76,78,86,82,High & Average+,188,81.0,237,442,2043
+Yannick Carrasco,2272.0,Atletico Madrid,143.0,Belgium,LaLiga Santander,87,LM,LW,Controlled,43.5K,4,4,H,H,91,84,82,90,55,69,High & Average+,185,73.0,436,471,2251
+Rodrygo,8015.0,Real Madrid,150.0,Brazil,LaLiga Santander,87,RW,RM,Explosive,190K,4,4,M,M,94,83,80,90,35,63,Lean,174,64.0,673,445,2162
+Ferland Mendy,6233.0,Real Madrid,150.0,France,LaLiga Santander,87,LB,LWB,Controlled,840K,4,5,H,H,95,70,87,82,81,83,Unique,180,73.0,1098,498,2318
+Takefusa Kubo,8001.0,Real Sociedad,140.0,Japan,LaLiga Santander,86,CAM,"RM,RW",Explosive,18K,4,4,M,M,91,77,82,92,50,65,Lean,173,67.0,568,457,2174
+Youssef En-Nesyri,5169.0,Sevilla,138.0,Morocco,LaLiga Santander,86,ST,CF,Controlled,32.3K,3,4,H,H,86,87,70,84,40,83,High & Average+,188,78.0,-736,450,2170
+Giménez,2278.0,Atletico Madrid,143.0,Uruguay,LaLiga Santander,86,CB,,Lengthy,17.5K,2,3,M,H,75,50,61,64,88,86,High & Average,185,80.0,38,424,1948
+Gabriel Veiga Novas,8713.0,Celta Vigo,152.0,Spain,LaLiga Santander,86,CM,CAM,Controlled,25.8K,4,4,M,M,86,83,85,89,71,81,Lean,184,77.0,445,495,2302
+Iñaki Williams,2399.0,Athletic Club,147.0,Ghana,LaLiga Santander,86,ST,CF,Controlled,129.4K,4,3,H,M,95,83,77,83,43,87,High & Average+,186,80.0,-2247,468,2203
+Andrés Guardado,6164.0,Real Betis,153.0,Mexico,LaLiga Santander,86,CDM,,Controlled,3.1K,3,3,M,M,79,78,86,85,83,82,Short & Lean,169,67.0,146,493,2410
+Aurélien Tchouaméni,6560.0,Real Madrid,150.0,France,LaLiga Santander,86,CM,CDM,Controlled,25.5K,3,3,M,H,75,75,84,83,85,86,High & Average+,187,81.0,2699,488,2308
+Thomas Lemar,3425.0,Atletico Madrid,143.0,France,LaLiga Santander,86,CM,"RM,LM",Explosive,22.5K,4,3,H,H,85,81,86,90,73,70,Lean,171,63.0,3065,485,2345
+Jesús Navas,616.0,Sevilla,138.0,Spain,LaLiga Santander,86,RB,RWB,Controlled,19K,4,2,H,M,88,72,79,84,83,79,Short & Lean,172,60.0,1504,485,2316
+Cristhian Stuani,1709.0,Girona,223.0,Uruguay,LaLiga Santander,85,ST,CF,Controlled,15.75K,4,4,H,L,85,90,80,83,56,92,High & Average,186,76.0,-159,486,2345
+Jesús Corona,10323.0,Sevilla,138.0,Mexico,LaLiga Santander,85,RW,"RM,LW",Explosive,14.75K,5,5,M,M,86,80,83,90,74,71,Average,173,66.0,1042,484,2376
+Axel Witsel,3059.0,Atletico Madrid,143.0,Belgium,LaLiga Santander,85,CDM,CM,Controlled,15.75K,3,4,L,M,78,70,85,83,86,82,Unique,186,81.0,-25,484,2342
+Ander Herrera,552.0,Athletic Club,147.0,Spain,LaLiga Santander,85,CM,CDM,Controlled,15.5K,4,4,H,H,77,79,83,85,84,81,Lean,182,71.0,-86,489,2366
+Florian Lejeune,5073.0,Rayo Vallecano,145.0,France,LaLiga Santander,85,CB,,Lengthy,16K,2,3,M,H,63,65,71,74,85,83,High & Average+,189,81.0,8,441,2082
+Fran García,9810.0,Rayo Vallecano,145.0,Spain,LaLiga Santander,85,LB,"LWB,LM",Controlled,22.5K,3,3,H,M,91,57,80,81,84,80,Short & Lean-,167,69.0,436,473,2197
+Reinildo,7432.0,Atletico Madrid,143.0,Mozambique,LaLiga Santander,85,LB,"CB,LWB",Controlled,19.5K,3,3,M,H,88,60,74,82,85,85,Lean,180,73.0,429,474,2196
+Lucas Ocampos,1109.0,Sevilla,138.0,Argentina,LaLiga Santander,85,LW,"LM,RW",Controlled,15.75K,4,3,H,H,85,86,82,86,67,87,,188,84.0,23,493,2350
+Munir,2106.0,Getafe,142.0,Morocco,LaLiga Santander,85,LW,"LM,RW,ST",Controlled,0,4,3,H,L,90,84,83,86,39,76,Lean,175,69.0,66,458,2191
+Alfonso Espino,8733.0,Cadiz,261.0,Uruguay,LaLiga Santander,85,LB,LWB,Controlled,0,3,3,H,M,90,66,76,78,81,85,Stocky,172,71.0,650,476,2198
+Ezequiel Ávila,6955.0,Osasuna,157.0,Argentina,LaLiga Santander,84,ST,"RM,CF",Controlled,13.5K,3,5,H,H,88,84,70,81,47,80,Average,172,81.0,493,450,2124
+Suso,1129.0,Sevilla,138.0,Spain,LaLiga Santander,84,CM,"CAM,LW",Explosive,13K,4,3,H,M,83,81,86,88,60,66,Average,176,70.0,-144,464,2241
+Joseph Aidoo,7826.0,Celta Vigo,152.0,Ghana,LaLiga Santander,84,CB,,Controlled,0,2,2,M,H,79,34,60,66,80,90,Average,184,80.0,70,409,1892
+Mario Hermoso,6136.0,Atletico Madrid,143.0,Spain,LaLiga Santander,84,CB,LB,Controlled,15K,2,3,M,H,80,54,78,76,86,84,Average,184,75.0,114,458,2166
+Predrag Rajkovic,7718.0,Mallorca,239.0,Serbia,LaLiga Santander,84,GK,,Controlled,12.5K,1,2,M,M,84,83,81,87,32,85,High & Average,191,85.0,-1,452,718
+Javi Galán,7385.0,Celta Vigo,152.0,Spain,LaLiga Santander,84,LB,LWB,Controlled,11K,3,2,H,M,84,60,79,86,80,75,Average,172,70.0,14,464,2195
+Lucas Robertone,10972.0,Almeria,208.0,Argentina,LaLiga Santander,84,CAM,"CDM,CM",Explosive,13.75K,4,4,M,H,82,78,79,85,84,81,Average,175,70.0,2187,489,2371
+Stefan Savić,2263.0,Atletico Madrid,143.0,Montenegro,LaLiga Santander,84,CB,,Lengthy,4.2K,2,3,M,H,64,35,58,58,87,80,High & Average+,187,81.0,16,382,1769
+Muniain,2401.0,Athletic Club,147.0,Spain,LaLiga Santander,84,LM,"CAM,LW",Explosive,4.2K,4,3,H,M,81,77,82,87,51,61,Short & Lean-,170,66.0,41,439,2127
+Rubén Alcaraz Jiménez,6917.0,Cadiz,261.0,Spain,LaLiga Santander,83,CDM,CM,Lengthy,14K,3,4,L,H,65,80,84,79,83,88,Average,180,82.0,9,479,2338
+Germán Pezzella,2143.0,Real Betis,153.0,Argentina,LaLiga Santander,83,CB,,Lengthy,10.75K,2,3,M,M,58,55,56,62,85,79,High & Average,186,81.0,3,395,1845
+Dani Rodríguez,7841.0,Mallorca,239.0,Spain,LaLiga Santander,83,CM,"CAM,ST,LW",Controlled,12K,3,3,H,H,90,82,81,80,72,78,Average,178,71.0,60,483,2254
+Jeremías Ledesma,8949.0,Cadiz,261.0,Argentina,LaLiga Santander,83,GK,,Controlled,27K,1,2,M,M,85,82,75,86,49,82,High & Stocky,186,83.0,123,459,922
+Unai Simón,5185.0,Athletic Club,147.0,Spain,LaLiga Santander,83,GK,,Controlled,1.4K,1,3,M,M,82,79,77,85,49,85,High & Average,190,89.0,61,457,949
+De Tomás,2452.0,Rayo Vallecano,145.0,Spain,LaLiga Santander,83,ST,CF,Controlled,13.25K,4,4,H,H,77,84,77,83,40,78,Average,180,79.0,81,439,2133
+Aritz Elustondo,2228.0,Real Sociedad,140.0,Spain,LaLiga Santander,82,CB,RB,Lengthy,1.9K,2,3,L,H,64,39,65,62,82,78,Lean,180,71.0,10,390,1845
+Raúl Albiol,1588.0,Villarreal,154.0,Spain,LaLiga Santander,82,CB,,Controlled,1.5K,2,3,L,H,38,41,62,63,85,71,High & Average+,190,82.0,13,360,1749
+Isco,2255.0,Sevilla,138.0,Spain,LaLiga Santander,82,CAM,"CM,LW",Controlled,10K,4,3,M,M,65,75,80,88,59,58,Average,176,79.0,37,425,2082
+David López,1857.0,Girona,223.0,Spain,LaLiga Santander,81,CB,CDM,Lengthy,16.5K,2,3,M,H,55,62,72,70,83,80,Average,183,81.0,9,422,2012
+Robin Le Normand,7276.0,Real Sociedad,140.0,France,LaLiga Santander,81,CB,,Lengthy,900,2,3,M,M,63,25,53,58,83,80,High & Average+,187,81.0,18,362,1635
+Guido Rodríguez,8267.0,Real Betis,153.0,Argentina,LaLiga Santander,81,CDM,,Controlled,3.7K,2,4,M,H,51,57,71,68,84,77,High & Average+,185,80.0,16,408,1906
+Borja Iglesias,2543.0,Real Betis,153.0,Spain,LaLiga Santander,81,ST,CF,Lengthy,700,3,3,H,M,66,82,65,74,40,81,High & Average+,187,86.0,17,408,1930
+Marko Dmitrović,6224.0,Sevilla,138.0,Serbia,LaLiga Santander,80,GK,,Controlled,750,1,2,M,M,77,79,78,81,37,80,High & Stocky,194,94.0,10,432,963
+Rui Silva,5109.0,Real Betis,153.0,Portugal,LaLiga Santander,80,GK,,Controlled,800,1,3,M,M,81,76,75,83,31,82,High & Average,191,91.0,4,428,863
+Sergi Roberto,2104.0,Barcelona,148.0,Spain,LaLiga Santander,80,RB,"RWB,CM",Controlled,2.8K,3,3,M,M,74,63,79,77,75,72,Lean,178,68.0,27,440,2065
+Joan Jordán,2122.0,Sevilla,138.0,Spain,LaLiga Santander,80,CM,,Controlled,750,3,4,M,M,59,75,81,76,68,75,Lean,183,74.0,2,434,2077
+Mauro Arambarri,3264.0,Getafe,142.0,Uruguay,LaLiga Santander,80,CDM,CM,Lengthy,2.9K,3,3,M,M,61,64,73,73,78,77,Average,175,74.0,2,426,2016
+Francis Coquelin,497.0,Villarreal,154.0,France,LaLiga Santander,80,CM,"CDM,LM",Controlled,800,3,4,M,H,68,68,78,79,78,80,Average,176,74.0,25,451,2146
+Jonathan Viera,2358.0,Las Palmas,144.0,Spain,LaLiga SmartBank (ESP 2),80,CAM,"CM,LM",Explosive,700,4,4,H,M,80,75,79,81,63,72,Lean,171,67.0,5,450,2144
+Morales,2186.0,Villarreal,154.0,Spain,LaLiga Santander,80,LM,"ST,LW",Controlled,3.6K,4,4,H,M,83,81,74,82,52,67,Lean,180,70.0,73,439,2107
+Etienne Capoue,572.0,Villarreal,154.0,France,LaLiga Santander,80,CM,CDM,Lengthy,750,3,3,M,M,53,73,78,75,79,78,High & Average+,190,80.0,24,436,2106
+Manu Trigueros,2301.0,Villarreal,154.0,Spain,LaLiga Santander,79,CM,"RM,LM",Controlled,750,4,4,H,M,50,73,78,75,72,66,Average,178,75.0,9,414,2068
+Fran Beltrán,6931.0,Celta Vigo,152.0,Spain,LaLiga Santander,79,CDM,CM,Controlled,1.4K,3,3,M,H,60,56,77,77,77,65,Short & Lean-,165,64.0,2,412,1969
+Rubén García,2183.0,Osasuna,157.0,Spain,LaLiga Santander,79,LM,"ST,LW",Explosive,750,4,2,H,M,77,76,79,79,45,54,Average,171,71.0,1,410,1991
+Luiz Felipe,6177.0,Real Betis,153.0,Italy,LaLiga Santander,79,CB,,Controlled,750,3,4,M,H,72,29,61,68,80,73,High & Average+,187,80.0,31,383,1739
+Héctor Bellerín,492.0,Barcelona,148.0,Spain,LaLiga Santander,79,RB,RWB,Explosive,4.4K,3,2,H,L,81,51,70,77,75,64,Lean,178,74.0,59,418,1960
+Juanmi,897.0,Real Betis,153.0,Spain,LaLiga Santander,79,LM,"ST,LW",Explosive,950,3,3,M,M,76,80,72,81,31,59,Lean,172,69.0,15,399,1930
+Unai Núñez,6149.0,Celta Vigo,152.0,Spain,LaLiga Santander,79,CB,,Lengthy,750,2,2,M,H,70,24,51,52,79,78,High & Average,186,81.0,0,354,1592
+Marcos Alonso Mendoza,1621.0,Barcelona,148.0,Spain,LaLiga Santander,79,LWB,LB,Controlled,950,3,3,H,L,53,74,80,77,76,75,High & Average+,188,85.0,-6,435,2167
+Denis Suárez,2308.0,Espanyol,141.0,Spain,LaLiga Santander,79,CM,,Controlled,750,3,3,M,M,72,72,81,81,64,55,Lean,178,66.0,10,425,2044
+Marcão,10999.0,Sevilla,138.0,Brazil,LaLiga Santander,79,CB,,Lengthy,750,2,3,H,H,67,36,60,70,78,86,High & Average,185,81.0,6,397,1839
+Luis Milla,8725.0,Getafe,142.0,Spain,LaLiga Santander,79,CDM,CM,Controlled,2.3K,3,3,H,H,70,70,76,74,75,74,Lean,175,67.0,9,439,2110
+Óscar Trejo,3208.0,Rayo Vallecano,145.0,Argentina,LaLiga Santander,79,CAM,,Controlled,2.4K,3,4,H,M,68,76,78,82,71,77,Average,180,79.0,21,452,2185
+Yeremy Pino,9024.0,Villarreal,154.0,Spain,LaLiga Santander,79,RM,"RW,ST",Explosive,1.3K,3,4,H,L,77,73,76,79,38,45,Lean,172,60.0,14,388,1843
+Rafa Mir,2589.0,Sevilla,138.0,Spain,LaLiga Santander,79,ST,CF,Lengthy,700,3,3,H,L,78,81,67,71,45,78,High & Stocky,191,86.0,4,420,1971
+Nemanja Gudelj,7888.0,Sevilla,138.0,Serbia,LaLiga Santander,79,CDM,CB,Controlled,900,3,2,L,M,54,70,79,69,74,84,High & Average,187,73.0,13,430,2095
+Nemanja Maksimović,6076.0,Getafe,142.0,Serbia,LaLiga Santander,79,CM,CDM,Controlled,750,3,3,H,H,51,72,75,74,77,77,High & Average,189,78.0,4,426,2048
+Renato Tapia,8710.0,Celta Vigo,152.0,Peru,LaLiga Santander,79,CDM,CM,Lengthy,1K,3,4,M,H,68,66,71,69,79,84,High & Stocky,185,80.0,14,437,2082
+Stole Dimitrievski,2619.0,Rayo Vallecano,145.0,FYR Macedonia,LaLiga Santander,78,GK,,Controlled,700,1,2,M,M,77,82,75,79,36,78,High & Average,188,84.0,15,427,882
+Pablo Maffeo,1003.0,Mallorca,239.0,Spain,LaLiga Santander,78,RB,RWB,Controlled,700,3,3,H,M,83,52,68,78,75,68,Average,172,70.0,-9,424,1917
+Óliver Torres,2424.0,Sevilla,138.0,Spain,LaLiga Santander,78,CM,LW,Controlled,750,3,4,H,M,59,67,78,81,64,50,Average,175,70.0,-1,399,1987
+Oriol Romeu Vidal,842.0,Girona,223.0,Spain,LaLiga Santander,78,CDM,CM,Controlled,950,2,3,L,H,41,44,62,65,80,79,Average,183,83.0,6,371,1817
+Willian José,2361.0,Real Betis,153.0,Brazil,LaLiga Santander,78,ST,CF,Lengthy,700,4,4,M,L,62,79,66,74,40,80,High & Average,189,91.0,6,401,1908
+Sergio Herrera,7859.0,Osasuna,157.0,Spain,LaLiga Santander,78,GK,,Controlled,700,1,3,M,M,79,77,73,77,47,75,High & Average+,192,82.0,9,428,906
+Franco Cervi,9794.0,Celta Vigo,152.0,Argentina,LaLiga Santander,78,LM,LW,Explosive,800,4,3,H,H,88,67,72,80,55,54,Short & Lean-,165,62.0,37,416,2005
+Enes Ünal,6219.0,Getafe,142.0,Turkey,LaLiga Santander,78,ST,CF,Controlled,700,3,3,H,M,69,81,65,75,40,76,High & Average,187,78.0,26,406,1942
+Portu,6118.0,Getafe,142.0,Spain,LaLiga Santander,78,RM,"LM,RW",Controlled,1.6K,3,4,H,M,87,74,72,76,57,77,Short & Lean-,167,66.0,18,443,2110
+Claudio Bravo,1731.0,Real Betis,153.0,Chile,LaLiga Santander,78,GK,,Controlled,700,1,3,M,M,77,78,84,78,56,78,Average,184,80.0,21,451,1149
+Aïssa Mandi,3237.0,Villarreal,154.0,Algeria,LaLiga Santander,78,CB,,Controlled,750,2,3,H,M,62,46,72,69,79,73,Lean,184,78.0,9,401,1941
+Rubén Peña,5075.0,Osasuna,157.0,Spain,LaLiga Santander,78,RB,"RWB,LB,RM",Controlled,700,4,3,H,L,78,70,71,77,74,66,Short & Lean-,170,65.0,5,436,2076
+Umar Sadiq,1450.0,Real Sociedad,140.0,Nigeria,LaLiga Santander,77,ST,CF,Lengthy,700,3,3,H,M,84,76,60,72,30,76,High & Average+,192,75.0,17,398,1798
+Domingos Duarte,7860.0,Getafe,142.0,Portugal,LaLiga Santander,77,CB,LB,Controlled,750,2,3,M,M,52,35,58,53,79,78,High & Average+,190,78.0,4,355,1625
+Aitor Fernández,4193.0,Osasuna,157.0,Spain,LaLiga Santander,77,GK,,Controlled,750,1,2,M,M,78,74,66,80,56,76,Average,182,78.0,3,430,969
+Johan Mojica,6242.0,Villarreal,154.0,Colombia,LaLiga Santander,77,LB,"LWB,LM",Controlled,800,3,2,H,L,88,65,73,72,72,70,High & Average+,185,73.0,26,440,2029
+Lucas Boyé,1189.0,Elche,207.0,Argentina,LaLiga Santander,77,ST,CF,Lengthy,650,4,2,H,L,70,78,64,78,49,80,Average,183,79.0,3,419,1967
+Hugo Duro,6637.0,Valencia,146.0,Spain,LaLiga Santander,77,ST,"LM,CF",Controlled,700,3,4,H,M,75,76,67,76,44,67,Average,180,76.0,11,405,1899
+Giorgi Mamardashvili,9693.0,Valencia,146.0,Georgia,LaLiga Santander,77,GK,,Controlled,700,1,3,M,M,79,78,74,79,48,80,High & Average+,199,88.0,40,438,716
+Damián Suárez,2194.0,Getafe,142.0,Uruguay,LaLiga Santander,77,RB,RWB,Controlled,850,3,3,H,M,69,69,72,73,75,75,Average,173,68.0,1,433,2096
+Alberto Moreno,608.0,Villarreal,154.0,Spain,LaLiga Santander,77,LB,"LWB,LM",Explosive,800,3,2,H,M,81,69,72,77,70,69,Average,171,65.0,2,438,2075
+Adrià Giner Pedrosa,7174.0,Espanyol,141.0,Spain,LaLiga Santander,76,LB,LWB,Explosive,1.6K,3,3,H,H,90,60,69,78,69,73,Lean,176,69.0,33,439,2022
+Thierry Rendall Correia,8058.0,Valencia,146.0,Portugal,LaLiga Santander,76,RB,"RWB,RM",Controlled,750,3,4,H,M,90,49,68,75,70,70,Average,176,69.0,34,422,1955
+Edgar González Estrada,8142.0,Real Betis,153.0,Spain,LaLiga Santander,76,CB,CDM,Controlled,750,2,2,M,M,53,49,64,63,77,78,High & Average+,193,78.0,23,384,1748
+Carlos Neva Tey,7864.0,Granada,155.0,Spain,LaLiga SmartBank (ESP 2),76,LB,"LWB,LM",Controlled,750,3,2,H,M,77,52,63,71,73,66,Lean,174,64.0,4,402,1860
+Nahuel Tenaglia,10364.0,Alaves,158.0,Argentina,LaLiga SmartBank (ESP 2),76,RB,"RWB,CB",Controlled,1.2K,3,3,M,M,71,43,65,72,75,79,Average,181,70.0,-5,405,1892
+Eric García Martret,8045.0,Barcelona,148.0,Spain,LaLiga Santander,76,CB,,Controlled,850,2,3,M,M,62,44,71,68,77,71,Average,182,76.0,5,393,1844
+Shon Weissman,8761.0,Real Valladolid,231.0,Israel,LaLiga Santander,76,ST,CF,Controlled,700,3,4,H,M,75,79,65,69,38,72,Stocky,174,79.0,-33,398,1927
+Daniel Vivian Moreno,6766.0,Athletic Club,147.0,Spain,LaLiga Santander,76,CB,,Controlled,750,2,2,H,M,70,43,55,60,77,77,Average,183,83.0,5,382,1773
+Omar Alderete,8986.0,Getafe,142.0,Paraguay,LaLiga Santander,76,CB,,Lengthy,750,2,3,M,M,63,56,58,63,77,78,High & Average,188,77.0,8,395,1859
+Gonzalo Escalante,2437.0,Cadiz,261.0,Argentina,LaLiga Santander,76,CDM,CM,Controlled,750,3,3,M,H,63,67,72,71,73,74,Average,182,76.0,13,420,2020
+Ander Guevara Lajo,6126.0,Real Sociedad,140.0,Spain,LaLiga Santander,76,CM,,Controlled,750,3,3,M,M,50,64,74,72,73,69,Average,180,73.0,6,402,1929
+Óscar Rodríguez Arnaiz,6570.0,Celta Vigo,152.0,Spain,LaLiga Santander,76,CM,"RM,LM",Controlled,750,3,3,H,M,59,75,76,76,56,55,Average,174,68.0,3,397,1939
+Víctor Díaz,5117.0,Granada,155.0,Spain,LaLiga SmartBank (ESP 2),76,CB,RB,Controlled,700,2,3,M,H,70,56,68,66,77,75,Lean,184,72.0,-2,412,1930
+Ante Budimir,1235.0,Osasuna,157.0,Croatia,LaLiga Santander,76,ST,CF,Lengthy,700,3,4,M,H,62,76,49,72,35,76,High & Average+,190,75.0,8,370,1718
+Jaume Costa,2539.0,Mallorca,239.0,Spain,LaLiga Santander,76,LB,"RB,LWB",Controlled,750,3,3,M,M,70,61,69,72,74,69,Lean,171,62.0,2,415,1987
+Fabrizio Angileri,10987.0,Getafe,142.0,Argentina,LaLiga Santander,76,LB,LWB,Controlled,1.2K,3,3,M,M,79,71,76,75,70,80,Average,184,84.0,1,451,2143
+Álvaro García Rivera,7071.0,Rayo Vallecano,145.0,Spain,LaLiga Santander,76,LM,LW,Explosive,700,3,3,M,H,91,67,71,75,37,45,Short & Lean,167,61.0,10,386,1854
+Zaldúa,2226.0,Cadiz,261.0,Spain,LaLiga Santander,76,RB,RWB,Controlled,700,2,3,H,M,66,37,68,65,75,75,Average,174,69.0,-6,386,1814
+Yangel Herrera,7350.0,Girona,223.0,Venezuela,LaLiga Santander,76,CM,"CDM,CAM",Controlled,700,3,3,M,M,62,70,72,74,77,78,Lean,184,77.0,7,433,2049
+Youssouf Sabaly,3399.0,Real Betis,153.0,Senegal,LaLiga Santander,76,RB,"RWB,RM",Controlled,750,3,3,M,M,77,46,64,71,73,70,Average,173,67.0,15,401,1868
+Santiago Comesaña Veiga,7070.0,Rayo Vallecano,145.0,Spain,LaLiga Santander,75,CDM,"CM,CAM",Lengthy,750,3,4,M,M,59,68,67,70,73,73,Lean,184,75.0,8,410,1910
+Carles Pérez Sayol,7609.0,Celta Vigo,152.0,Spain,LaLiga Santander,75,RW,"RM,CF",Explosive,750,4,2,H,M,80,73,66,79,36,62,Average,173,75.0,1,396,1836
+Iván Alejo Peralta,6226.0,Cadiz,261.0,Spain,LaLiga Santander,75,RM,"LM,RW",Controlled,900,4,3,M,M,81,73,73,76,44,67,Lean,184,76.0,-49,414,1899
+Vedat Muriqi,9002.0,Mallorca,239.0,Kosovo,LaLiga Santander,75,ST,CF,Controlled,700,3,3,M,M,50,75,58,68,28,82,High & Average,194,86.0,31,361,1723
+Iddrisu Baba,7840.0,Mallorca,239.0,Ghana,LaLiga Santander,75,CDM,"CB,CM",Lengthy,750,2,4,M,H,63,50,64,64,75,78,High & Average+,185,73.0,0,394,1803
+Aihen Muñoz Capellán,7306.0,Real Sociedad,140.0,Spain,LaLiga Santander,75,LB,LWB,Controlled,800,3,3,H,M,76,54,69,73,72,70,Lean,175,68.0,5,414,1938
+Jon Moncayola Tollar,7857.0,Osasuna,157.0,Spain,LaLiga Santander,75,CM,CDM,Controlled,700,3,4,M,H,62,65,73,71,73,67,High & Average,189,86.0,3,411,1933
+Myrto Uzuni,10400.0,Granada,155.0,Albania,LaLiga SmartBank (ESP 2),75,LM,"ST,LW",Explosive,650,4,3,H,M,83,72,66,79,27,63,Stocky,178,64.0,18,390,1850
+Samuel Dias Lino,10943.0,Valencia,146.0,Brazil,LaLiga Santander,75,LM,"RM,ST,LW",Explosive,700,3,3,H,M,81,71,67,76,30,64,Average,178,66.0,7,389,1832
+Iñigo Lekue Martínez,2484.0,Athletic Club,147.0,Spain,LaLiga Santander,75,RB,"RWB,LB",Controlled,700,3,3,H,M,81,62,70,70,70,72,Lean,180,70.0,7,425,1976
+Jaime Mata Arnaiz,7009.0,Getafe,142.0,Spain,LaLiga Santander,75,ST,CF,Controlled,700,3,3,H,M,65,75,62,73,31,74,High & Average,185,79.0,2,380,1817
+Unai López Cabrera,4091.0,Rayo Vallecano,145.0,Spain,LaLiga Santander,75,CM,"CDM,CAM",Controlled,750,3,3,H,M,71,70,77,76,67,69,Short & Lean-,170,69.0,3,430,2074
+Andriy Lunin,7194.0,Real Madrid,150.0,Ukraine,LaLiga Santander,75,GK,,Controlled,750,1,3,M,M,74,71,73,76,37,75,High & Average+,192,87.0,32,406,806
+José Callejón,1382.0,Granada,155.0,Spain,LaLiga SmartBank (ESP 2),75,RW,RM,Explosive,750,3,4,M,M,75,72,75,77,48,58,Lean,178,73.0,13,405,1972
+Kike García,5074.0,Osasuna,157.0,Spain,LaLiga Santander,75,ST,CF,Lengthy,750,3,4,H,M,57,76,64,73,44,73,High & Average,186,79.0,6,387,1853
+Dimitri Foulquier,2509.0,Valencia,146.0,France,LaLiga Santander,75,RB,"RWB,CB",Controlled,750,3,3,H,M,76,63,68,71,72,77,Lean,183,78.0,12,427,1972
+Fernando Martínez Rubio,10969.0,Almeria,208.0,Spain,LaLiga Santander,75,GK,,Controlled,700,1,2,M,M,75,73,70,76,48,74,High & Average,185,85.0,4,416,931
+Anthony Lozano,6533.0,Cadiz,261.0,Honduras,LaLiga Santander,75,ST,"LM,CF",Controlled,700,3,3,M,L,79,75,66,71,37,74,High & Average,185,74.0,15,402,1878
+Lucas Torró Marset,7050.0,Osasuna,157.0,Spain,LaLiga Santander,75,CDM,CM,Controlled,750,2,3,M,M,35,63,66,66,74,75,High & Average+,190,77.0,8,379,1859
+Omar Mascarell González,2456.0,Elche,207.0,Spain,LaLiga Santander,75,CDM,CM,Controlled,750,3,5,L,M,57,60,69,72,72,71,Lean,181,76.0,2,401,1955
+Martin Valjent,7838.0,Mallorca,239.0,Slovakia,LaLiga Santander,75,CB,,Controlled,750,2,2,M,M,64,36,58,64,75,83,High & Average,187,83.0,4,380,1771
+Iván Balliu,5672.0,Rayo Vallecano,145.0,Albania,LaLiga Santander,75,RB,RWB,Explosive,700,3,3,H,M,81,51,68,72,70,70,Average,174,65.0,8,412,1940
+Ander Barrenetxea,7308.0,Real Sociedad,140.0,Spain,LaLiga Santander,74,LW,LM,Explosive,700,3,4,H,M,78,71,63,80,24,48,Average,175,74.0,2,364,1747
+Óscar Valentín,9811.0,Rayo Vallecano,145.0,Spain,LaLiga Santander,74,CDM,CM,Controlled,850,2,3,M,H,63,45,65,63,72,74,Lean,177,72.0,4,382,1802
+Aitor Ruibal García,6427.0,Real Betis,153.0,Spain,LaLiga Santander,74,RM,"LM,RW",Controlled,900,3,3,H,M,85,73,67,74,42,60,Average,176,75.0,8,401,1814
+Álex Centelles,8773.0,Almeria,208.0,Spain,LaLiga Santander,74,LB,LWB,Controlled,500,3,3,M,M,78,52,67,71,68,75,High & Average+,185,73.0,1,411,1900
+Darko Brašanac,5037.0,Osasuna,157.0,Serbia,LaLiga Santander,74,CM,"CDM,CAM",Lengthy,800,3,3,M,H,49,70,71,71,71,71,Average,178,73.0,2,403,1972
+Jon Guridi Aldalur,5179.0,Alaves,158.0,Spain,LaLiga SmartBank (ESP 2),74,CM,,Controlled,900,3,3,M,M,63,64,69,77,62,53,Lean,179,64.0,2,388,1806
+Nico Williams,9211.0,Athletic Club,147.0,Spain,LaLiga Santander,74,RM,"LM,RW",Controlled,2.5K,4,4,M,M,91,67,65,77,33,58,Lean,181,67.0,118,391,1809
+Manu Sánchez,7605.0,Osasuna,157.0,Spain,LaLiga Santander,74,LB,"LWB,LM",Explosive,500,3,3,M,M,72,44,62,68,72,60,Lean,171,66.0,10,378,1758
+Paulo Gazzaniga,973.0,Girona,223.0,Argentina,LaLiga Santander,74,GK,,Controlled,950,1,3,M,M,76,74,78,77,57,73,High & Average+,196,90.0,20,435,1093
+Matija Nastasić,451.0,Mallorca,239.0,Serbia,LaLiga Santander,74,CB,,Lengthy,700,2,2,L,H,62,36,62,55,74,74,High & Average,188,83.0,10,363,1784
+Gonzalo Melero Manzanares,6953.0,Almeria,208.0,Spain,LaLiga Santander,74,CM,CDM,Controlled,800,3,3,M,M,53,75,73,70,70,75,Average,183,77.0,0,416,2034
+Gonzalo Villar,6750.0,Getafe,142.0,Spain,LaLiga Santander,74,CM,CDM,Controlled,550,4,3,M,M,54,57,74,77,69,67,Lean,181,73.0,0,398,1916
+Cyle Larin,11340.0,Real Valladolid,231.0,Canada,LaLiga Santander,74,ST,"LM,CF,LW",Lengthy,950,3,4,H,M,74,74,65,68,28,78,High & Average,188,90.0,7,387,1785
+Iñigo Ruiz de Galarreta,9755.0,Mallorca,239.0,Spain,LaLiga Santander,74,CDM,CM,Controlled,850,3,3,H,M,67,59,70,73,69,69,Lean,175,69.0,2,407,1920
+Mariano,5110.0,Real Madrid,150.0,Dominican Republic,LaLiga Santander,74,ST,CF,Controlled,850,3,4,M,M,74,76,61,71,45,78,Average,180,76.0,1,405,1961
+Mikel Vesga Arruti,5077.0,Athletic Club,147.0,Spain,LaLiga Santander,74,CM,,Controlled,650,3,3,M,H,41,63,70,66,75,78,High & Average+,191,84.0,4,393,1848
+Bebé,2168.0,Rayo Vallecano,145.0,Cape Verde Islands,LaLiga Santander,74,RM,"LM,RW,ST",Lengthy,2.9K,3,4,M,L,82,77,71,72,41,83,High & Average,190,83.0,36,426,1962
+Borja Mayoral Moya,2252.0,Getafe,142.0,Spain,LaLiga Santander,74,ST,CF,Controlled,700,3,4,M,M,66,74,67,74,38,66,Average,182,74.0,1,385,1883
+Stefan Mitrović,4242.0,Getafe,142.0,Serbia,LaLiga Santander,74,CB,,Controlled,500,2,5,L,H,31,34,54,53,74,81,High & Average,189,84.0,0,327,1553
+Carlos Fernández Luna,2070.0,Real Sociedad,140.0,Spain,LaLiga Santander,74,ST,"CAM,CF",Controlled,650,3,4,M,M,67,76,64,74,27,67,High & Average+,186,71.0,2,375,1777
+Pathé Ciss,9815.0,Rayo Vallecano,145.0,Senegal,LaLiga Santander,73,CDM,CM,Lengthy,800,2,3,L,H,63,56,61,62,71,82,High & Average+,185,71.0,3,395,1808
+Manuel Morlanes Ariño,6592.0,Villarreal,154.0,Spain,LaLiga Santander,73,CDM,CM,Controlled,3.9K,3,3,M,M,68,64,74,73,69,67,Average,178,75.0,-1,415,1992
+Óscar Mingueza García,9011.0,Celta Vigo,152.0,Spain,LaLiga Santander,73,CB,RB,Controlled,950,2,3,M,M,76,35,65,64,74,74,Lean,184,74.0,25,388,1799
+Alberto Perea Correoso,8849.0,Granada,155.0,Spain,LaLiga SmartBank (ESP 2),73,LM,LW,Controlled,900,3,3,M,M,73,69,70,77,35,59,Lean,177,74.0,0,383,1849
+Alberto Moleiro González,12160.0,Las Palmas,144.0,Spain,LaLiga SmartBank (ESP 2),73,LM,"RM,CM,LW",Explosive,600,3,3,M,M,77,64,70,77,46,59,Short & Lean-,169,67.0,12,393,1846
+Selim Amallah,11379.0,Real Valladolid,231.0,Morocco,LaLiga Santander,73,CAM,"CM,LW",Controlled,2.5K,3,3,H,M,68,75,72,74,63,75,High & Average,186,81.0,2,427,2050
+Jorge Cuenca Barreno,8489.0,Villarreal,154.0,Spain,LaLiga Santander,73,CB,,Controlled,700,2,3,M,M,60,37,58,52,74,66,High & Average+,190,75.0,3,347,1650
+Sergio Guardiola Navarro,5212.0,Cadiz,261.0,Spain,LaLiga Santander,73,ST,CF,Controlled,550,3,2,H,L,73,73,62,74,30,77,Average,184,78.0,-1,389,1830
+Srdan Babic,10971.0,Almeria,208.0,Serbia,LaLiga Santander,73,CB,,Controlled,500,2,3,M,M,54,40,47,52,73,76,High & Average,195,86.0,1,342,1581
+Ilaix Moriba,9243.0,Valencia,146.0,Guinea,LaLiga Santander,73,CM,,Controlled,550,4,4,M,M,70,71,64,74,64,64,High & Average,185,73.0,-13,407,1863
+Brian Ocampo,11071.0,Cadiz,261.0,Uruguay,LaLiga Santander,73,RW,"RM,LW",Explosive,1.2K,4,3,M,M,83,67,71,77,47,62,Average,175,74.0,7,407,1923
+Jørgen Strand Larsen,11070.0,Celta Vigo,152.0,Norway,LaLiga Santander,73,ST,CF,Lengthy,600,3,3,H,L,77,72,56,67,32,82,High & Average,193,86.0,22,386,1794
+Eric Curbelo de la Fe,5200.0,Las Palmas,144.0,Spain,LaLiga SmartBank (ESP 2),73,CB,RB,Controlled,650,2,5,H,M,82,34,61,64,73,79,Lean,177,77.0,11,393,1793
+Daniel Cárdenas Líndez,8108.0,Levante,151.0,Spain,LaLiga SmartBank (ESP 2),73,GK,,Controlled,550,1,3,M,M,74,67,71,79,44,68,High & Average+,186,80.0,2,403,803
+Rubén Sobrino Pozuelo,5047.0,Cadiz,261.0,Spain,LaLiga Santander,73,ST,"RM,LM,CF",Controlled,500,3,4,H,M,77,73,63,74,37,64,High & Average+,185,73.0,1,388,1822
+Unai García Lugea,5141.0,Osasuna,157.0,Spain,LaLiga Santander,73,CB,,Controlled,950,2,3,M,H,52,41,60,54,74,74,High & Average,186,81.0,1,355,1671
+Gerard Gumbau Garriga,2609.0,Elche,207.0,Spain,LaLiga Santander,73,CM,CDM,Controlled,550,3,3,M,M,55,67,73,68,72,66,High & Average+,187,77.0,1,401,1915
+Aleix García Serrano,1055.0,Girona,223.0,Spain,LaLiga Santander,73,CM,CDM,Controlled,700,3,3,M,M,65,69,72,75,64,63,Lean,173,68.0,8,408,1961
+Carles Aleñá Castillo,5058.0,Getafe,142.0,Spain,LaLiga Santander,73,CM,"RM,LM",Controlled,500,4,2,M,M,68,67,74,73,59,59,Average,180,73.0,3,400,1899
+Mouctar Diakhaby,5666.0,Valencia,146.0,Guinea,LaLiga Santander,73,CB,,Lengthy,600,2,3,M,M,55,39,54,58,74,75,High & Average+,189,78.0,2,355,1655
+Sandro Ramírez Castillo,2537.0,Las Palmas,144.0,Spain,LaLiga SmartBank (ESP 2),73,ST,CF,Controlled,600,3,4,H,M,68,74,67,75,31,60,Average,175,71.0,-5,375,1847
+Raillo,2584.0,Mallorca,239.0,Spain,LaLiga Santander,73,CB,,Controlled,650,2,3,L,H,49,36,53,54,74,78,High & Average+,187,80.0,-16,344,1649
