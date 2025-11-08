@@ -37,16 +37,28 @@ def bilge():
 
 
 #--------------BILGE-END-------------------------------
+
+
 @app.route("/talha")
 def talha():
     """Talha sayfası"""
     return render_template("talha.html", title="Talha")
 #--------------TALHA-START-----------------------------
 
-
-
+@app.route("/api/players/fut23", methods=['GET'])
+def api_fut23_all():
+    """Get all rows from fut23 table"""
+    try:
+        query = "SELECT * FROM fut23"
+        results = db.execute_query(query)
+        return jsonify({"players": results or [], "count": len(results) if results else 0})
+    except Exception as e:
+        logger.exception("Error fetching fut23 data: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
 
 #--------------TALHA-END-------------------------------
+
+
 
 @app.route("/osman")
 def osman():

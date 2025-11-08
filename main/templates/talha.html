@@ -1,6 +1,19 @@
 {% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='players.css') }}">
+{% endblock %}
+
 {% block content %}
-<h2>Form Example</h2>
-<p>This is a placeholder form page. Add your form implementation here.</p>
+<section class="content-section">
+    <h2>Players & FIFA Ratings</h2>
+    <p>Test the FUT23 players data. Click the button below to load all players from the database.</p>
+    
+    <button id="btn-test-fut23" class="btn-test">Load All FUT23 Players</button>
+    
+    <div id="results"></div>
+</section>
+
+<script src="{{ url_for('static', filename='players.js') }}"></script>
 {% endblock %}
 

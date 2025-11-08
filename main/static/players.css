@@ -1,0 +1,148 @@
+/* Players Page Styles */
+
+.content-section {
+    background: rgba(15, 20, 25, 0.9);
+    border-radius: 16px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.content-section h2 {
+    color: #2ecc71;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+    text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
+.content-section p {
+    color: #b8b8b8;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.btn-test {
+    padding: 0.8rem 2rem;
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    color: #0f1419;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-test:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(46, 204, 113, 0.5);
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+}
+
+.btn-test:active {
+    transform: translateY(0);
+}
+
+.btn-test:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#results {
+    margin-top: 2rem;
+}
+
+.results-container {
+    background: rgba(15, 20, 25, 0.9);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+.results-header {
+    color: #2ecc71;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.results-count {
+    color: #b8b8b8;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.players-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    overflow-x: auto;
+    display: block;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.players-table table {
+    width: 100%;
+    min-width: 800px;
+}
+
+.players-table thead {
+    position: sticky;
+    top: 0;
+    background: rgba(15, 20, 25, 0.95);
+    z-index: 10;
+}
+
+.players-table th {
+    color: #2ecc71;
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 2px solid rgba(46, 204, 113, 0.3);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+}
+
+.players-table td {
+    color: #e8e8e8;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid rgba(46, 204, 113, 0.1);
+}
+
+.players-table tr:hover {
+    background: rgba(46, 204, 113, 0.1);
+}
+
+.error-message {
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.1);
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #e74c3c;
+    margin-top: 1rem;
+}
+
+.loading {
+    color: #2ecc71;
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.1rem;
+}
+
+.loading::after {
+    content: '...';
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
+}
+
