@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .shot-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .hero {
+        text-align: center;
+        color: #e8e8e8;
+        margin-bottom: 40px;
+    }
+
+    .hero h2 {
+        font-size: 3.5em;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 20px rgba(46, 204, 113, 0.3);
+    }
+
+    .hero p {
+        font-size: 1.3em;
+        color: #b8b8b8;
+    }
+
+    .search-card {
+        background: rgba(15, 20, 25, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        margin-bottom: 40px;
+        border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .search-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #2ecc71;
+        margin-bottom: 8px;
+        font-size: 0.95em;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 12px 15px;
+        border: 2px solid rgba(46, 204, 113, 0.3);
+        border-radius: 8px;
+        font-size: 1em;
+        transition: all 0.3s;
+        background: rgba(10, 14, 20, 0.6);
+        color: #e8e8e8;
+    }
+
+    .form-group input::placeholder {
+        color: #718096;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #2ecc71;
+        box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+        background: rgba(10, 14, 20, 0.8);
+    }
+
+    .form-group select option {
+        background: #0f1419;
+        color: #e8e8e8;
+    }
+
+    .search-button {
+        padding: 15px 40px;
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: #0f1419;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+    }
+
+    .search-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(46, 204, 113, 0.5);
+    }
+
+    .search-button:active {
+        transform: translateY(0);
+    }
+
+    .results-container {
+        background: rgba(15, 20, 25, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        display: none;
+        border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .results-container.active {
+        display: block;
+    }
+
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid rgba(46, 204, 113, 0.5);
+    }
+
+    .results-header h3 {
+        color: #2ecc71;
+        font-size: 2em;
+        text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+    }
+
+    .results-count {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: #0f1419;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+
+    .results-grid {
+        display: grid;
+        gap: 20px;
+    }
+
+    .shot-card {
+        background: rgba(46, 204, 113, 0.05);
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.3s;
+        cursor: pointer;
+        border: 2px solid rgba(46, 204, 113, 0.2);
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .shot-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(46, 204, 113, 0.2);
+        border-color: #2ecc71;
+        background: rgba(46, 204, 113, 0.1);
+    }
+
+    .shot-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8em;
+        box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+    }
+
+    .shot-info h4 {
+        color: #e8e8e8;
+        font-size: 1.3em;
+        margin-bottom: 8px;
+    }
+
+    .shot-details {
+        color: #b8b8b8;
+        font-size: 0.95em;
+    }
+
+    .shot-meta {
+        display: flex;
+        gap: 10px;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+
+    .badge-goal {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: #0f1419;
+    }
+
+    .badge-saved, .badge-savedshot {
+        background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        color: white;
+    }
+
+    .badge-missed, .badge-missedshots {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+    }
+
+    .badge-blocked, .badge-blockedshot {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+    }
+
+    .xg-display {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #2ecc71;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        display: none;
+    }
+
+    .loading.active {
+        display: block;
+    }
+
+    .spinner {
+        border: 4px solid rgba(46, 204, 113, 0.2);
+        border-top: 4px solid #2ecc71;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 60px 20px;
+        color: #b8b8b8;
+    }
+
+    .no-results-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+    }
+
+    .no-results h4 {
+        color: #2ecc71;
+        margin-bottom: 10px;
+    }
+
+    @media (max-width: 768px) {
+        .hero h2 {
+            font-size: 2.5em;
+        }
+
+        .search-form {
+            grid-template-columns: 1fr;
+        }
+
+        .shot-card {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+
+        .shot-meta {
+            align-items: center;
+        }
+    }
+</style>
+
+<div class="shot-container">
+    <div class="hero">
+        <h2>⚽ Shot Analytics</h2>
+        <p>Search and analyze football shots with detailed player statistics</p>
+    </div>
+
+    <div class="search-card">
+        <form id="searchForm" class="search-form">
+            <div class="form-group">
+                <label for="player">Player Name</label>
+                <input type="text" id="player" name="player" placeholder="e.g., Lionel Messi">
+            </div>
+
+            <div class="form-group">
+                <label for="team">Team</label>
+                <input type="text" id="team" name="team" placeholder="e.g., Barcelona">
+            </div>
+
+            <div class="form-group">
+                <label for="season">Season</label>
+                <input type="number" id="season" name="season" placeholder="e.g., 2023" min="2000" max="2024">
+            </div>
+
+            <div class="form-group">
+                <label for="result">Result</label>
+                <select id="result" name="result">
+                    <option value="">All Results</option>
+                    <option value="Goal">Goal</option>
+                    <option value="SavedShot">Saved</option>
+                    <option value="MissedShots">Missed</option>
+                    <option value="BlockedShot">Blocked</option>
+                </select>
+            </div>
+        </form>
+
+        <button class="search-button" onclick="searchShots()">🔍 Search Shots</button>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p style="color: #2ecc71; font-size: 1.2em;">Searching for shots...</p>
+    </div>
+
+    <div class="results-container" id="resultsContainer">
+        <div class="results-header">
+            <h3>Search Results</h3>
+            <div class="results-count" id="resultsCount">0 shots</div>
+        </div>
+        <div class="results-grid" id="resultsGrid"></div>
+    </div>
+</div>
+
+<script>
+    async function searchShots() {
+        const form = document.getElementById('searchForm');
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+
+        for (let [key, value] of formData.entries()) {
+            if (value) params.append(key, value);
+        }
+
+        const loading = document.getElementById('loading');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const resultsCount = document.getElementById('resultsCount');
+
+        loading.classList.add('active');
+        resultsContainer.classList.remove('active');
+
+        try {
+            const response = await fetch(`/api/search/shots?${params.toString()}`);
+            const data = await response.json();
+
+            loading.classList.remove('active');
+
+            if (data.success && data.shots.length > 0) {
+                resultsContainer.classList.add('active');
+                resultsCount.textContent = `${data.count} shot${data.count !== 1 ? 's' : ''}`;
+
+                resultsGrid.innerHTML = data.shots.map(shot => `
+                    <div class="shot-card" onclick="window.location.href='/shot/${shot.shot_id}'">
+                        <div class="shot-icon">⚽</div>
+                        <div class="shot-info">
+                            <h4>${shot.player}</h4>
+                            <div class="shot-details">
+                                <strong>${shot.h_a === 'h' ? shot.h_team : shot.a_team}</strong> vs 
+                                ${shot.h_a === 'h' ? shot.a_team : shot.h_team} • 
+                                ${shot.minute}' • ${shot.situation || 'Open Play'}
+                            </div>
+                            <div class="shot-details" style="margin-top: 5px;">
+                                ${new Date(shot.date).toLocaleDateString()} • Season ${shot.season}
+                            </div>
+                        </div>
+                        <div class="shot-meta">
+                            <span class="badge badge-${(shot.result || 'missed').toLowerCase()}">${shot.result || 'Unknown'}</span>
+                            <div class="xg-display">xG: ${shot.xG.toFixed(3)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                resultsContainer.classList.add('active');
+                resultsCount.textContent = '0 shots';
+                resultsGrid.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">🔍</div>
+                        <h4>No shots found</h4>
+                        <p>Try adjusting your search criteria</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            loading.classList.remove('active');
+            resultsContainer.classList.add('active');
+            resultsGrid.innerHTML = `
+                <div class="no-results">
+                    <div class="no-results-icon">❌</div>
+                    <h4>Error</h4>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    // Allow Enter key to submit search
+    document.getElementById('searchForm').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchShots();
+        }
+    });
+</script>
+{% endblock %}

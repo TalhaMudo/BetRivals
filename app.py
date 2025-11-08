@@ -54,6 +54,10 @@ def osman():
     return render_template("osman.html", title="Osman")
 #--------------OSMAN-START-----------------------------
 
+@app.route('/shots')
+def index():
+    """Homepage with search interface"""
+    return render_template('shot_search.html')
 
 @app.route('/shot/<int:shot_id>')
 def shot_detail(shot_id):
@@ -189,6 +193,128 @@ def shot_detail(shot_id):
 
 
     
+@app.route('/api/search/shots')
+def search_shots():
+    """API endpoint to search for shots"""
+    try:
+        player_name = request.args.get('player', '').strip()
+        team = request.args.get('team', '').strip()
+        season = request.args.get('season', '').strip()
+        result = request.args.get('result', '').strip()
+        limit = int(request.args.get('limit', 50))
+        
+        query = """
+            SELECT 
+                s.shot_id,
+                s.player,
+                s.h_team,
+                s.a_team,
+                s.minute,
+                s.result,
+                s.xG,
+                s.situation,
+                s.season,
+                s.date,
+                s.h_a
+            FROM shot_data s
+            WHERE 1=1
+        """
+        
+        params = []
+        
+        if player_name:
+            query += " AND s.player LIKE %s"
+            params.append(f"%{player_name}%")
+        
+        if team:
+            query += " AND (s.h_team LIKE %s OR s.a_team LIKE %s)"
+            params.append(f"%{team}%")
+            params.append(f"%{team}%")
+        
+        if season:
+            query += " AND s.season = %s"
+            params.append(int(season))
+        
+        if result:
+            query += " AND s.result = %s"
+            params.append(result)
+        
+        query += " ORDER BY s.date DESC, s.minute DESC LIMIT %s"
+        params.append(limit)
+        
+        results = db.execute_query(query, tuple(params), fetch_all=True)
+        
+        return jsonify({
+            'success': True,
+            'count': len(results),
+            'shots': results
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error searching shots: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/players/autocomplete')
+def players_autocomplete():
+    """API endpoint for player name autocomplete"""
+    try:
+        query_str = request.args.get('q', '').strip()
+        
+        if len(query_str) < 2:
+            return jsonify([])
+        
+        query = """
+            SELECT DISTINCT player, player_id
+            FROM shot_data
+            WHERE player LIKE %s
+            ORDER BY player
+            LIMIT 20
+        """
+        
+        results = db.execute_query(query, (f"%{query_str}%",), fetch_all=True)
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        logger.exception(f"Error in autocomplete: {e}")
+        return jsonify([]), 500
+
+
+@app.route('/api/stats/player/<int:player_id>')
+def player_stats_api(player_id):
+    """API endpoint for player statistics"""
+    try:
+        query = """
+            SELECT 
+                p.*,
+                COUNT(DISTINCT s.match_id) as matches_with_shots,
+                COUNT(s.shot_id) as total_shots_taken,
+                SUM(CASE WHEN s.result = 'Goal' THEN 1 ELSE 0 END) as goals_from_shots
+            FROM player p
+            LEFT JOIN shot_data s ON p.player_id = s.player_id AND p.year = s.season
+            WHERE p.player_id = %s
+            GROUP BY p.season_player_id
+            ORDER BY p.year DESC
+        """
+        
+        results = db.execute_query(query, (player_id,), fetch_all=True)
+        
+        return jsonify({
+            'success': True,
+            'player_stats': results
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error fetching player stats: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 
 
 
