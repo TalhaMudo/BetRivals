@@ -31,21 +31,44 @@ def about():
 def bilge():
     """Bilge sayfası"""
     return render_template("bilge.html", title="Bilge")
+#--------------BILGE-START-----------------------------
 
+
+
+
+#--------------BILGE-END-------------------------------
 @app.route("/talha")
 def talha():
     """Talha sayfası"""
     return render_template("talha.html", title="Talha")
+#--------------TALHA-START-----------------------------
+
+
+
+
+#--------------TALHA-END-------------------------------
 
 @app.route("/osman")
 def osman():
     """Osman sayfası"""
     return render_template("osman.html", title="Osman")
+#--------------OSMAN-START-----------------------------
+
+
+
+
+#--------------OSMAN-END-------------------------------
 
 @app.route("/matches")
 def matches():
     """Matches sayfası"""
     return render_template("matches.html", title="matches")
+#--------------ABDULLAH-START-----------------------------
+
+
+
+
+#--------------ABDULLAH-END-------------------------------
 
 @app.route("/api")
 def api_data():
