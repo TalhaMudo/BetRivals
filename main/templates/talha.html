@@ -6,10 +6,13 @@
 
 {% block content %}
 <section class="content-section">
-    <h2>Players & FIFA Ratings</h2>
-    <p>Test the FUT23 players data. Click the button below to load all players from the database.</p>
+    <h2>Players & FIFA Ratings Analysis</h2>
+    <p>Analyze players with the most goals but lowest FIFA ratings. This shows players who perform well in real matches but are underrated in FIFA 23.</p>
     
-    <button id="btn-test-fut23" class="btn-test">Load All FUT23 Players</button>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+        <button id="btn-analysis" class="btn-test">🔍 Show Top Goal Scorers (Low FIFA Rating)</button>
+        <button id="btn-test-fut23" class="btn-test" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71;">Load All FUT23 Players</button>
+    </div>
     
     <div id="results"></div>
 </section>

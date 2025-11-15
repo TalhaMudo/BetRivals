@@ -56,6 +56,48 @@ def api_fut23_all():
         logger.exception("Error fetching fut23 data: %s", e)
         return jsonify({"error": "Database error", "players": []}), 500
 
+@app.route("/api/players/analysis", methods=['GET'])
+def api_players_analysis():
+    """Get players with most goals but least FIFA ratings (joined player + fut23 tables)"""
+    try:
+        query = """
+        SELECT 
+            p.player_id,
+            p.player_name,
+            p.goals,
+            p.assists,
+            p.games,
+            p.xG,
+            p.position,
+            p.team_title,
+            p.year,
+            f.Rating AS fifa_rating,
+            f.Pace,
+            f.Shoot,
+            f.Pass,
+            f.Drible,
+            f.Defense,
+            f.Physical,
+            f.Base_Stats,
+            f.In_Game_Stats,
+            f.Country,
+            f.League
+        FROM player p
+        INNER JOIN fut23 f ON p.player_id = f.player_id
+        WHERE p.goals IS NOT NULL AND f.Rating IS NOT NULL
+        ORDER BY p.goals DESC, f.Rating ASC
+        LIMIT 50
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [], 
+            "count": len(results) if results else 0,
+            "description": "Players with most goals and least FIFA ratings"
+        })
+    except Exception as e:
+        logger.exception("Error fetching player analysis data: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
 #--------------TALHA-END-------------------------------
 
 
