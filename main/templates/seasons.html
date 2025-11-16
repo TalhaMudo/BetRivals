@@ -1,25 +1,281 @@
 <!doctype html>
 <html>
-<body style="font-family:sans-serif">
-<h2>Seasons</h2>
-<input id="team" placeholder="team_id">
-<input id="year" placeholder="year">
-<button onclick="add()">Add</button>
-<table border="1"><tbody id="rows"></tbody></table>
+<head>
+  <meta charset="utf-8">
+  <title>Seasons</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root { color-scheme: dark; }
+    body{font-family:system-ui, Arial, sans-serif; margin:24px; color:#e6e6e6; background:#111}
+    input, select, button{padding:6px 8px; border-radius:8px; border:1px solid #444; background:#1a1a1a; color:#eee}
+    table{border-collapse: collapse; width:100%}
+    th, td{border:1px solid #333; padding:8px; text-align:left}
+    th{background:#1a1a1a}
+    .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .muted{opacity:.65}
+    .grid{display:grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap:8px}
+    .grid-4{display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:8px}
+    .pill{display:inline-block; padding:2px 8px; border-radius:999px; background:#1f1f1f; border:1px solid #333}
+    .btn{cursor:pointer}
+    .btn.danger{border-color:#7b1c1c; color:#ffb3b3}
+    .btn.primary{border-color:#2b6cb0; color:#cfe7ff}
+  </style>
+</head>
+<body>
+
+  <h1>Seasons</h1>
+  <div class="row" style="margin-bottom:10px">
+    <a class="pill" href="/teams">← Back to Teams</a>
+    <span class="muted" id="totalInfo"></span>
+  </div>
+
+  <!-- Filters -->
+  <div class="grid" style="margin-bottom:10px">
+    <input id="f_team_id" placeholder="team_id (int)">
+    <input id="f_year" placeholder="year (int)">
+    <input id="f_title" placeholder="title contains…">
+    <select id="f_ha">
+      <option value="">H/A</option>
+      <option value="H">H</option>
+      <option value="A">A</option>
+    </select>
+    <select id="f_result">
+      <option value="">Result</option>
+      <option value="W">W</option>
+      <option value="D">D</option>
+      <option value="L">L</option>
+    </select>
+    <select id="f_order">
+      <option value="year_desc">Year ↓</option>
+      <option value="year_asc">Year ↑</option>
+      <option value="pts_desc">Pts ↓</option>
+      <option value="pts_asc">Pts ↑</option>
+      <option value="date_desc">Date ↓</option>
+      <option value="date_asc">Date ↑</option>
+    </select>
+    <input id="f_from" type="date" placeholder="from">
+    <input id="f_to" type="date" placeholder="to">
+    <button class="btn" onclick="loadSeasons(1)">Apply</button>
+    <button class="btn" onclick="resetFilters()">Reset</button>
+  </div>
+
+  <!-- Create / Update form (minimal required + birkaç opsiyonel alan) -->
+  <details style="margin-bottom:12px">
+    <summary><strong>Create / Update Season</strong></summary>
+    <div class="grid-4" style="margin-top:8px">
+      <input id="s_id" placeholder="seasonentryid (leave empty to auto)">
+      <input id="s_team_id" placeholder="team_id *">
+      <input id="s_year" placeholder="year *">
+      <input id="s_title" placeholder="title">
+      <select id="s_ha">
+        <option value="">H/A</option>
+        <option value="H">H</option>
+        <option value="A">A</option>
+      </select>
+      <select id="s_result">
+        <option value="">Result</option>
+        <option value="W">W</option>
+        <option value="D">D</option>
+        <option value="L">L</option>
+      </select>
+      <input id="s_date" type="datetime-local" placeholder="date">
+      <input id="s_pts" placeholder="pts">
+      <input id="s_wins" placeholder="wins">
+      <input id="s_draws" placeholder="draws">
+      <input id="s_loses" placeholder="loses">
+      <input id="s_xG" placeholder="xG">
+      <input id="s_xGA" placeholder="xGA">
+      <input id="s_npxG" placeholder="npxG">
+      <input id="s_npxGA" placeholder="npxGA">
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary" onclick="submitSeason()">Save</button>
+      <button class="btn" onclick="resetSeasonForm()">Reset</button>
+    </div>
+  </details>
+
+  <table id="seasonsTable">
+    <thead>
+      <tr>
+        <th>ID</th><th>Team</th><th>Title</th><th>Year</th><th>H/A</th>
+        <th>Res</th><th>Date</th><th>Pts</th><th>W-D-L</th>
+        <th>xG/xGA</th><th>npxG/npxGA</th><th>npxGD</th>
+        <th style="width:220px">Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="pager" class="row" style="margin-top:10px"></div>
+
 <script>
-async function load(){
-  let d=await (await fetch("/api/seasons")).json();
-  let r=document.getElementById("rows");r.innerHTML="";
-  (d.items||[]).forEach(s=>r.innerHTML+=`<tr><td>${s.seasonentryid}</td><td>${s.team_id}</td><td>${s.year}</td>
-  <td><button onclick="del(${s.seasonentryid})">X</button></td></tr>`);
+const S = { page:1, per_page:10 };
+
+function g(id){ return document.getElementById(id); }
+
+function getFilters(){
+  return {
+    team_id: g('f_team_id').value.trim(),
+    year: g('f_year').value.trim(),
+    title: g('f_title').value.trim(),
+    h_a: g('f_ha').value,
+    result: g('f_result').value,
+    order_by: g('f_order').value,
+    date_from: g('f_from').value,
+    date_to: g('f_to').value,
+    page: S.page,
+    per_page: S.per_page
+  };
 }
-async function add(){
-  let t=document.getElementById("team").value,y=document.getElementById("year").value;
-  await fetch("/api/seasons",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({team_id:+t,year:+y})});
-  load();
+
+async function loadSeasons(page){
+  if (page) S.page = page;
+  const f = getFilters();
+  const params = new URLSearchParams();
+  for (const [k,v] of Object.entries(f)){
+    if (v !== "") params.set(k,v);
+  }
+  const res = await fetch(`/api/seasons?${params.toString()}`);
+  const data = await res.json();
+  renderSeasons(data);
 }
-async function del(id){await fetch(`/api/seasons/${id}/delete`,{method:"POST"});load();}
-load();
+
+function renderSeasons(data){
+  const tbody = document.querySelector('#seasonsTable tbody');
+  tbody.innerHTML = '';
+  (data.items || []).forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.seasonentryid}</td>
+      <td>${r.team_name || ''} <span class="muted">#${r.team_id}</span></td>
+      <td>${r.title || ''}</td>
+      <td>${r.year || ''}</td>
+      <td>${r.h_a || ''}</td>
+      <td>${r.result || ''}</td>
+      <td>${r.date || ''}</td>
+      <td>${nz(r.pts)}</td>
+      <td>${nz(r.wins)}-${nz(r.draws)}-${nz(r.loses)}</td>
+      <td>${nz(r.xG)}/${nz(r.xGA)}</td>
+      <td>${nz(r.npxG)}/${nz(r.npxGA)}</td>
+      <td>${nz(r.npxGD)}</td>
+      <td>
+        <button class="btn" onclick='fillSeasonForm(${JSON.stringify(r)})'>Edit</button>
+        <button class="btn danger" onclick="deleteSeason(${r.seasonentryid})">Delete</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  g('totalInfo').textContent = `Total: ${data.total ?? 0}`;
+  renderPager(data.total || 0, data.page || 1, data.per_page || S.per_page);
+}
+
+function renderPager(total, page, per){
+  const pages = Math.max(1, Math.ceil(total / per));
+  const box = g('pager');
+  box.innerHTML = '';
+  for(let p=1;p<=pages;p++){
+    const b = document.createElement('button');
+    b.className = 'btn';
+    b.textContent = p;
+    if (p === page) { b.style.fontWeight = 'bold'; b.disabled = true; }
+    b.onclick = () => loadSeasons(p);
+    box.appendChild(b);
+  }
+}
+
+function nz(v){ return (v===null || v===undefined) ? '' : v; }
+
+function resetFilters(){
+  ['f_team_id','f_year','f_title','f_ha','f_result','f_order','f_from','f_to'].forEach(id => g(id).value = '');
+  g('f_order').value = 'year_desc';
+  loadSeasons(1);
+}
+
+function fillSeasonForm(r){
+  g('s_id').value = r.seasonentryid || '';
+  g('s_team_id').value = r.team_id || '';
+  g('s_year').value = r.year || '';
+  g('s_title').value = r.title || '';
+  g('s_ha').value = r.h_a || '';
+  g('s_result').value = r.result || '';
+  g('s_date').value = r.date ? toLocalDT(r.date) : '';
+  g('s_pts').value = nz(r.pts);
+  g('s_wins').value = nz(r.wins);
+  g('s_draws').value = nz(r.draws);
+  g('s_loses').value = nz(r.loses);
+  g('s_xG').value = nz(r.xG);
+  g('s_xGA').value = nz(r.xGA);
+  g('s_npxG').value = nz(r.npxG);
+  g('s_npxGA').value = nz(r.npxGA);
+}
+
+function resetSeasonForm(){
+  ['s_id','s_team_id','s_year','s_title','s_ha','s_result','s_date','s_pts','s_wins','s_draws','s_loses','s_xG','s_xGA','s_npxG','s_npxGA']
+    .forEach(id => g(id).value = '');
+}
+
+function toLocalDT(s){
+  // 'YYYY-MM-DD HH:MM:SS' -> 'YYYY-MM-DDTHH:MM'
+  if (!s) return '';
+  const t = s.replace(' ', 'T').slice(0,16);
+  return t;
+}
+
+async function submitSeason(){
+  const payload = collectSeasonPayload();
+  if (!payload.team_id || !payload.year){
+    alert('team_id and year are required'); return;
+  }
+
+  const id = g('s_id').value.trim();
+  if (id){
+    await fetch(`/api/seasons/${id}/update`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+  } else {
+    await fetch(`/api/seasons`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+  }
+  resetSeasonForm();
+  loadSeasons(1);
+}
+
+function collectSeasonPayload(){
+  const v = id => g(id).value.trim();
+  const num = x => x==='' ? null : (isNaN(+x) ? x : +x);
+  const payload = {
+    seasonentryid: v('s_id') || null,
+    team_id: num(v('s_team_id')),
+    year: num(v('s_year')),
+    title: v('s_title') || null,
+    h_a: v('s_ha') || null,
+    result: v('s_result') || null,
+    date: v('s_date') ? v('s_date').replace('T',' ') + ':00' : null,
+    pts: num(v('s_pts')),
+    wins: num(v('s_wins')),
+    draws: num(v('s_draws')),
+    loses: num(v('s_loses')),
+    xG: num(v('s_xG')),
+    xGA: num(v('s_xGA')),
+    npxG: num(v('s_npxG')),
+    npxGA: num(v('s_npxGA')),
+  };
+  // boş değerleri gönderme (API'n kısmi update/insert yapıyor)
+  Object.keys(payload).forEach(k => (payload[k] === null || payload[k] === '') && delete payload[k]);
+  return payload;
+}
+
+async function deleteSeason(id){
+  if(!confirm(`Delete season #${id}?`)) return;
+  const res = await fetch(`/api/seasons/${id}/delete`, { method:'POST' });
+  const j = await res.json();
+  if (j && j.error) alert(j.error);
+  loadSeasons(S.page);
+}
+
+loadSeasons(1);
 </script>
 </body>
 </html>
