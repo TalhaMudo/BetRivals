@@ -69,3 +69,5 @@ docker-compose.override.yml
 # --- Misc ---
 *.bak
 *.tmp
+tempCodeRunnerFile.py
+gercekapp.py

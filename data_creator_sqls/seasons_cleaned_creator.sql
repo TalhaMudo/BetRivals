@@ -25,4 +25,11 @@ CREATE TABLE season (
     ppda_allowed_att INT,
     ppda_allowed_def INT,
     FOREIGN KEY (team_id) REFERENCES teams(team_id)
+      ON UPDATE RESTRICT
+      ON DELETE RESTRICT,
+    -- veri kontrolleri
+    CONSTRAINT chk_ha     CHECK (h_a IN ('H','A') OR h_a IS NULL),
+    CONSTRAINT chk_result CHECK (result IN ('W','D','L') OR result IS NULL),
+    CONSTRAINT chk_year   CHECK (year BETWEEN 1900 AND 2100)
 );
+

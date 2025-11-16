@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<body style="font-family:sans-serif">
+<h2>Teams</h2>
+<input id="name" placeholder="team name">
+<button onclick="add()">Add</button>
+<table border="1"><tbody id="rows"></tbody></table>
+<script>
+async function load(){
+  let d=await (await fetch("/api/teams")).json();
+  let r=document.getElementById("rows");r.innerHTML="";
+  (d.items||[]).forEach(t=>r.innerHTML+=`<tr><td>${t.team_id}</td><td>${t.team_name}</td>
+  <td><button onclick="del(${t.team_id})">X</button></td></tr>`);
+}
+async function add(){
+  let n=document.getElementById("name").value;
+  await fetch("/api/teams",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({team_name:n})});
+  load();
+}
+async function del(id){await fetch(`/api/teams/${id}/delete`,{method:"POST"});load();}
+load();
+</script>
+</body>
+</html>

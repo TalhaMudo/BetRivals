@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<body style="font-family:sans-serif">
+<h2>Seasons</h2>
+<input id="team" placeholder="team_id">
+<input id="year" placeholder="year">
+<button onclick="add()">Add</button>
+<table border="1"><tbody id="rows"></tbody></table>
+<script>
+async function load(){
+  let d=await (await fetch("/api/seasons")).json();
+  let r=document.getElementById("rows");r.innerHTML="";
+  (d.items||[]).forEach(s=>r.innerHTML+=`<tr><td>${s.seasonentryid}</td><td>${s.team_id}</td><td>${s.year}</td>
+  <td><button onclick="del(${s.seasonentryid})">X</button></td></tr>`);
+}
+async function add(){
+  let t=document.getElementById("team").value,y=document.getElementById("year").value;
+  await fetch("/api/seasons",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({team_id:+t,year:+y})});
+  load();
+}
+async function del(id){await fetch(`/api/seasons/${id}/delete`,{method:"POST"});load();}
+load();
+</script>
+</body>
+</html>
