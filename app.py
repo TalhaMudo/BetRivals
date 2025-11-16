@@ -345,14 +345,31 @@ def api_data():
 
 @app.route("/api/matches", methods=['POST'])
 def api_matches():
-    """execute query and return matches filtered by supplied JSON filters."""
+    """Return matches filtered by supplied JSON filters."""
     filters = request.get_json(silent=True) or {}
+    limit = min(int(filters.get('limit', 50)), 5000)
     
+    # Build parameterized query
     sql = [
-        # query here
+        "SELECT mi.match_id, mi.date, mi.season, mi.league,",
+        "       mi.team_h, mi.team_a, mi.h_goals, mi.a_goals,",
+        "       mi.h_xg, mi.a_xg, mi.h_shot, mi.a_shot,",
+        "       md.isResult, md.xG_h, md.xG_a, md.forecast_w, md.forecast_d, md.forecast_l",
+        "FROM match_info mi",
+        "LEFT JOIN match_data md ON mi.match_id = md.match_id",
+        "WHERE 1=1"
     ]
     params = []
 
+    if filters.get('q'):
+        sql.append("AND (LOWER(mi.team_h) LIKE %s OR LOWER(mi.team_a) LIKE %s OR mi.match_id = %s)")
+        q = f"%{filters['q'].lower()}%"
+        params.extend([q, q, filters['q']])
+    
+    if filters.get('season'):
+        sql.append("AND mi.season = %s")
+        params.append(filters['season'])
+    
     if filters.get('team_home'):
         sql.append("AND mi.team_h = %s")
         params.append(filters['team_home'])
@@ -361,16 +378,45 @@ def api_matches():
         sql.append("AND mi.team_a = %s")
         params.append(filters['team_away'])
     
-    # others filters
+    if filters.get('date_from'):
+        sql.append("AND mi.date >= %s")
+        params.append(filters['date_from'])
+    
+    if filters.get('date_to'):
+        sql.append("AND mi.date <= %s")
+        params.append(filters['date_to'])
+    
+    if filters.get('min_goals'):
+        sql.append("AND (COALESCE(mi.h_goals,0) + COALESCE(mi.a_goals,0)) >= %s")
+        params.append(int(filters['min_goals']))
+    
+    if filters.get('max_goals'):
+        sql.append("AND (COALESCE(mi.h_goals,0) + COALESCE(mi.a_goals,0)) <= %s")
+        params.append(int(filters['max_goals']))
+    
+    if filters.get('min_xg'):
+        sql.append("AND (COALESCE(mi.h_xg,0) + COALESCE(mi.a_xg,0)) >= %s")
+        params.append(float(filters['min_xg']))
 
+    sql.append(f"ORDER BY mi.date DESC LIMIT {limit}")
     query = " ".join(sql)
 
     try:
         matches = db.execute_query(query, params=params)
-        return jsonify({"matches": matches or []})
+        return jsonify({"matches": matches or [], "limit": limit})
     except Exception as e:
         logger.exception("Error fetching matches: %s", e)
         return jsonify({"error": "Database error", "matches": []}), 500
+
+@app.route("/api/add_match", methods=['POST'])
+def api_add_match():
+    """Create a new match entry in the database.""" # admin user only
+    pass
+
+@app.route("/api/modify_match", methods=['POST'])
+def api_delete_match():
+    """Modify a match entry from the database. It can be used to delete a match as well.""" # admin user only
+    pass
 
 
 # -------------------------------------------------
