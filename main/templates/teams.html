@@ -1,24 +1,142 @@
 <!doctype html>
 <html>
-<body style="font-family:sans-serif">
-<h2>Teams</h2>
-<input id="name" placeholder="team name">
-<button onclick="add()">Add</button>
-<table border="1"><tbody id="rows"></tbody></table>
+<head>
+  <meta charset="utf-8">
+  <title>Teams</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root { color-scheme: dark; }
+    body{font-family:system-ui, Arial, sans-serif; margin:24px; color:#e6e6e6; background:#111}
+    input, select, button{padding:6px 8px; border-radius:8px; border:1px solid #444; background:#1a1a1a; color:#eee}
+    table{border-collapse: collapse; width:100%}
+    th, td{border:1px solid #333; padding:8px; text-align:left}
+    th{background:#1a1a1a}
+    .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .muted{opacity:.65}
+    .pill{display:inline-block; padding:2px 8px; border-radius:999px; background:#1f1f1f; border:1px solid #333}
+    .btn{cursor:pointer}
+    .btn.danger{border-color:#7b1c1c; color:#ffb3b3}
+    .btn.primary{border-color:#2b6cb0; color:#cfe7ff}
+  </style>
+</head>
+<body>
+
+  <h1>Teams</h1>
+
+  <!-- Search + pagination -->
+  <div class="row" style="margin-bottom:10px">
+    <input id="q" placeholder="Search team name…">
+    <button class="btn" onclick="loadTeams(1)">Search</button>
+    <span class="muted" id="totalInfo"></span>
+    <a class="pill" href="/seasons">Go to Seasons →</a>
+  </div>
+
+  <!-- Add / Update form -->
+  <div class="row" style="margin-bottom:10px">
+    <input id="team_name" placeholder="Team name">
+    <input id="edit_id" type="hidden">
+    <button class="btn primary" onclick="submitTeam()">Save</button>
+    <button class="btn" onclick="resetForm()">Reset</button>
+  </div>
+
+  <table id="teamsTable">
+    <thead>
+      <tr>
+        <th style="width:120px">Team ID</th>
+        <th>Team Name</th>
+        <th style="width:220px">Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="pager" class="row" style="margin-top:10px"></div>
+
 <script>
-async function load(){
-  let d=await (await fetch("/api/teams")).json();
-  let r=document.getElementById("rows");r.innerHTML="";
-  (d.items||[]).forEach(t=>r.innerHTML+=`<tr><td>${t.team_id}</td><td>${t.team_name}</td>
-  <td><button onclick="del(${t.team_id})">X</button></td></tr>`);
+const state = { page: 1, per_page: 10, q: "" };
+
+function qs(id){ return document.getElementById(id); }
+
+async function loadTeams(page){
+  if (page) state.page = page;
+  state.q = qs('q').value.trim();
+  const url = `/api/teams?q=${encodeURIComponent(state.q)}&page=${state.page}&per_page=${state.per_page}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  renderTeams(data);
 }
-async function add(){
-  let n=document.getElementById("name").value;
-  await fetch("/api/teams",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({team_name:n})});
-  load();
+
+function renderTeams(data){
+  const tbody = document.querySelector('#teamsTable tbody');
+  tbody.innerHTML = '';
+  (data.items || []).forEach(t => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${t.team_id}</td>
+      <td>${t.team_name}</td>
+      <td>
+        <button class="btn" onclick='startEdit(${t.team_id}, ${JSON.stringify(t.team_name)})'>Edit</button>
+        <button class="btn danger" onclick="deleteTeam(${t.team_id})">Delete</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  qs('totalInfo').textContent = `Total: ${data.total ?? 0}`;
+  renderPager(data.total || 0, data.page || 1, data.per_page || state.per_page);
 }
-async function del(id){await fetch(`/api/teams/${id}/delete`,{method:"POST"});load();}
-load();
+
+function renderPager(total, page, per){
+  const pages = Math.max(1, Math.ceil(total / per));
+  const box = qs('pager');
+  box.innerHTML = '';
+  for(let p=1;p<=pages;p++){
+    const b = document.createElement('button');
+    b.className = 'btn';
+    b.textContent = p;
+    if (p === page) { b.style.fontWeight = 'bold'; b.disabled = true; }
+    b.onclick = () => loadTeams(p);
+    box.appendChild(b);
+  }
+}
+
+async function submitTeam(){
+  const id = qs('edit_id').value;
+  const name = qs('team_name').value.trim();
+  if(!name){ alert('team_name required'); return; }
+
+  if (id){
+    await fetch(`/api/teams/${id}/update`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ team_name: name })
+    });
+  } else {
+    await fetch('/api/teams', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ team_name: name })
+    });
+  }
+  resetForm();
+  loadTeams(1);
+}
+
+function startEdit(id, name){
+  qs('edit_id').value = id;
+  qs('team_name').value = name;
+}
+
+async function deleteTeam(id){
+  if(!confirm(`Delete team #${id}?`)) return;
+  const res = await fetch(`/api/teams/${id}/delete`, { method:'POST' });
+  const j = await res.json();
+  if (j && j.error) alert(j.error);
+  loadTeams(state.page);
+}
+
+function resetForm(){
+  qs('edit_id').value = '';
+  qs('team_name').value = '';
+}
+
+loadTeams(1);
 </script>
 </body>
 </html>
