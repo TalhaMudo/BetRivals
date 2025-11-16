@@ -22,10 +22,10 @@ async function fetchMatches(filters) { // filters will affect the sql query
     return data.matches || [];
 }
 
-function renderTable(matches) {
+function renderTable(matches, limit = 50) {
     const container = document.getElementById('results');
     if (!matches || matches.length === 0) {
-        container.innerHTML = '<p>No matches found.</p>';
+        container.innerHTML = '<div class="no-results">No matches found.</div>';
         return;
     }
 
@@ -35,8 +35,18 @@ function renderTable(matches) {
         'h_xg', 'a_xg', 'h_shot', 'a_shot'
     ];
     
-    let html = '<div class="dataset-grid">';
-    html += '<div class="dataset-card results-container">';
+    let html = '<div class="results-container">';
+    html += '<div class="results-header">';
+    html += '<h3>Search Results</h3>';
+    html += '<div class="results-controls">';
+    html += `<span class="results-count">${matches.length} matches</span>`;
+    html += '<select class="limit-selector" id="limitSelector" onchange="updateLimit(this.value)">';
+    html += '<option value="50"' + (limit === 50 ? ' selected' : '') + '>50 Matches</option>';
+    html += '<option value="100"' + (limit === 100 ? ' selected' : '') + '>100 Matches</option>';
+    html += '<option value="200"' + (limit === 200 ? ' selected' : '') + '>200 Matches</option>';
+    html += '<option value="500"' + (limit === 500 ? ' selected' : '') + '>500 Matches</option>';
+    html += '</select>';
+    html += '</div></div>';
     html += '<table class="results-table">';
     html += '<thead><tr>' + cols.map(c => 
         `<th>${c.replace(/_/g, ' ').toUpperCase()}</th>`
@@ -46,7 +56,7 @@ function renderTable(matches) {
             `<td>${m[c] ?? ''}</td>`
         ).join('') + '</tr>';
     }).join('') + '</tbody>';
-    html += '</table></div></div>';
+    html += '</table></div>';
     
     container.innerHTML = html;
 }
@@ -55,16 +65,26 @@ function collectFilters() {
     return {
         q: document.getElementById('q').value.trim(),
         season: document.getElementById('season').value,
-        league: document.getElementById('league').value.trim(),
         date_from: document.getElementById('date_from').value,
         date_to: document.getElementById('date_to').value,
         min_goals: document.getElementById('min_goals').value,
         max_goals: document.getElementById('max_goals').value,
         min_xg: document.getElementById('min_xg').value,
-        isResult: document.getElementById('is_result').value,
         team_home: document.getElementById('team_home').value,
-        team_away: document.getElementById('team_away').value
+        team_away: document.getElementById('team_away').value,
+        limit: 50
     };
+}
+
+async function updateLimit(newLimit) {
+    try {
+        const filters = collectFilters();
+        filters.limit = parseInt(newLimit);
+        const matches = await fetchMatches(filters);
+        renderTable(matches, filters.limit);
+    } catch (error) {
+        console.error('Update limit failed:', error);
+    }
 }
 
 function populateTeamSelects(matches) {
@@ -126,12 +146,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             e.preventDefault();
             // Reset all form fields
             [
-                'q', 'season', 'league', 'date_from', 'date_to',
-                'min_goals', 'max_goals', 'min_xg', 'is_result',
+                'q', 'season', 'date_from', 'date_to',
+                'min_goals', 'max_goals', 'min_xg',
                 'team_home', 'team_away'
             ].forEach(id => document.getElementById(id).value = '');
-            // Load initial data
-            doSearch();
+            // Clear results
+            document.getElementById('results').innerHTML = '';
         });
 
     document.getElementById('btn_team_headtohead')
@@ -145,10 +165,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
             
-            const filters = { team_home: home, team_away: away };
+            const filters = { team_home: home, team_away: away, limit: 50 };
             try {
                 const matches = await fetchMatches(filters);
-                renderTable(matches);
+                renderTable(matches, 50);
             } catch (error) {
                 console.error('H2H search failed:', error);
                 document.getElementById('results').innerHTML = 
@@ -156,15 +176,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-    // Load initial data
+    // Load team and season options but don't fetch all matches yet
     try {
-        const initial = await fetchMatches({});
+        const initial = await fetchMatches({ limit: 5000 });
         populateTeamSelects(initial);
         populateSeasons(initial);
-        renderTable(initial);
     } catch (error) {
-        console.error('Initial load failed:', error);
-        document.getElementById('results').innerHTML = 
-            '<p class="error">Error loading initial data. Please refresh the page.</p>';
+        console.error('Failed to load team and season options:', error);
     }
 });

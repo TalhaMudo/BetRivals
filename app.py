@@ -347,13 +347,14 @@ def api_data():
 def api_matches():
     """Return matches filtered by supplied JSON filters."""
     filters = request.get_json(silent=True) or {}
+    limit = min(int(filters.get('limit', 50)), 5000)
     
     # Build parameterized query
     sql = [
         "SELECT mi.match_id, mi.date, mi.season, mi.league,",
         "       mi.team_h, mi.team_a, mi.h_goals, mi.a_goals,",
         "       mi.h_xg, mi.a_xg, mi.h_shot, mi.a_shot,",
-        "       md.isResult",
+        "       md.isResult, md.xG_h, md.xG_a, md.forecast_w, md.forecast_d, md.forecast_l",
         "FROM match_info mi",
         "LEFT JOIN match_data md ON mi.match_id = md.match_id",
         "WHERE 1=1"
@@ -368,10 +369,6 @@ def api_matches():
     if filters.get('season'):
         sql.append("AND mi.season = %s")
         params.append(filters['season'])
-    
-    if filters.get('league'):
-        sql.append("AND LOWER(mi.league) = %s")
-        params.append(str(filters['league']).lower())
     
     if filters.get('team_home'):
         sql.append("AND mi.team_h = %s")
@@ -400,17 +397,13 @@ def api_matches():
     if filters.get('min_xg'):
         sql.append("AND (COALESCE(mi.h_xg,0) + COALESCE(mi.a_xg,0)) >= %s")
         params.append(float(filters['min_xg']))
-    
-    if filters.get('isResult') not in (None, '', False):
-        sql.append("AND COALESCE(md.isResult,0) = %s")
-        params.append(filters['isResult'])
 
-    sql.append("ORDER BY mi.date DESC LIMIT 1000")
+    sql.append(f"ORDER BY mi.date DESC LIMIT {limit}")
     query = " ".join(sql)
 
     try:
         matches = db.execute_query(query, params=params)
-        return jsonify({"matches": matches or []})
+        return jsonify({"matches": matches or [], "limit": limit})
     except Exception as e:
         logger.exception("Error fetching matches: %s", e)
         return jsonify({"error": "Database error", "matches": []}), 500
