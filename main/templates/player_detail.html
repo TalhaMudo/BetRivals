@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='players.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="content-section player-detail-section">
+    <div id="player-detail-container">
+        <div class="loading">Loading player details...</div>
+    </div>
+</section>
+
+<script src="{{ url_for('static', filename='players.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const playerId = {{ player_id }};
+        loadPlayerDetail(playerId);
+    });
+</script>
+{% endblock %}
+
