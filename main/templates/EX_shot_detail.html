@@ -1,0 +1,496 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .shot-detail-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .back-button {
+        display: inline-block;
+        padding: 12px 30px;
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: #0f1419;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .back-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(46, 204, 113, 0.5);
+    }
+
+    .header-card {
+        background: rgba(15, 20, 25, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .header-card h2 {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 15px;
+        font-size: 2.5em;
+        text-shadow: 0 0 20px rgba(46, 204, 113, 0.3);
+    }
+
+    .header-card .match-info {
+        color: #b8b8b8;
+        font-size: 1.2em;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        font-weight: 600;
+    }
+
+    .badge-goal {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: #0f1419;
+    }
+
+    .badge-saved, .badge-savedshot {
+        background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        color: white;
+    }
+
+    .badge-missed, .badge-missedshots {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+    }
+
+    .badge-blocked, .badge-blockedshot {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+    }
+
+    .main-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        background: rgba(15, 20, 25, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .card h3 {
+        color: #2ecc71;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid rgba(46, 204, 113, 0.5);
+        font-size: 1.8em;
+        text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+    }
+
+    .shot-visualization {
+        position: relative;
+        width: 100%;
+        height: 400px;
+        background: linear-gradient(to bottom, 
+            rgba(46, 204, 113, 0.3) 0%, 
+            rgba(39, 174, 96, 0.2) 100%);
+        border-radius: 10px;
+        margin: 20px 0;
+        overflow: hidden;
+        border: 2px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .pitch-lines {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0.3;
+    }
+
+    .goal-area {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40%;
+        height: 20%;
+        border: 3px solid #2ecc71;
+        border-bottom: none;
+        background: rgba(46, 204, 113, 0.1);
+    }
+
+    .shot-marker {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        background: #2ecc71;
+        border: 4px solid #e8e8e8;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 20px rgba(46, 204, 113, 0.8);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); }
+        50% { transform: translate(-50%, -50%) scale(1.2); }
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .stat-item {
+        background: linear-gradient(135deg, rgba(46, 204, 113, 0.2) 0%, rgba(39, 174, 96, 0.2) 100%);
+        padding: 20px;
+        border-radius: 10px;
+        color: #e8e8e8;
+        border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .stat-label {
+        font-size: 0.9em;
+        color: #b8b8b8;
+        margin-bottom: 5px;
+    }
+
+    .stat-value {
+        font-size: 2em;
+        font-weight: bold;
+        color: #2ecc71;
+    }
+
+    .player-info {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 25px;
+        padding: 20px;
+        background: linear-gradient(135deg, rgba(46, 204, 113, 0.2) 0%, rgba(39, 174, 96, 0.2) 100%);
+        border-radius: 10px;
+        color: #e8e8e8;
+        border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .player-avatar {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2em;
+        font-weight: bold;
+        color: #0f1419;
+        box-shadow: 0 4px 12px rgba(46, 204, 113, 0.5);
+    }
+
+    .player-details h4 {
+        font-size: 1.5em;
+        margin-bottom: 5px;
+        color: #2ecc71;
+    }
+
+    .player-details p {
+        color: #b8b8b8;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .info-item {
+        padding: 15px;
+        background: rgba(46, 204, 113, 0.1);
+        border-radius: 8px;
+        border-left: 4px solid #2ecc71;
+    }
+
+    .info-label {
+        font-size: 0.85em;
+        color: #b8b8b8;
+        margin-bottom: 5px;
+    }
+
+    .info-value {
+        font-size: 1.1em;
+        font-weight: 600;
+        color: #e8e8e8;
+    }
+
+    .other-shots {
+        margin-top: 30px;
+    }
+
+    .shot-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .shot-item {
+        padding: 15px;
+        background: rgba(46, 204, 113, 0.05);
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: transform 0.2s, background 0.2s;
+        border: 1px solid rgba(46, 204, 113, 0.2);
+    }
+
+    .shot-item:hover {
+        transform: translateX(5px);
+        background: rgba(46, 204, 113, 0.1);
+        border-color: rgba(46, 204, 113, 0.4);
+    }
+
+    .shot-item-details {
+        color: #e8e8e8;
+    }
+
+    .shot-item-details .minute {
+        color: #2ecc71;
+        font-weight: bold;
+    }
+
+    .shot-item-details .situation {
+        font-size: 0.9em;
+        color: #b8b8b8;
+    }
+
+    .xg-bar {
+        width: 100%;
+        height: 8px;
+        background: rgba(46, 204, 113, 0.2);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+
+    .xg-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
+        transition: width 0.3s;
+    }
+
+    @media (max-width: 968px) {
+        .main-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="shot-detail-container">
+    <a href="/shots" class="back-button">← Back to Search</a>
+    
+    <div class="header-card">
+        <h2>🎯 Shot #{{ shot.shot_id }}</h2>
+        <div class="match-info">
+            <span><strong>{{ shot.h_team }}</strong> {{ shot.h_goals }} - {{ shot.a_goals }} <strong>{{ shot.a_team }}</strong></span>
+            <span>•</span>
+            <span>{{ shot.date.strftime('%B %d, %Y') if shot.date else 'N/A' }}</span>
+            <span>•</span>
+            <span>{{ shot.league or 'Unknown League' }}</span>
+            <span class="badge badge-{{ shot.result.lower() if shot.result else 'missed' }}">
+                {{ shot.result or 'Unknown' }}
+            </span>
+        </div>
+    </div>
+
+    <div class="main-grid">
+        <div class="card">
+            <h3>📊 Shot Details</h3>
+            
+            <div class="shot-visualization">
+                <div class="pitch-lines">
+                    <div class="goal-area"></div>
+                </div>
+                <div class="shot-marker" style="left: {{ (shot.X or 0.5) * 100 }}%; bottom: {{ (shot.Y or 0.5) * 100 }}%;"></div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">Expected Goals (xG)</div>
+                    <div class="stat-value">{{ "%.3f"|format(shot.xG or 0) }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Minute</div>
+                    <div class="stat-value">{{ shot.minute }}'</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Shot Type</div>
+                    <div class="stat-value" style="font-size: 1.3em;">{{ shot.shotType or 'N/A' }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Situation</div>
+                    <div class="stat-value" style="font-size: 1.3em;">{{ shot.situation or 'N/A' }}</div>
+                </div>
+            </div>
+
+            <div class="info-grid" style="margin-top: 20px;">
+                <div class="info-item">
+                    <div class="info-label">Last Action</div>
+                    <div class="info-value">{{ shot.lastAction or 'N/A' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Assisted By</div>
+                    <div class="info-value">{{ shot.player_assisted or 'Unassisted' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Home/Away</div>
+                    <div class="info-value">{{ 'Home' if shot.h_a == 'h' else 'Away' if shot.h_a == 'a' else 'N/A' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Season</div>
+                    <div class="info-value">{{ shot.season }}</div>
+                </div>
+            </div>
+
+            {% if other_shots %}
+            <div class="other-shots">
+                <h4 style="color: #2ecc71; margin-bottom: 15px; text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);">Other Shots in This Match</h4>
+                <div class="shot-list">
+                    {% for other in other_shots %}
+                    <div class="shot-item">
+                        <div class="shot-item-details">
+                            <div><span class="minute">{{ other.minute }}'</span> - {{ other.shotType }}</div>
+                            <div class="situation">{{ other.situation }}</div>
+                            <div class="xg-bar">
+                                <div class="xg-fill" style="width: {{ (other.xG or 0) * 100 }}%;"></div>
+                            </div>
+                        </div>
+                        <span class="badge badge-{{ other.result.lower() if other.result else 'missed' }}">
+                            {{ other.result }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div>
+            {% if player %}
+            <div class="card">
+                <h3>👤 Player Profile</h3>
+                
+                <div class="player-info">
+                    <div class="player-avatar">
+                        {{ player.player_name[0] if player.player_name else '?' }}
+                    </div>
+                    <div class="player-details">
+                        <h4>{{ player.player_name }}</h4>
+                        <p>{{ player.position }} • {{ player.team_title }}</p>
+                        <p style="font-size: 0.9em;">Season {{ player.year }}</p>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Games Played</div>
+                        <div class="info-value">{{ player.games }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Minutes</div>
+                        <div class="info-value">{{ player.time }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Goals</div>
+                        <div class="info-value">{{ player.goals }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Assists</div>
+                        <div class="info-value">{{ player.assists }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Total xG</div>
+                        <div class="info-value">{{ "%.2f"|format(player.xG or 0) }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Total xA</div>
+                        <div class="info-value">{{ "%.2f"|format(player.xA or 0) }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Shots</div>
+                        <div class="info-value">{{ player.shots }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Key Passes</div>
+                        <div class="info-value">{{ player.key_passes }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Yellow Cards</div>
+                        <div class="info-value">{{ player.yellow_cards }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Red Cards</div>
+                        <div class="info-value">{{ player.red_cards }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if season_stats %}
+            <div class="card" style="margin-top: 30px;">
+                <h3>📈 Season Shot Statistics</h3>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Total Shots</div>
+                        <div class="stat-value">{{ season_stats.total_shots }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Goals Scored</div>
+                        <div class="stat-value">{{ season_stats.goals_scored }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Conversion Rate</div>
+                        <div class="stat-value">
+                            {{ "%.1f"|format((season_stats.goals_scored / season_stats.total_shots * 100) if season_stats.total_shots > 0 else 0) }}%
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Avg xG per Shot</div>
+                        <div class="stat-value">{{ "%.3f"|format(season_stats.avg_xg or 0) }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
