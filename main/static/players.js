@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         searchBtn.addEventListener('click', performSearch);
-        searchInput.addEventListener('keypress', function(e) {
+        searchInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 performSearch();
             }
@@ -235,10 +235,10 @@ function displaySearchResults(data) {
         </div>
         <div class="player-cards-grid">
             ${data.players.map(player => `
-                <div class="player-card" onclick="window.location.href='/talha/${player.player_id}'">
+                <div class="player-card" data-player-name="${player.player_name || ''}" onclick="window.location.href='/talha/${player.player_id}'">
                     <div class="player-photo-placeholder">
                         <span>📷</span>
-                        <small>Photo placeholder</small>
+                        <small>Loading photo...</small>
                     </div>
                     <div class="player-card-info">
                         <h3 class="player-card-name">${player.player_name || 'Unknown'}</h3>
@@ -273,11 +273,18 @@ function displaySearchResults(data) {
     `;
 
     searchResultsDiv.innerHTML = resultsHTML;
+
+    // After rendering the cards, try to load Unsplash photos for visible players
+    try {
+        loadPlayerImagesForSearchResults();
+    } catch (e) {
+        console.error('Error loading player images for search results:', e);
+    }
 }
 
 async function loadPlayerDetail(playerId) {
     const container = document.getElementById('player-detail-container');
-    
+
     try {
         const response = await fetch(`/api/players/${playerId}`);
         const data = await response.json();
@@ -506,5 +513,112 @@ function displayPlayerDetail(player) {
     `;
 
     container.innerHTML = html;
+
+    // After rendering the detail view, try to load a real player photo from Unsplash
+    if (player && player.player_name) {
+        loadPlayerImageFromUnsplash(player.player_name);
+    }
 }
 
+// Shared Unsplash helper: fetch a player image URL
+async function fetchUnsplashPlayerImageUrl(playerName) {
+    if (!playerName) return null;
+
+    // Build a query similar to the shots page logic
+    const query = playerName.split(' ').join('_') + '_football_player';
+
+    const response = await fetch(
+        `https://api.unsplash.com/search/photos?page=1&per_page=1&orientation=portrait&query=${query}`,
+        {
+            method: 'GET',
+            headers: {
+                Authorization: 'Client-ID ThT--ohlHF51lLMYmNIbwbexClSxQuUqFtjRzKwrcKE',
+                // NOTE: Replace this with your own Unsplash access key if needed.
+            },
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch image');
+    }
+
+    const data = await response.json();
+
+    if (data.results && data.results.length > 0) {
+        return data.results[0].urls.small || data.results[0].urls.regular;
+    }
+
+    return null;
+}
+
+// Load player image from Unsplash API for the detail page
+async function loadPlayerImageFromUnsplash(playerName) {
+    const imgEl = document.getElementById('player-photo-img');
+    const placeholderEl = document.getElementById('player-photo-placeholder');
+
+    if (!imgEl || !playerName) {
+        return;
+    }
+
+    try {
+        const imageUrl = await fetchUnsplashPlayerImageUrl(playerName);
+        if (!imageUrl) {
+            console.log('No images found for player on Unsplash');
+            return;
+        }
+
+        imgEl.src = imageUrl;
+
+        imgEl.onload = () => {
+            imgEl.style.display = 'block';
+            if (placeholderEl) {
+                placeholderEl.style.display = 'none';
+            }
+        };
+
+        imgEl.onerror = () => {
+            console.log('Failed to load player image from URL');
+            imgEl.style.display = 'none';
+            if (placeholderEl) {
+                placeholderEl.style.display = 'flex';
+            }
+        };
+    } catch (error) {
+        console.error('Error fetching player image from Unsplash:', error);
+        // On error, keep the placeholder visible
+    }
+}
+
+// Load Unsplash images for players in the search results grid
+async function loadPlayerImagesForSearchResults() {
+    const cards = document.querySelectorAll('.player-card');
+    if (!cards || cards.length === 0) return;
+
+    // Limit the number of API calls to avoid hitting Unsplash rate limits
+    const maxImages = 12;
+    let loadedCount = 0;
+
+    for (const card of cards) {
+        if (loadedCount >= maxImages) break;
+
+        const playerName = card.getAttribute('data-player-name');
+        const placeholder = card.querySelector('.player-photo-placeholder');
+
+        if (!playerName || !placeholder) continue;
+
+        try {
+            const imageUrl = await fetchUnsplashPlayerImageUrl(playerName);
+            if (!imageUrl) continue;
+
+            placeholder.style.backgroundImage = `url('${imageUrl}')`;
+            placeholder.style.backgroundSize = 'cover';
+            placeholder.style.backgroundPosition = 'center';
+            placeholder.style.border = 'none';
+            placeholder.innerHTML = '';
+
+            loadedCount += 1;
+        } catch (error) {
+            console.error('Error loading Unsplash image for player card:', error);
+        }
+    }
+}
