@@ -630,6 +630,94 @@ def api_data():
     return jsonify({"message": "API endpoint", "status": "ok"})
 
 
+@app.route('/match/<int:match_id>')
+def match_page(match_id):
+    """Detailed match page with matches between two teams and their recent matches"""
+    try:
+        query = """
+            SELECT mi.*, md.isResult, md.xG_h, md.xG_a, md.forecast_w, md.forecast_d, md.forecast_l
+            FROM match_info mi
+            LEFT JOIN match_data md ON mi.match_id = md.match_id
+            WHERE mi.match_id = %s
+            LIMIT 1
+        """
+        results = db.execute_query(query, params=[match_id])
+        if not results:
+            return render_template('error.html', error='Match not found', message=f'No match with id {match_id}'), 404
+
+        match = results[0]
+
+        home_name = match.get('team_h')
+        away_name = match.get('team_a')
+
+        recent_q = """
+            SELECT match_id, date, team_h, team_a, h_goals, a_goals, season
+            FROM match_info
+            WHERE team_h = %s OR team_a = %s
+            ORDER BY date DESC
+            LIMIT 5
+        """
+        home_recent = db.execute_query(recent_q, params=[home_name, home_name]) if home_name else []
+        away_recent = db.execute_query(recent_q, params=[away_name, away_name]) if away_name else []
+
+        h2h_recent = []
+        h2h_stats = {'home_wins': 0, 'draws': 0, 'away_wins': 0, 'total': 0}
+        if home_name and away_name:
+            h2h_q = """
+                SELECT match_id, date, team_h, team_a, h_goals, a_goals, season
+                FROM match_info
+                WHERE (team_h = %s AND team_a = %s) OR (team_h = %s AND team_a = %s)
+                ORDER BY date DESC
+                LIMIT 10
+            """
+            h2h_recent = db.execute_query(h2h_q, params=[home_name, away_name, away_name, home_name]) or []
+
+            for m in h2h_recent:
+                try:
+                    hg = m.get('h_goals')
+                    ag = m.get('a_goals')
+                    if hg is None or ag is None:
+                        continue
+                    h2h_stats['total'] += 1
+                    if hg == ag:
+                        h2h_stats['draws'] += 1
+                    elif (hg > ag and m.get('team_h') == home_name) or (ag > hg and m.get('team_a') == home_name):
+                        h2h_stats['home_wins'] += 1
+                    else:
+                        h2h_stats['away_wins'] += 1
+                except Exception:
+                    continue
+
+        # compute percentages
+        if h2h_stats['total'] > 0:
+            total = h2h_stats['total']
+            h2h_stats['home_pct'] = round(h2h_stats['home_wins'] / total * 100, 1)
+            h2h_stats['draw_pct'] = round(h2h_stats['draws'] / total * 100, 1)
+            h2h_stats['away_pct'] = round(h2h_stats['away_wins'] / total * 100, 1)
+        else:
+            h2h_stats['home_pct'] = h2h_stats['draw_pct'] = h2h_stats['away_pct'] = 0
+
+        h2h_stats['home_width'] = f"{h2h_stats['home_pct']}%"
+        h2h_stats['draw_width'] = f"{h2h_stats['draw_pct']}%"
+        h2h_stats['away_width'] = f"{h2h_stats['away_pct']}%"
+
+        h_xg = match.get('h_xg') if match.get('h_xg') is not None else match.get('xG_h', 0)
+        a_xg = match.get('a_xg') if match.get('a_xg') is not None else match.get('xG_a', 0)
+        total_xg = (h_xg + a_xg) if (h_xg + a_xg) > 0 else 1
+        h_xg_pct = round((h_xg / total_xg) * 100, 1)
+        a_xg_pct = round((a_xg / total_xg) * 100, 1)
+
+        match['h_xg_computed'] = round(h_xg, 2)
+        match['a_xg_computed'] = round(a_xg, 2)
+        match['h_xg_width'] = f"{h_xg_pct}%"
+        match['a_xg_width'] = f"{a_xg_pct}%"
+
+        return render_template('match_detail.html', match=match, home_recent=home_recent, away_recent=away_recent, h2h_recent=h2h_recent, h2h_stats=h2h_stats)
+    except Exception as e:
+        logger.exception(f"Error fetching match {match_id}: %s", e)
+        return render_template('error.html', error='Database Error', message=str(e)), 500
+
+
 @app.route("/api/matches", methods=['POST'])
 def api_matches():
     """Return matches filtered by supplied JSON filters."""
