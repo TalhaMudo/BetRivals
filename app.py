@@ -98,6 +98,123 @@ def api_players_analysis():
         logger.exception("Error fetching player analysis data: %s", e)
         return jsonify({"error": "Database error", "players": []}), 500
 
+@app.route("/api/players/search", methods=['GET'])
+def api_players_search():
+    """Search players by name, team, or position"""
+    try:
+        search_query = request.args.get('q', '').strip()
+        if not search_query:
+            return jsonify({"players": [], "count": 0})
+        
+        # Use LIKE for partial matching
+        search_pattern = f"%{search_query}%"
+        query = """
+        SELECT DISTINCT
+            p.player_id,
+            p.player_name,
+            p.goals,
+            p.assists,
+            p.games,
+            p.xG,
+            p.position,
+            p.team_title,
+            p.year,
+            f.Rating AS fifa_rating,
+            f.Pace,
+            f.Shoot,
+            f.Pass,
+            f.Drible,
+            f.Defense,
+            f.Physical,
+            f.Country,
+            f.League
+        FROM player p
+        LEFT JOIN fut23 f ON p.player_id = f.player_id
+        WHERE p.player_name LIKE %s 
+           OR p.team_title LIKE %s 
+           OR p.position LIKE %s
+        ORDER BY p.player_name
+        LIMIT 50
+        """
+        results = db.execute_query(query, params=[search_pattern, search_pattern, search_pattern])
+        return jsonify({
+            "players": results or [], 
+            "count": len(results) if results else 0
+        })
+    except Exception as e:
+        logger.exception("Error searching players: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/api/players/<int:player_id>", methods=['GET'])
+def api_player_detail(player_id):
+    """Get full player details by player_id"""
+    try:
+        query = """
+        SELECT 
+            p.season_player_id,
+            p.player_id,
+            p.player_name,
+            p.games,
+            p.time,
+            p.goals,
+            p.xG,
+            p.assists,
+            p.xA,
+            p.shots,
+            p.key_passes,
+            p.yellow_cards,
+            p.red_cards,
+            p.position,
+            p.team_title,
+            p.npg,
+            p.npxG,
+            p.xGChain,
+            p.xGBuildup,
+            p.year,
+            f.Name AS fut23_name,
+            f.Team AS fut23_team,
+            f.team_id,
+            f.Country,
+            f.League,
+            f.Rating,
+            f.Position AS fut23_position,
+            f.Other_Positions,
+            f.Run_type,
+            f.Price,
+            f.Skill,
+            f.Weak_foot,
+            f.Attack_rate,
+            f.Defense_rate,
+            f.Pace,
+            f.Shoot,
+            f.Pass,
+            f.Drible,
+            f.Defense,
+            f.Physical,
+            f.Body_type,
+            f.Height_cm,
+            f.Weight,
+            f.Popularity,
+            f.Base_Stats,
+            f.In_Game_Stats
+        FROM player p
+        LEFT JOIN fut23 f ON p.player_id = f.player_id
+        WHERE p.player_id = %s
+        LIMIT 1
+        """
+        results = db.execute_query(query, params=[player_id])
+        if not results or len(results) == 0:
+            return jsonify({"error": "Player not found"}), 404
+        return jsonify({"player": results[0]})
+    except Exception as e:
+        logger.exception("Error fetching player detail: %s", e)
+        return jsonify({"error": "Database error"}), 500
+
+@app.route("/talha/<int:player_id>")
+def player_detail(player_id):
+    """Individual player detail page"""
+    return render_template("player_detail.html", title="Player Details", player_id=player_id)
+
 #--------------TALHA-END-------------------------------
 
 

@@ -6,13 +6,25 @@
 
 {% block content %}
 <section class="content-section">
-    <h2>Players & FIFA Ratings Analysis</h2>
-    <p>Analyze players with the most goals but lowest FIFA ratings. This shows players who perform well in real matches but are underrated in FIFA 23.</p>
-    
-    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
-        <button id="btn-analysis" class="btn-test">🔍 Show Top Goal Scorers (Low FIFA Rating)</button>
-        <button id="btn-test-fut23" class="btn-test" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71;">Load All FUT23 Players</button>
+    <div class="page-header">
+        <div class="header-left">
+            <h2>Players & FIFA Ratings Analysis</h2>
+            <p>Analyze players with all their stats and ratings.</p>
+        </div>
+        <div class="header-right">
+            <div class="search-container">
+                <input type="text" id="player-search" class="search-input" placeholder="Search players by name, team, or position..." />
+                <button id="search-btn" class="search-btn">🔍</button>
+            </div>
+        </div>
     </div>
+    
+    <div class="buttons-container">
+        <button id="btn-analysis" class="btn-test btn-primary">🔍 Show Top Goal Scorers (Low FIFA Rating)</button>
+        <button id="btn-test-fut23" class="btn-test btn-secondary">Load All FUT23 Players</button>
+    </div>
+    
+    <div id="search-results" class="search-results-container"></div>
     
     <div id="results"></div>
 </section>
