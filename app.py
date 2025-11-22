@@ -1,8 +1,10 @@
-from flask import Flask, render_template, jsonify, request, redirect, url_for
+from flask import Flask, render_template, jsonify, request, redirect, url_for, session
 import os
 import logging
 from dotenv import load_dotenv
 from utils import DatabaseConnector
+from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -317,13 +319,127 @@ def player_stats_api(player_id):
 
 
 
+# --- Authentication Middleware --- #
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            # Check if it's an API request
+            if request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+                return jsonify({
+                    "success": False,
+                    "message": "Authentication required",
+                    "error": "unauthorized"
+                }), 401
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return wrapper
 
+# --- Authentication Routes --- #
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form.get("username")
+        email = request.form.get("email")
+        password = request.form.get("password")
+        
+        # Validation
+        if not all([username, email, password]):
+            return render_template("register.html", error="All fields are required"), 400
+        
+        if len(password) < 6:
+            return render_template("register.html", error="Password must be at least 6 characters"), 400
+        
+        password_hash = generate_password_hash(password)
+        
+        # Safe SQL with parameterized queries
+        sql = """
+            INSERT INTO users (username, email, password_hash)
+            VALUES (%s, %s, %s)
+        """
+        try:
+            db.execute_query(sql, (username, email, password_hash), fetch_all=False)
+            return redirect("/login?registered=true")
+        except Exception as e:
+            # Check for duplicate username/email
+            if "duplicate" in str(e).lower():
+                error = "Username or email already exists"
+            else:
+                error = "An error occurred during registration"
+            return render_template("register.html", error=error), 400
+    
+    return render_template("register.html")
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        
+        # Validation
+        if not username or not password:
+            return render_template("login.html", error="Username and password are required"), 400
+        
+        # Safe SQL with parameterized queries
+        sql = "SELECT * FROM users WHERE username = %s"
+        users = db.execute_query(sql, (username,))
+        
+        if not users:
+            return render_template("login.html", error="Invalid username or password"), 401
+        
+        user = users[0]
+        
+        if not check_password_hash(user["password_hash"], password):
+            return render_template("login.html", error="Invalid username or password"), 401
+        
+        # Set session
+        session["user_id"] = user["id"]
+        session["username"] = user["username"]
+        
+        return redirect("/admin")
+    
+    error = request.args.get("error")
+    registered = request.args.get("registered")
+    return render_template("login.html", error=error, registered=registered)
 
+@app.route("/admin")
+@login_required
+def admin():
+    return render_template("admin.html", username=session.get("username"))
 
+@app.route("/admin/shots")
+@login_required
+def admin_shots():
+    # Fetch shots data
+    sql = "SELECT * FROM shots ORDER BY date DESC LIMIT 100"
+    shots = db.execute_query(sql)
+    return render_template("admin_shots.html", shots=shots, username=session.get("username"))
 
+@app.route("/admin/players")
+@login_required
+def admin_players():
+    # Fetch players data
+    sql = "SELECT * FROM players ORDER BY name ASC"
+    players = db.execute_query(sql)
+    return render_template("admin_players.html", players=players, username=session.get("username"))
 
+@app.route("/admin/teams")
+@login_required
+def admin_teams():
+    # Fetch teams data
+    sql = "SELECT * FROM teams ORDER BY name ASC"
+    teams = db.execute_query(sql)
+    return render_template("admin_teams.html", teams=teams, username=session.get("username"))
 
+@app.route("/admin/settings")
+@login_required
+def admin_settings():
+    return render_template("admin_settings.html", username=session.get("username"))
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login?logged_out=true")
 #--------------OSMAN-END-------------------------------
 
 @app.route("/matches")
