@@ -1,8 +1,10 @@
-from flask import Flask, render_template, jsonify, request, redirect, url_for
+from flask import Flask, render_template, jsonify, request, redirect, url_for, session
 import os
 import logging
 from dotenv import load_dotenv
 from utils import DatabaseConnector
+from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -37,16 +39,187 @@ def bilge():
 
 
 #--------------BILGE-END-------------------------------
+
+
 @app.route("/talha")
 def talha():
     """Talha sayfası"""
     return render_template("talha.html", title="Talha")
 #--------------TALHA-START-----------------------------
 
+@app.route("/api/players/fut23", methods=['GET'])
+def api_fut23_all():
+    """Get all rows from fut23 table"""
+    try:
+        query = "SELECT * FROM fut23"
+        results = db.execute_query(query)
+        return jsonify({"players": results or [], "count": len(results) if results else 0})
+    except Exception as e:
+        logger.exception("Error fetching fut23 data: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
 
+@app.route("/api/players/analysis", methods=['GET'])
+def api_players_analysis():
+    """Get players with most goals but least FIFA ratings (joined player + fut23 tables)"""
+    try:
+        query = """
+        SELECT 
+            p.player_id,
+            p.player_name,
+            p.goals,
+            p.assists,
+            p.games,
+            p.xG,
+            p.position,
+            p.team_title,
+            p.year,
+            f.Rating AS fifa_rating,
+            f.Pace,
+            f.Shoot,
+            f.Pass,
+            f.Drible,
+            f.Defense,
+            f.Physical,
+            f.Base_Stats,
+            f.In_Game_Stats,
+            f.Country,
+            f.League
+        FROM player p
+        INNER JOIN fut23 f ON p.player_id = f.player_id
+        WHERE p.goals IS NOT NULL AND f.Rating IS NOT NULL
+        ORDER BY p.goals DESC, f.Rating ASC
+        LIMIT 50
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [], 
+            "count": len(results) if results else 0,
+            "description": "Players with most goals and least FIFA ratings"
+        })
+    except Exception as e:
+        logger.exception("Error fetching player analysis data: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
 
+@app.route("/api/players/search", methods=['GET'])
+def api_players_search():
+    """Search players by name, team, or position"""
+    try:
+        search_query = request.args.get('q', '').strip()
+        if not search_query:
+            return jsonify({"players": [], "count": 0})
+        
+        # Use LIKE for partial matching
+        search_pattern = f"%{search_query}%"
+        query = """
+        SELECT DISTINCT
+            p.player_id,
+            p.player_name,
+            p.goals,
+            p.assists,
+            p.games,
+            p.xG,
+            p.position,
+            p.team_title,
+            p.year,
+            f.Rating AS fifa_rating,
+            f.Pace,
+            f.Shoot,
+            f.Pass,
+            f.Drible,
+            f.Defense,
+            f.Physical,
+            f.Country,
+            f.League
+        FROM player p
+        LEFT JOIN fut23 f ON p.player_id = f.player_id
+        WHERE p.player_name LIKE %s 
+           OR p.team_title LIKE %s 
+           OR p.position LIKE %s
+        ORDER BY p.player_name
+        LIMIT 50
+        """
+        results = db.execute_query(query, params=[search_pattern, search_pattern, search_pattern])
+        return jsonify({
+            "players": results or [], 
+            "count": len(results) if results else 0
+        })
+    except Exception as e:
+        logger.exception("Error searching players: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/api/players/<int:player_id>", methods=['GET'])
+def api_player_detail(player_id):
+    """Get full player details by player_id"""
+    try:
+        query = """
+        SELECT 
+            p.season_player_id,
+            p.player_id,
+            p.player_name,
+            p.games,
+            p.time,
+            p.goals,
+            p.xG,
+            p.assists,
+            p.xA,
+            p.shots,
+            p.key_passes,
+            p.yellow_cards,
+            p.red_cards,
+            p.position,
+            p.team_title,
+            p.npg,
+            p.npxG,
+            p.xGChain,
+            p.xGBuildup,
+            p.year,
+            f.Name AS fut23_name,
+            f.Team AS fut23_team,
+            f.team_id,
+            f.Country,
+            f.League,
+            f.Rating,
+            f.Position AS fut23_position,
+            f.Other_Positions,
+            f.Run_type,
+            f.Price,
+            f.Skill,
+            f.Weak_foot,
+            f.Attack_rate,
+            f.Defense_rate,
+            f.Pace,
+            f.Shoot,
+            f.Pass,
+            f.Drible,
+            f.Defense,
+            f.Physical,
+            f.Body_type,
+            f.Height_cm,
+            f.Weight,
+            f.Popularity,
+            f.Base_Stats,
+            f.In_Game_Stats
+        FROM player p
+        LEFT JOIN fut23 f ON p.player_id = f.player_id
+        WHERE p.player_id = %s
+        LIMIT 1
+        """
+        results = db.execute_query(query, params=[player_id])
+        if not results or len(results) == 0:
+            return jsonify({"error": "Player not found"}), 404
+        return jsonify({"player": results[0]})
+    except Exception as e:
+        logger.exception("Error fetching player detail: %s", e)
+        return jsonify({"error": "Database error"}), 500
+
+@app.route("/talha/<int:player_id>")
+def player_detail(player_id):
+    """Individual player detail page"""
+    return render_template("player_detail.html", title="Player Details", player_id=player_id)
 
 #--------------TALHA-END-------------------------------
+
+
 
 @app.route("/osman")
 def osman():
@@ -317,13 +490,127 @@ def player_stats_api(player_id):
 
 
 
+# --- Authentication Middleware --- #
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            # Check if it's an API request
+            if request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+                return jsonify({
+                    "success": False,
+                    "message": "Authentication required",
+                    "error": "unauthorized"
+                }), 401
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return wrapper
 
+# --- Authentication Routes --- #
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form.get("username")
+        email = request.form.get("email")
+        password = request.form.get("password")
+        
+        # Validation
+        if not all([username, email, password]):
+            return render_template("register.html", error="All fields are required"), 400
+        
+        if len(password) < 6:
+            return render_template("register.html", error="Password must be at least 6 characters"), 400
+        
+        password_hash = generate_password_hash(password)
+        
+        # Safe SQL with parameterized queries
+        sql = """
+            INSERT INTO users (username, email, password_hash)
+            VALUES (%s, %s, %s)
+        """
+        try:
+            db.execute_query(sql, (username, email, password_hash), fetch_all=False)
+            return redirect("/login?registered=true")
+        except Exception as e:
+            # Check for duplicate username/email
+            if "duplicate" in str(e).lower():
+                error = "Username or email already exists"
+            else:
+                error = "An error occurred during registration"
+            return render_template("register.html", error=error), 400
+    
+    return render_template("register.html")
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        
+        # Validation
+        if not username or not password:
+            return render_template("login.html", error="Username and password are required"), 400
+        
+        # Safe SQL with parameterized queries
+        sql = "SELECT * FROM users WHERE username = %s"
+        users = db.execute_query(sql, (username,))
+        
+        if not users:
+            return render_template("login.html", error="Invalid username or password"), 401
+        
+        user = users[0]
+        
+        if not check_password_hash(user["password_hash"], password):
+            return render_template("login.html", error="Invalid username or password"), 401
+        
+        # Set session
+        session["user_id"] = user["id"]
+        session["username"] = user["username"]
+        
+        return redirect("/admin")
+    
+    error = request.args.get("error")
+    registered = request.args.get("registered")
+    return render_template("login.html", error=error, registered=registered)
 
+@app.route("/admin")
+@login_required
+def admin():
+    return render_template("admin.html", username=session.get("username"))
 
+@app.route("/admin/shots")
+@login_required
+def admin_shots():
+    # Fetch shots data
+    sql = "SELECT * FROM shots ORDER BY date DESC LIMIT 100"
+    shots = db.execute_query(sql)
+    return render_template("admin_shots.html", shots=shots, username=session.get("username"))
 
+@app.route("/admin/players")
+@login_required
+def admin_players():
+    # Fetch players data
+    sql = "SELECT * FROM players ORDER BY name ASC"
+    players = db.execute_query(sql)
+    return render_template("admin_players.html", players=players, username=session.get("username"))
 
+@app.route("/admin/teams")
+@login_required
+def admin_teams():
+    # Fetch teams data
+    sql = "SELECT * FROM teams ORDER BY name ASC"
+    teams = db.execute_query(sql)
+    return render_template("admin_teams.html", teams=teams, username=session.get("username"))
 
+@app.route("/admin/settings")
+@login_required
+def admin_settings():
+    return render_template("admin_settings.html", username=session.get("username"))
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login?logged_out=true")
 #--------------OSMAN-END-------------------------------
 
 @app.route("/matches")

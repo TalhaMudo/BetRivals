@@ -59,6 +59,7 @@ coverage.xml
 
 # --- OS files ---
 .DS_Store
+main/.DS_Store
 Thumbs.db
 
 # --- Docker / Compose ---
