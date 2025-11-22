@@ -1,0 +1,166 @@
+
+<!-- LOGIN.HTML -->
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .auth-container {
+        max-width: 500px;
+        margin: 80px auto;
+        padding: 0 20px;
+    }
+
+    .auth-card {
+        background: rgba(15, 20, 25, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 50px 40px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .auth-header h2 {
+        font-size: 2.5em;
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 10px;
+    }
+
+    .auth-header p {
+        color: #b8b8b8;
+        font-size: 1em;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        color: #2ecc71;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 0.95em;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid rgba(46, 204, 113, 0.3);
+        border-radius: 10px;
+        background: rgba(10, 14, 20, 0.6);
+        color: #e8e8e8;
+        font-size: 1em;
+        transition: all 0.3s;
+        box-sizing: border-box;
+    }
+
+    .form-group input::placeholder {
+        color: #718096;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #2ecc71;
+        box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+        background: rgba(10, 14, 20, 0.8);
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: #0f1419;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+        margin-top: 10px;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(46, 204, 113, 0.5);
+    }
+
+    .submit-btn:active {
+        transform: translateY(0);
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 25px;
+        color: #b8b8b8;
+    }
+
+    .auth-footer a {
+        color: #2ecc71;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .auth-footer a:hover {
+        color: #27ae60;
+        text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+    }
+
+    .error-message {
+        background: rgba(231, 76, 60, 0.15);
+        border: 2px solid rgba(231, 76, 60, 0.5);
+        color: #ff6b6b;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    @media (max-width: 480px) {
+        .auth-card {
+            padding: 35px 25px;
+        }
+
+        .auth-header h2 {
+            font-size: 2em;
+        }
+    }
+</style>
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h2>🔐 Login</h2>
+            <p>Sign in to your Shot Analytics account</p>
+        </div>
+
+        <form method="POST" action="/login">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter your username" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            </div>
+
+            <button type="submit" class="submit-btn">Sign In</button>
+        </form>
+
+        <div class="auth-footer">
+            Don't have an account? <a href="/register">Create one</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
