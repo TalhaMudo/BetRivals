@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
             padding: 0;
             box-sizing: border-box;
         }
+
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -221,7 +223,8 @@
             font-size: 1.5rem;
         }
 
-        .content-section p, .content-section ul {
+        .content-section p,
+        .content-section ul {
             color: #b8b8b8;
             line-height: 1.8;
             margin-bottom: 1rem;
@@ -267,6 +270,7 @@
         }
     </style>
 </head>
+
 <body>
     <header>
         <div class="header-content">
@@ -274,10 +278,11 @@
             <nav>
                 <a href="{{ url_for('home') }}">Home</a>
                 <a href="{{ url_for('about') }}">About</a>
-                <a href="{{ url_for('bilge') }}">Bilge</a>
                 <a href="{{ url_for('talha') }}">Players</a>
                 <a href="shots">Shots</a>
                 <a href="{{ url_for('matches') }}">Matches</a>
+                <a href="{{ url_for('teams_page') }}">Teams</a>
+                <a href="{{ url_for('seasons_page') }}">Seasons</a>
                 <a href="login">Login</a>
                 <a href="register">Register</a>
             </nav>
@@ -291,5 +296,8 @@
     <footer>
         <p>&copy; 2025 BetRivals Team | Advanced Football Analytics</p>
     </footer>
+    {% block scripts %}{% endblock %}
+
 </body>
+
 </html>

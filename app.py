@@ -38,44 +38,55 @@ def teams_page():
 
 @app.route("/seasons")
 def seasons_page():
-    return render_template("seasons.html", title="Seasons")
+    return render_template("seasons_user.html", title="Seasons")
 
 # ========= BILGE: Teams API =========
 
 @app.route("/api/teams", methods=["GET"])
 def api_teams_list():
     """
-    Filters:
-      - q: name search
-      - page, per_page
+    GET /api/teams?q=Ar&page=1&per_page=20
     """
     q = request.args.get("q", "").strip()
     page = max(int(request.args.get("page", 1)), 1)
-    per_page = min(max(int(request.args.get("per_page", 20)), 1), 200)
+    per_page = int(request.args.get("per_page", 20))
+    if per_page < 1:
+         per_page = 1
+
     offset = (page - 1) * per_page
 
-    base = ["FROM teams WHERE 1=1"]
+    sql_base = "FROM teams WHERE 1=1"
     params = []
+
     if q:
-        base.append("AND team_name LIKE %s")
+        sql_base += " AND team_name LIKE %s"
         params.append(f"%{q}%")
 
     try:
-        total = db.execute_query(f"SELECT COUNT(*) { ' '.join(base) }", params)[0][0]
+        # COUNT
+        count_rows = db.execute_query(f"SELECT COUNT(*) AS total {sql_base}", params)
+        total = count_rows[0]["total"]
+
+        # DATA
         rows = db.execute_query(
             f"""
-            SELECT team_id, team_name
-            { ' '.join(base) }
+            SELECT 
+                team_id AS team_id,
+                team_name AS team_name
+            {sql_base}
             ORDER BY team_name ASC
             LIMIT %s OFFSET %s
             """,
             params + [per_page, offset]
         )
-        items = [
-            {"team_id": r[0], "team_name": r[1]}
-            for r in rows
-        ]
-        return jsonify({"total": total, "page": page, "per_page": per_page, "items": items})
+
+        return jsonify({
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "items": rows
+        })
+
     except Exception as e:
         logger.exception("Error listing teams: %s", e)
         return jsonify({"error": "Database error", "items": []}), 500
@@ -85,10 +96,16 @@ def api_teams_list():
 def api_team_create():
     data = request.get_json(silent=True) or {}
     name = (data.get("team_name") or "").strip()
+    
     if not name:
         return jsonify({"error": "team_name is required"}), 400
+
     try:
-        db.execute_query("INSERT INTO teams (team_name) VALUES (%s)", [name])
+        db.execute_query(
+            "INSERT INTO teams (team_name) VALUES (%s)",
+            [name],
+            fetch_all=False
+        )
         return jsonify({"ok": True})
     except Exception as e:
         logger.exception("Error creating team: %s", e)
@@ -99,10 +116,16 @@ def api_team_create():
 def api_team_update(team_id):
     data = request.get_json(silent=True) or {}
     name = (data.get("team_name") or "").strip()
+
     if not name:
         return jsonify({"error": "team_name is required"}), 400
+    
     try:
-        db.execute_query("UPDATE teams SET team_name=%s WHERE team_id=%s", [name, team_id])
+        db.execute_query(
+            "UPDATE teams SET team_name=%s WHERE team_id=%s",
+            [name, team_id],
+            fetch_all=False
+        )
         return jsonify({"ok": True})
     except Exception as e:
         logger.exception("Error updating team: %s", e)
@@ -112,12 +135,16 @@ def api_team_update(team_id):
 @app.route("/api/teams/<int:team_id>/delete", methods=["POST"])
 def api_team_delete(team_id):
     try:
-        db.execute_query("DELETE FROM teams WHERE team_id=%s", [team_id])
+        db.execute_query(
+            "DELETE FROM teams WHERE team_id=%s",
+            [team_id],
+            fetch_all=False
+        )
         return jsonify({"ok": True})
     except Exception as e:
         logger.exception("Error deleting team: %s", e)
-        # FK varsa silinemez
         return jsonify({"error": "Cannot delete team (FK in use?)"}), 400
+
 
 
 # ========= BILGE: Seasons API =========
@@ -125,91 +152,93 @@ def api_team_delete(team_id):
 @app.route("/api/seasons", methods=["GET"])
 def api_seasons_list():
     """
-    Filters:
-      - team_id, year, h_a, result
-      - title (substring)
-      - date_from, date_to  (YYYY-MM-DD)
-      - order_by in {year_desc, year_asc, pts_desc, pts_asc, date_desc, date_asc}
-      - page, per_page
+    GET /api/seasons?team_id=1&year=2022&h_a=H&result=W
     """
     team_id = request.args.get("team_id")
     year = request.args.get("year")
     title = request.args.get("title", "").strip()
     h_a = request.args.get("h_a")
     result = request.args.get("result")
-    date_from = request.args.get("date_from")
-    date_to = request.args.get("date_to")
-    order_by = request.args.get("order_by", "year_desc")
 
     page = max(int(request.args.get("page", 1)), 1)
     per_page = min(max(int(request.args.get("per_page", 20)), 1), 200)
     offset = (page - 1) * per_page
 
-    order_map = {
-        "year_desc": "s.year DESC, t.team_name ASC",
-        "year_asc":  "s.year ASC, t.team_name ASC",
-        "pts_desc":  "s.pts DESC, t.team_name ASC",
-        "pts_asc":   "s.pts ASC, t.team_name ASC",
-        "date_desc": "s.date DESC",
-        "date_asc":  "s.date ASC",
-    }
-    order_sql = order_map.get(order_by, "s.year DESC, t.team_name ASC")
-
-    base = ["""
-        FROM season s
-        LEFT JOIN teams t ON t.team_id = s.team_id
-        WHERE 1=1
-    """]
+    sql_where = "WHERE 1=1"
     params = []
 
     if team_id:
-        base.append("AND s.team_id = %s")
+        sql_where += " AND s.team_id = %s"
         params.append(team_id)
     if year:
-        base.append("AND s.year = %s")
+        sql_where += " AND s.year = %s"
         params.append(year)
     if title:
-        base.append("AND s.title LIKE %s")
+        sql_where += " AND s.title LIKE %s"
         params.append(f"%{title}%")
     if h_a in ("H", "A"):
-        base.append("AND s.h_a = %s")
+        sql_where += " AND s.h_a = %s"
         params.append(h_a)
     if result in ("W", "D", "L"):
-        base.append("AND s.result = %s")
+        sql_where += " AND s.result = %s"
         params.append(result)
-    if date_from:
-        base.append("AND s.date >= %s")
-        params.append(f"{date_from} 00:00:00")
-    if date_to:
-        base.append("AND s.date <= %s")
-        params.append(f"{date_to} 23:59:59")
 
     try:
-        total = db.execute_query(f"SELECT COUNT(*) { ' '.join(base) }", params)[0][0]
-        rows = db.execute_query(
-            f"""
+        # COUNT
+        count_sql = f"""
+            SELECT COUNT(*) AS total
+            FROM season s
+            LEFT JOIN teams t ON t.team_id = s.team_id
+            {sql_where}
+        """
+        count_rows = db.execute_query(count_sql, params)
+        total = count_rows[0]["total"]
+
+        # DATA
+        sql = f"""
             SELECT
-              s.seasonentryid, s.team_id, IFNULL(t.team_name,''), s.title, s.year, s.h_a,
-              s.xG, s.xGA, s.npxG, s.npxGA, s.deep, s.deep_allowed, s.scored, s.missed,
-              s.xpts, s.result, s.date, s.wins, s.draws, s.loses, s.pts, s.npxGD,
-              s.ppda_att, s.ppda_def, s.ppda_allowed_att, s.ppda_allowed_def
-            { ' '.join(base) }
-            ORDER BY {order_sql}
+                s.seasonentryid AS seasonentryid,
+                s.team_id       AS team_id,
+                t.team_name     AS team_name,
+                s.title         AS title,
+                s.year          AS year,
+                s.h_a           AS h_a,
+                s.xG            AS xG,
+                s.xGA           AS xGA,
+                s.npxG          AS npxG,
+                s.npxGA         AS npxGA,
+                s.deep          AS deep,
+                s.deep_allowed  AS deep_allowed,
+                s.scored        AS scored,
+                s.missed        AS missed,
+                s.xpts          AS xpts,
+                s.result        AS result,
+                s.date          AS date,
+                s.wins          AS wins,
+                s.draws         AS draws,
+                s.loses         AS loses,
+                s.pts           AS pts,
+                s.npxGD         AS npxGD,
+                s.ppda_att      AS ppda_att,
+                s.ppda_def      AS ppda_def,
+                s.ppda_allowed_att AS ppda_allowed_att,
+                s.ppda_allowed_def AS ppda_allowed_def
+            FROM season s
+            LEFT JOIN teams t ON t.team_id = s.team_id
+            {sql_where}
+            ORDER BY s.year DESC, t.team_name ASC
             LIMIT %s OFFSET %s
-            """,
-            params + [per_page, offset]
-        )
-        items = []
-        for r in rows:
-            items.append({
-                "seasonentryid": r[0], "team_id": r[1], "team_name": r[2], "title": r[3],
-                "year": r[4], "h_a": r[5], "xG": r[6], "xGA": r[7], "npxG": r[8], "npxGA": r[9],
-                "deep": r[10], "deep_allowed": r[11], "scored": r[12], "missed": r[13],
-                "xpts": r[14], "result": r[15], "date": r[16],
-                "wins": r[17], "draws": r[18], "loses": r[19], "pts": r[20], "npxGD": r[21],
-                "ppda_att": r[22], "ppda_def": r[23], "ppda_allowed_att": r[24], "ppda_allowed_def": r[25],
-            })
-        return jsonify({"total": total, "page": page, "per_page": per_page, "items": items})
+        """
+
+        rows = db.execute_query(sql, params + [per_page, offset])
+
+        return jsonify({
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "items": rows
+        })
+
     except Exception as e:
         logger.exception("Error listing seasons: %s", e)
         return jsonify({"error": "Database error", "items": []}), 500
@@ -217,34 +246,25 @@ def api_seasons_list():
 
 @app.route("/api/seasons", methods=["POST"])
 def api_season_create():
-    """
-    Body (JSON): season alanlarının tamamı opsiyonel; gerekli olanlar:
-      - team_id, year  (FK ve mantıksal)
-    """
     data = request.get_json(silent=True) or {}
+
     if not data.get("team_id") or not data.get("year"):
         return jsonify({"error": "team_id and year are required"}), 400
 
-    fields = [
-        "seasonentryid","team_id","title","year","h_a","xG","xGA","npxG","npxGA",
-        "deep","deep_allowed","scored","missed","xpts","result","date",
-        "wins","draws","loses","pts","npxGD","ppda_att","ppda_def","ppda_allowed_att","ppda_allowed_def"
-    ]
-    cols = []
-    vals = []
+    fields = []
+    values = []
     params = []
-    for f in fields:
-        if f in data and data[f] not in (None, ""):
-            cols.append(f)
-            vals.append("%s")
-            params.append(data[f])
 
-    if not cols:
-        return jsonify({"error": "no fields to insert"}), 400
+    for k, v in data.items():
+        if v not in (None, ""):
+            fields.append(k)
+            values.append("%s")
+            params.append(v)
 
-    sql = f"INSERT INTO season ({', '.join(cols)}) VALUES ({', '.join(vals)})"
+    sql = f"INSERT INTO season ({', '.join(fields)}) VALUES ({', '.join(values)})"
+
     try:
-        db.execute_query(sql, params)
+        db.execute_query(sql, params, fetch_all=False)
         return jsonify({"ok": True})
     except Exception as e:
         logger.exception("Error creating season: %s", e)
@@ -254,26 +274,23 @@ def api_season_create():
 @app.route("/api/seasons/<int:seasonentryid>/update", methods=["POST"])
 def api_season_update(seasonentryid):
     data = request.get_json(silent=True) or {}
-    # boş body gelirse engelle
-    updatable = [
-        "team_id","title","year","h_a","xG","xGA","npxG","npxGA",
-        "deep","deep_allowed","scored","missed","xpts","result","date",
-        "wins","draws","loses","pts","npxGD","ppda_att","ppda_def","ppda_allowed_att","ppda_allowed_def"
-    ]
-    sets = []
-    params = []
-    for f in updatable:
-        if f in data:
-            sets.append(f"{f}=%s")
-            params.append(data[f])
 
-    if not sets:
+    fields = []
+    params = []
+
+    for k, v in data.items():
+        fields.append(f"{k}=%s")
+        params.append(v)
+
+    if not fields:
         return jsonify({"error": "no fields to update"}), 400
 
     params.append(seasonentryid)
-    sql = f"UPDATE season SET {', '.join(sets)} WHERE seasonentryid=%s"
+
+    sql = f"UPDATE season SET {', '.join(fields)} WHERE seasonentryid=%s"
+
     try:
-        db.execute_query(sql, params)
+        db.execute_query(sql, params, fetch_all=False)
         return jsonify({"ok": True})
     except Exception as e:
         logger.exception("Error updating season: %s", e)
@@ -283,13 +300,15 @@ def api_season_update(seasonentryid):
 @app.route("/api/seasons/<int:seasonentryid>/delete", methods=["POST"])
 def api_season_delete(seasonentryid):
     try:
-        db.execute_query("DELETE FROM season WHERE seasonentryid=%s", [seasonentryid])
+        db.execute_query(
+            "DELETE FROM season WHERE seasonentryid=%s",
+            [seasonentryid],
+            fetch_all=False
+        )
         return jsonify({"ok": True})
     except Exception as e:
         logger.exception("Error deleting season: %s", e)
         return jsonify({"error": "Cannot delete season"}), 400
-
-
 
 #--------------BILGE-END-------------------------------
 
