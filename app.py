@@ -638,7 +638,194 @@ def shot_detail(shot_id):
                              error="Database Error",
                              message=str(e)), 500
 
+@app.route('/api/search/shots/advanced')
+def search_shots_advanced():
+    """Advanced API endpoint with complex filtering"""
+    try:
+        # Extract all filter parameters
+        player_name = request.args.get('player', '').strip()
+        team = request.args.get('team', '').strip()
+        season = request.args.get('season', '').strip()
+        league = request.args.get('league', '').strip()
+        
+        # Range filters
+        xg_min = request.args.get('xg_min', '0')
+        xg_max = request.args.get('xg_max', '1')
+        minute_min = request.args.get('minute_min', '0')
+        minute_max = request.args.get('minute_max', '120')
+        
+        # Multiple select filters
+        results = request.args.getlist('results')
+        shot_types = request.args.getlist('shot_types')
+        situations = request.args.getlist('situations')
+        positions = request.args.getlist('positions')
+        assist_status = request.args.getlist('assist_status')
+        
+        limit = int(request.args.get('limit', 50))
+        
+        # Build dynamic query
+        query = """
+            SELECT 
+                s.shot_id,
+                s.player,
+                s.h_team,
+                s.a_team,
+                s.minute,
+                s.result,
+                s.xG,
+                s.situation,
+                s.season,
+                s.date,
+                s.h_a,
+                s.shotType,
+                s.player_assisted,
+                m.league
+            FROM shot_data s
+            LEFT JOIN match_info m ON s.match_id = m.match_id
+            WHERE 1=1
+        """
+        
+        params = []
+        
+        # Player filter
+        if player_name:
+            query += " AND s.player LIKE %s"
+            params.append(f"%{player_name}%")
+        
+        # Team filter (both home and away)
+        if team:
+            query += " AND (s.h_team LIKE %s OR s.a_team LIKE %s)"
+            params.append(f"%{team}%")
+            params.append(f"%{team}%")
+        
+        # Season filter
+        if season:
+            query += " AND s.season = %s"
+            params.append(int(season))
+        
+        # League filter
+        if league:
+            query += " AND m.league = %s"
+            params.append(league)
+        
+        # xG range filter
+        try:
+            xg_min = float(xg_min)
+            xg_max = float(xg_max)
+            query += " AND s.xG BETWEEN %s AND %s"
+            params.extend([xg_min, xg_max])
+        except ValueError:
+            pass
+        
+        # Minute range filter
+        try:
+            minute_min = int(minute_min)
+            minute_max = int(minute_max)
+            query += " AND s.minute BETWEEN %s AND %s"
+            params.extend([minute_min, minute_max])
+        except ValueError:
+            pass
+        
+        # Shot result filter (multiple selections)
+        if results:
+            placeholders = ','.join(['%s'] * len(results))
+            query += f" AND s.result IN ({placeholders})"
+            params.extend(results)
+        
+        # Shot type filter
+        if shot_types:
+            placeholders = ','.join(['%s'] * len(shot_types))
+            query += f" AND s.shotType IN ({placeholders})"
+            params.extend(shot_types)
+        
+        # Situation filter
+        if situations:
+            placeholders = ','.join(['%s'] * len(situations))
+            query += f" AND s.situation IN ({placeholders})"
+            params.extend(situations)
+        
+        # Home/Away position filter
+        if positions:
+            placeholders = ','.join(['%s'] * len(positions))
+            query += f" AND s.h_a IN ({placeholders})"
+            params.extend(positions)
+        
+        # Assist status filter
+        if assist_status:
+            if 'assisted' in assist_status and 'unassisted' in assist_status:
+                pass  # Both selected, no filter needed
+            elif 'assisted' in assist_status:
+                query += " AND s.player_assisted IS NOT NULL AND s.player_assisted != ''"
+            elif 'unassisted' in assist_status:
+                query += " AND (s.player_assisted IS NULL OR s.player_assisted = '')"
+        
+        # Order and limit
+        query += " ORDER BY s.date DESC, s.minute DESC LIMIT %s"
+        params.append(limit)
+        
+        results_data = db.execute_query(query, tuple(params), fetch_all=True)
+        
+        return jsonify({
+            'success': True,
+            'count': len(results_data),
+            'shots': results_data,
+            'applied_filters': {
+                'player': player_name,
+                'team': team,
+                'season': season,
+                'league': league,
+                'xg_range': f"{xg_min}-{xg_max}",
+                'minute_range': f"{minute_min}-{minute_max}",
+                'results': results,
+                'shot_types': shot_types,
+                'situations': situations,
+                'positions': positions,
+                'assist_status': assist_status
+            }
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error in advanced search: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
+
+@app.route('/api/filters/options')
+def get_filter_options():
+    """Get available filter options for dropdown/select elements"""
+    try:
+        # Get unique seasons
+        seasons_query = "SELECT DISTINCT season FROM shot_data ORDER BY season DESC"
+        seasons = db.execute_query(seasons_query, fetch_all=True)
+        
+        # Get unique leagues
+        leagues_query = "SELECT DISTINCT league FROM match_info WHERE league IS NOT NULL ORDER BY league"
+        leagues = db.execute_query(leagues_query, fetch_all=True)
+        
+        # Get unique shot types
+        shot_types_query = "SELECT DISTINCT shotType FROM shot_data WHERE shotType IS NOT NULL ORDER BY shotType"
+        shot_types = db.execute_query(shot_types_query, fetch_all=True)
+        
+        # Get unique situations
+        situations_query = "SELECT DISTINCT situation FROM shot_data WHERE situation IS NOT NULL ORDER BY situation"
+        situations = db.execute_query(situations_query, fetch_all=True)
+        
+        return jsonify({
+            'success': True,
+            'seasons': [row['season'] for row in seasons],
+            'leagues': [row['league'] for row in leagues],
+            'shot_types': [row['shotType'] for row in shot_types],
+            'situations': [row['situation'] for row in situations]
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error fetching filter options: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
     
 @app.route('/api/search/shots')
 def search_shots():

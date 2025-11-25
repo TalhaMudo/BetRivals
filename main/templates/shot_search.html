@@ -85,6 +85,121 @@
         color: #e8e8e8;
     }
 
+    /* Advanced Filters Toggle */
+    .advanced-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        cursor: pointer;
+        color: #2ecc71;
+        font-weight: 600;
+        transition: all 0.3s;
+        border-radius: 10px;
+        background: rgba(46, 204, 113, 0.05);
+        border: 2px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .advanced-toggle:hover {
+        background: rgba(46, 204, 113, 0.1);
+        border-color: #2ecc71;
+    }
+
+    .advanced-toggle-icon {
+        transition: transform 0.3s;
+        font-size: 1.2em;
+    }
+
+    .advanced-toggle.active .advanced-toggle-icon {
+        transform: rotate(180deg);
+    }
+
+    /* Advanced Filters Section */
+    .advanced-filters {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
+        opacity: 0;
+    }
+
+    .advanced-filters.active {
+        max-height: 2000px;
+        opacity: 1;
+        margin-bottom: 25px;
+    }
+
+    .advanced-filters-content {
+        padding: 30px;
+        background: rgba(10, 14, 20, 0.4);
+        border-radius: 15px;
+        border: 1px solid rgba(46, 204, 113, 0.2);
+    }
+
+    .filter-section {
+        margin-bottom: 25px;
+    }
+
+    .filter-section-title {
+        color: #2ecc71;
+        font-size: 1.1em;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .checkbox-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px;
+        background: rgba(46, 204, 113, 0.05);
+        border-radius: 8px;
+        border: 2px solid rgba(46, 204, 113, 0.2);
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .checkbox-item:hover {
+        background: rgba(46, 204, 113, 0.1);
+        border-color: #2ecc71;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #2ecc71;
+    }
+
+    .checkbox-item label {
+        cursor: pointer;
+        color: #e8e8e8;
+        font-size: 0.9em;
+        margin: 0;
+    }
+
+    .range-inputs {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .range-separator {
+        color: #2ecc71;
+        font-weight: 600;
+    }
+
     .search-button {
         padding: 15px 40px;
         background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
@@ -96,6 +211,7 @@
         cursor: pointer;
         transition: all 0.3s;
         box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+        width: 100%;
     }
 
     .search-button:hover {
@@ -291,6 +407,18 @@
         .shot-meta {
             align-items: center;
         }
+
+        .checkbox-group {
+            grid-template-columns: 1fr;
+        }
+
+        .range-inputs {
+            grid-template-columns: 1fr;
+        }
+
+        .range-separator {
+            display: none;
+        }
     }
 </style>
 
@@ -301,6 +429,7 @@
     </div>
 
     <div class="search-card">
+        <!-- Basic Search Form -->
         <form id="searchForm" class="search-form">
             <div class="form-group">
                 <label for="player">Player Name</label>
@@ -314,7 +443,9 @@
 
             <div class="form-group">
                 <label for="season">Season</label>
-                <input type="number" id="season" name="season" placeholder="e.g., 2023" min="2000" max="2024">
+                <select id="season" name="season">
+                    <option value="">All Seasons</option>
+                </select>
             </div>
 
             <div class="form-group">
@@ -328,6 +459,107 @@
                 </select>
             </div>
         </form>
+
+        <!-- Advanced Filters Toggle -->
+        <div class="advanced-toggle" onclick="toggleAdvancedFilters()">
+            <span class="advanced-toggle-icon">▼</span>
+            <span>Advanced Filters</span>
+        </div>
+
+        <!-- Advanced Filters Section -->
+        <div class="advanced-filters" id="advancedFilters">
+            <div class="advanced-filters-content">
+                
+                <!-- League Filter -->
+                <div class="filter-section">
+                    <div class="filter-section-title">🏆 League</div>
+                    <div class="form-group">
+                        <select id="league" name="league">
+                            <option value="">All Leagues</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- xG Range Filter -->
+                <div class="filter-section">
+                    <div class="filter-section-title">📊 Expected Goals (xG) Range</div>
+                    <div class="range-inputs">
+                        <div class="form-group">
+                            <label for="xg_min">Min xG</label>
+                            <input type="number" id="xg_min" name="xg_min" value="0" min="0" max="1" step="0.01">
+                        </div>
+                        <span class="range-separator">to</span>
+                        <div class="form-group">
+                            <label for="xg_max">Max xG</label>
+                            <input type="number" id="xg_max" name="xg_max" value="1" min="0" max="1" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Minute Range Filter -->
+                <div class="filter-section">
+                    <div class="filter-section-title">⏱️ Minute Range</div>
+                    <div class="range-inputs">
+                        <div class="form-group">
+                            <label for="minute_min">Min Minute</label>
+                            <input type="number" id="minute_min" name="minute_min" value="0" min="0" max="120">
+                        </div>
+                        <span class="range-separator">to</span>
+                        <div class="form-group">
+                            <label for="minute_max">Max Minute</label>
+                            <input type="number" id="minute_max" name="minute_max" value="120" min="0" max="120">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shot Type Filter -->
+                <div class="filter-section">
+                    <div class="filter-section-title">🎯 Shot Type</div>
+                    <div class="checkbox-group" id="shotTypeCheckboxes">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Situation Filter -->
+                <div class="filter-section">
+                    <div class="filter-section-title">⚡ Situation</div>
+                    <div class="checkbox-group" id="situationCheckboxes">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Home/Away Filter -->
+                <div class="filter-section">
+                    <div class="filter-section-title">🏠 Home/Away</div>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pos_h" name="positions" value="h" checked>
+                            <label for="pos_h">Home</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pos_a" name="positions" value="a" checked>
+                            <label for="pos_a">Away</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assist Status Filter -->
+                <div class="filter-section">
+                    <div class="filter-section-title">🤝 Assist Status</div>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="assist_assisted" name="assist_status" value="assisted" checked>
+                            <label for="assist_assisted">Assisted</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="assist_unassisted" name="assist_status" value="unassisted" checked>
+                            <label for="assist_unassisted">Unassisted</label>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
 
         <button class="search-button" onclick="searchShots()">🔍 Search Shots</button>
     </div>
@@ -347,13 +579,124 @@
 </div>
 
 <script>
+    let filterOptions = {};
+    let advancedFiltersOpen = false;
+
+    // Load filter options on page load
+    async function loadFilterOptions() {
+        try {
+            const response = await fetch('/api/filters/options');
+            const data = await response.json();
+            
+            if (data.success) {
+                filterOptions = data;
+                populateFilterOptions();
+            }
+        } catch (error) {
+            console.error('Error loading filter options:', error);
+        }
+    }
+
+    function populateFilterOptions() {
+        // Populate seasons
+        const seasonSelect = document.getElementById('season');
+        filterOptions.seasons.forEach(season => {
+            const option = document.createElement('option');
+            option.value = season;
+            option.textContent = season;
+            seasonSelect.appendChild(option);
+        });
+
+        // Populate leagues
+        const leagueSelect = document.getElementById('league');
+        filterOptions.leagues.forEach(league => {
+            const option = document.createElement('option');
+            option.value = league;
+            option.textContent = league;
+            leagueSelect.appendChild(option);
+        });
+
+        // Populate shot types
+        const shotTypeContainer = document.getElementById('shotTypeCheckboxes');
+        filterOptions.shot_types.forEach((type, index) => {
+            const div = document.createElement('div');
+            div.className = 'checkbox-item';
+            div.innerHTML = `
+                <input type="checkbox" id="shot_type_${index}" name="shot_types" value="${type}" checked>
+                <label for="shot_type_${index}">${type}</label>
+            `;
+            shotTypeContainer.appendChild(div);
+        });
+
+        // Populate situations
+        const situationContainer = document.getElementById('situationCheckboxes');
+        filterOptions.situations.forEach((situation, index) => {
+            const div = document.createElement('div');
+            div.className = 'checkbox-item';
+            div.innerHTML = `
+                <input type="checkbox" id="situation_${index}" name="situations" value="${situation}" checked>
+                <label for="situation_${index}">${situation}</label>
+            `;
+            situationContainer.appendChild(div);
+        });
+    }
+
+    function toggleAdvancedFilters() {
+        const filters = document.getElementById('advancedFilters');
+        const toggle = document.querySelector('.advanced-toggle');
+        advancedFiltersOpen = !advancedFiltersOpen;
+        
+        if (advancedFiltersOpen) {
+            filters.classList.add('active');
+            toggle.classList.add('active');
+        } else {
+            filters.classList.remove('active');
+            toggle.classList.remove('active');
+        }
+    }
+
     async function searchShots() {
         const form = document.getElementById('searchForm');
         const formData = new FormData(form);
         const params = new URLSearchParams();
 
+        // Add basic form data
         for (let [key, value] of formData.entries()) {
             if (value) params.append(key, value);
+        }
+
+        // Check if advanced filters are being used
+        const useAdvanced = advancedFiltersOpen && document.getElementById('advancedFilters').classList.contains('active');
+        
+        if (useAdvanced) {
+            // Add advanced filter parameters
+            const league = document.getElementById('league').value;
+            if (league) params.append('league', league);
+
+            params.append('xg_min', document.getElementById('xg_min').value);
+            params.append('xg_max', document.getElementById('xg_max').value);
+            params.append('minute_min', document.getElementById('minute_min').value);
+            params.append('minute_max', document.getElementById('minute_max').value);
+
+            // Add selected shot types
+            document.querySelectorAll('input[name="shot_types"]:checked').forEach(cb => {
+                params.append('shot_types', cb.value);
+            });
+
+            // Add selected situations
+            document.querySelectorAll('input[name="situations"]:checked').forEach(cb => {
+                params.append('situations', cb.value);
+            });
+
+            // Add selected positions
+            document.querySelectorAll('input[name="positions"]:checked').forEach(cb => {
+                params.append('positions', cb.value);
+            });
+
+            // Add assist status
+            document.querySelectorAll('input[name="assist_status"]:checked').forEach(cb => {
+                params.append('assist_status', cb.value);
+            });
         }
 
         const loading = document.getElementById('loading');
@@ -365,7 +708,8 @@
         resultsContainer.classList.remove('active');
 
         try {
-            const response = await fetch(`/api/search/shots?${params.toString()}`);
+            const endpoint = useAdvanced ? '/api/search/shots/advanced' : '/api/search/shots';
+            const response = await fetch(`${endpoint}?${params.toString()}`);
             const data = await response.json();
 
             loading.classList.remove('active');
@@ -386,6 +730,7 @@
                             </div>
                             <div class="shot-details" style="margin-top: 5px;">
                                 ${new Date(shot.date).toLocaleDateString()} • Season ${shot.season}
+                                ${shot.league ? ` • ${shot.league}` : ''}
                             </div>
                         </div>
                         <div class="shot-meta">
@@ -425,5 +770,8 @@
             searchShots();
         }
     });
+
+    // Load filter options when page loads
+    document.addEventListener('DOMContentLoaded', loadFilterOptions);
 </script>
 {% endblock %}
