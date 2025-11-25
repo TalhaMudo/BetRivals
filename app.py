@@ -55,6 +55,8 @@ def osman():
     """Osman sayfası"""
     return render_template("osman.html", title="Osman")
 #--------------OSMAN-START-----------------------------
+#2sr -------------------------------------------------------------------------------------------------------------------------------
+
 
 @app.route('/shots')
 def index():
@@ -407,13 +409,14 @@ def login():
 def admin():
     return render_template("admin.html", username=session.get("username"))
 
+"""
 @app.route("/admin/shots")
 @login_required
 def admin_shots():
     # Fetch shots data
     sql = "SELECT * FROM shots ORDER BY date DESC LIMIT 100"
     shots = db.execute_query(sql)
-    return render_template("admin_shots.html", shots=shots, username=session.get("username"))
+    return render_template("admin_shots.html", shots=shots, username=session.get("username"))"""
 
 @app.route("/admin/players")
 @login_required
@@ -440,6 +443,216 @@ def admin_settings():
 def logout():
     session.clear()
     return redirect("/login?logged_out=true")
+
+#2sg - - - - - - - - - - - - - - - - - - below is for admin page : 
+
+# Add these routes to your app.py (in OSMAN section or appropriate place)
+
+@app.route("/admin/shots")
+@login_required
+def admin_shots():
+    """Display shots management page"""
+    try:
+        sql = "SELECT * FROM shot_data ORDER BY date DESC LIMIT 100"
+        shots = db.execute_query(sql, fetch_all=True)
+        return render_template("admin_shots.html", 
+                             shots=shots, 
+                             username=session.get("username"))
+    except Exception as e:
+        logger.exception(f"Error fetching shots: {e}")
+        return render_template("admin_shots.html", 
+                             shots=[], 
+                             error="Failed to load shots",
+                             username=session.get("username"))
+
+@app.route("/api/admin/shots", methods=['GET'])
+@login_required
+def api_get_shots():
+    """API endpoint to fetch shots with pagination and filtering"""
+    try:
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 20))
+        player = request.args.get('player', '').strip()
+        result = request.args.get('result', '').strip()
+        
+        offset = (page - 1) * limit
+        
+        # Count total records
+        count_sql = "SELECT COUNT(*) as total FROM shot_data WHERE 1=1"
+        count_params = []
+        
+        base_sql = "SELECT * FROM shot_data WHERE 1=1"
+        params = []
+        
+        if player:
+            base_sql += " AND player LIKE %s"
+            count_sql += " AND player LIKE %s"
+            params.append(f"%{player}%")
+            count_params.append(f"%{player}%")
+        
+        if result:
+            base_sql += " AND result = %s"
+            count_sql += " AND result = %s"
+            params.append(result)
+            count_params.append(result)
+        
+        count_result = db.execute_query(count_sql, tuple(count_params), fetch_all=True)
+        total = count_result[0]['total'] if count_result else 0
+        
+        base_sql += " ORDER BY date DESC LIMIT %s OFFSET %s"
+        params.extend([limit, offset])
+        
+        shots = db.execute_query(base_sql, tuple(params), fetch_all=True)
+        
+        return jsonify({
+            'success': True,
+            'shots': shots,
+            'total': total,
+            'page': page,
+            'limit': limit
+        })
+    except Exception as e:
+        logger.exception(f"Error fetching shots API: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route("/api/admin/shots", methods=['POST'])
+@login_required
+def api_create_shot():
+    """API endpoint to create a new shot"""
+    try:
+        data = request.get_json()
+        
+        # Validation
+        required_fields = ['player', 'player_id', 'match_id', 'minute', 'result', 'xG', 'h_team', 'a_team', 'season']
+        if not all(field in data for field in required_fields):
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        sql = """
+            INSERT INTO shot_data 
+            (player, player_id, match_id, minute, result, xG, X, Y, 
+             shotType, situation, h_a, h_team, a_team, season, date, 
+             h_goals, a_goals, player_assisted, lastAction)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        
+        params = (
+            data.get('player'),
+            data.get('player_id'),
+            data.get('match_id'),
+            data.get('minute'),
+            data.get('result'),
+            data.get('xG'),
+            data.get('X'),
+            data.get('Y'),
+            data.get('shotType', 'Open Play'),
+            data.get('situation', 'Regular'),
+            data.get('h_a', 'h'),
+            data.get('h_team'),
+            data.get('a_team'),
+            data.get('season'),
+            data.get('date'),
+            data.get('h_goals', 0),
+            data.get('a_goals', 0),
+            data.get('player_assisted'),
+            data.get('lastAction')
+        )
+        
+        db.execute_query(sql, params, fetch_all=False)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Shot created successfully'
+        }), 201
+        
+    except Exception as e:
+        logger.exception(f"Error creating shot: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route("/api/admin/shots/<int:shot_id>", methods=['GET'])
+@login_required
+def api_get_shot(shot_id):
+    """API endpoint to fetch a specific shot"""
+    try:
+        sql = "SELECT * FROM shot_data WHERE shot_id = %s"
+        result = db.execute_query(sql, (shot_id,), fetch_all=True)
+        
+        if not result:
+            return jsonify({'success': False, 'error': 'Shot not found'}), 404
+        
+        return jsonify({
+            'success': True,
+            'shot': result[0]
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error fetching shot {shot_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route("/api/admin/shots/<int:shot_id>", methods=['PUT'])
+@login_required
+def api_update_shot(shot_id):
+    """API endpoint to update a shot"""
+    try:
+        data = request.get_json()
+        
+        # Build dynamic update query
+        update_fields = []
+        params = []
+        
+        updatable_fields = [
+            'player', 'minute', 'result', 'X', 'Y', 'xG', 
+            'shotType', 'situation', 'h_a', 'h_goals', 'a_goals',
+            'player_assisted', 'lastAction'
+        ]
+        
+        for field in updatable_fields:
+            if field in data:
+                update_fields.append(f"{field} = %s")
+                params.append(data[field])
+        
+        if not update_fields:
+            return jsonify({'success': False, 'error': 'No fields to update'}), 400
+        
+        params.append(shot_id)
+        
+        sql = f"UPDATE shot_data SET {', '.join(update_fields)} WHERE shot_id = %s"
+        db.execute_query(sql, tuple(params), fetch_all=False)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Shot updated successfully'
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error updating shot {shot_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route("/api/admin/shots/<int:shot_id>", methods=['DELETE'])
+@login_required
+def api_delete_shot(shot_id):
+    """API endpoint to delete a shot"""
+    try:
+        # Check if shot exists
+        check_sql = "SELECT shot_id FROM shot_data WHERE shot_id = %s"
+        result = db.execute_query(check_sql, (shot_id,), fetch_all=True)
+        
+        if not result:
+            return jsonify({'success': False, 'error': 'Shot not found'}), 404
+        
+        sql = "DELETE FROM shot_data WHERE shot_id = %s"
+        db.execute_query(sql, (shot_id,), fetch_all=False)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Shot deleted successfully'
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error deleting shot {shot_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+#2sr -------------------------------------------------------------------------------------------------------------------------------
 #--------------OSMAN-END-------------------------------
 
 @app.route("/matches")
