@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='seasons_user.css') }}">
+
+<div class="seasons-page">
+
+  <div class="hero-section">
+    <h2>📅 Seasons</h2>
+    <p>Filter and explore seasonal performance across teams, home/away stats, and results.</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-card">
+
+    <!-- Filter Inputs -->
+    <div class="row">
+      <select id="filterTeam">
+        <option value="">All Teams</option>
+      </select>
+
+      <select id="filterYear">
+        <option value="">All Years</option>
+      </select>
+
+      <select id="filterHA">
+        <option value="">Home/Away</option>
+        <option value="H">Home</option>
+        <option value="A">Away</option>
+      </select>
+
+      <select id="filterResult">
+        <option value="">Result</option>
+        <option value="W">Win</option>
+        <option value="D">Draw</option>
+        <option value="L">Loss</option>
+      </select>
+    </div>
+
+    <!-- Buttons -->
+    <div class="row">
+      <button id="btnSearch">Search</button>
+      <button id="btnReset" class="secondary">Reset</button>
+      <button id="btnViewAll" class="outline">View All</button>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- CARD GRID (Normal Mode)        -->
+  <!-- ============================== -->
+  <div id="seasonsGrid" class="seasons-grid"></div>
+
+  <!-- ============================== -->
+  <!-- TABLE VIEW (View All Mode)     -->
+  <!-- ============================== -->
+  <div id="seasonsTableContainer" style="display:none; max-height: 600px; overflow-y: auto; margin-top:2rem;">
+    <table class="season-table">
+      <thead>
+        <tr>
+          <th>Team</th>
+          <th>Year</th>
+          <th>Result</th>
+          <th>xG</th>
+          <th>xGA</th>
+          <th>PPDA</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody id="seasonsTableBody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='seasons_user.js') }}"></script>
+{% endblock %}

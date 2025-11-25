@@ -1,0 +1,140 @@
+.seasons-page {
+    max-width: 1200px;
+    margin: 2rem auto;
+}
+
+.filter-card {
+    background: rgba(15, 20, 25, 0.9);
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    backdrop-filter: blur(8px);
+}
+
+.row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+select,
+input {
+    flex: 1;
+    padding: .65rem;
+    border-radius: 6px;
+    background: #121212;
+    border: 1px solid #2ecc71;
+    color: #eee;
+}
+
+button {
+    padding: .65rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    background: #2ecc71;
+    color: #111;
+}
+
+button.secondary {
+    background: #444;
+    color: #ddd;
+}
+
+button.outline {
+    background: transparent;
+    border: 1px solid #2ecc71;
+    color: #2ecc71;
+}
+
+.seasons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+.season-card {
+    background: rgba(15, 20, 25, 0.95);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: left;
+    border: 1px solid rgba(46, 204, 113, 0.25);
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+    transition: 0.3s;
+}
+
+.season-card:hover {
+    transform: translateY(-4px);
+    border-color: #2ecc71;
+    box-shadow: 0 0 18px rgba(46, 204, 113, 0.3);
+}
+
+.season-card h3 {
+    color: #2ecc71;
+    margin-bottom: .3rem;
+    font-size: 1.2rem;
+}
+
+.season-field {
+    margin: .2rem 0;
+    color: #ccc;
+}
+
+#seasonsTableContainer {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+#seasonsTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#seasonsTable th,
+#seasonsTable td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#seasonsTable th {
+    background: #0f3f1a;
+    color: white;
+}
+
+#seasonsTable tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Scroll kapsayıcı düzgün hizalansın */
+#seasonsWrapper {
+    max-height: 600px;
+    overflow-y: auto;
+    width: 100%;
+}
+
+/* Tablonun hem header hem body eşit genişlik olsun */
+.season-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    /* ← EN ÖNEMLİ SATIR */
+}
+
+/* Hücreler sabit hizada dursun */
+.season-table th,
+.season-table td {
+    padding: 12px 16px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Header sabit görünmeli */
+.season-table thead {
+    background: #0a2e1f;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}

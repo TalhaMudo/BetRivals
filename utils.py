@@ -67,7 +67,7 @@ class DatabaseConnector: # a bridge between Flask and MySQL Database using conne
             logger.exception(f"MySQL error during initialization: {err}")
             raise
         except Exception as e:
-            logger.exception(f"Failed to initialize DatabaseConnector: {err}")
+            logger.exception(f"Failed to initialize DatabaseConnector: {e}")
             raise
 
     def _get_connection(self):

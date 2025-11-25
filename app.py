@@ -28,27 +28,470 @@ def about():
     """Hakkında sayfası"""
     return render_template("about.html", title="About Us")
 
+#--------------BILGE-START------------------------------
 
-@app.route("/bilge")
-def bilge():
-    """Bilge sayfası"""
-    return render_template("bilge.html", title="Bilge")
-#--------------BILGE-START-----------------------------
+# ========= BILGE: Teams & Seasons pages =========
+
+@app.route("/teams")
+def teams_page():
+    return render_template("teams.html", title="Teams")
+
+@app.route("/seasons")
+def seasons_page():
+    return render_template("seasons_user.html", title="Seasons")
+
+# ========= BILGE: Teams API =========
+
+@app.route("/api/teams", methods=["GET"])
+def api_teams_list():
+    """
+    GET /api/teams?q=Ar&page=1&per_page=20
+    """
+    q = request.args.get("q", "").strip()
+    page = max(int(request.args.get("page", 1)), 1)
+    per_page = int(request.args.get("per_page", 20))
+    if per_page < 1:
+         per_page = 1
+
+    offset = (page - 1) * per_page
+
+    sql_base = "FROM teams WHERE 1=1"
+    params = []
+
+    if q:
+        sql_base += " AND team_name LIKE %s"
+        params.append(f"%{q}%")
+
+    try:
+        # COUNT
+        count_rows = db.execute_query(f"SELECT COUNT(*) AS total {sql_base}", params)
+        total = count_rows[0]["total"]
+
+        # DATA
+        rows = db.execute_query(
+            f"""
+            SELECT 
+                team_id AS team_id,
+                team_name AS team_name
+            {sql_base}
+            ORDER BY team_name ASC
+            LIMIT %s OFFSET %s
+            """,
+            params + [per_page, offset]
+        )
+
+        return jsonify({
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "items": rows
+        })
+
+    except Exception as e:
+        logger.exception("Error listing teams: %s", e)
+        return jsonify({"error": "Database error", "items": []}), 500
+
+
+@app.route("/api/teams", methods=["POST"])
+def api_team_create():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("team_name") or "").strip()
+    
+    if not name:
+        return jsonify({"error": "team_name is required"}), 400
+
+    try:
+        db.execute_query(
+            "INSERT INTO teams (team_name) VALUES (%s)",
+            [name],
+            fetch_all=False
+        )
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.exception("Error creating team: %s", e)
+        return jsonify({"error": "Database error"}), 500
+
+
+@app.route("/api/teams/<int:team_id>/update", methods=["POST"])
+def api_team_update(team_id):
+    data = request.get_json(silent=True) or {}
+    name = (data.get("team_name") or "").strip()
+
+    if not name:
+        return jsonify({"error": "team_name is required"}), 400
+    
+    try:
+        db.execute_query(
+            "UPDATE teams SET team_name=%s WHERE team_id=%s",
+            [name, team_id],
+            fetch_all=False
+        )
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.exception("Error updating team: %s", e)
+        return jsonify({"error": "Database error"}), 500
+
+
+@app.route("/api/teams/<int:team_id>/delete", methods=["POST"])
+def api_team_delete(team_id):
+    try:
+        db.execute_query(
+            "DELETE FROM teams WHERE team_id=%s",
+            [team_id],
+            fetch_all=False
+        )
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.exception("Error deleting team: %s", e)
+        return jsonify({"error": "Cannot delete team (FK in use?)"}), 400
 
 
 
+# ========= BILGE: Seasons API =========
+
+@app.route("/api/seasons", methods=["GET"])
+def api_seasons_list():
+    """
+    GET /api/seasons?team_id=1&year=2022&h_a=H&result=W
+    """
+    team_id = request.args.get("team_id")
+    year = request.args.get("year")
+    title = request.args.get("title", "").strip()
+    h_a = request.args.get("h_a")
+    result = request.args.get("result")
+
+    page = max(int(request.args.get("page", 1)), 1)
+    per_page = min(max(int(request.args.get("per_page", 20)), 1), 200)
+    offset = (page - 1) * per_page
+
+    sql_where = "WHERE 1=1"
+    params = []
+
+    if team_id:
+        sql_where += " AND s.team_id = %s"
+        params.append(team_id)
+    if year:
+        sql_where += " AND s.year = %s"
+        params.append(year)
+    if title:
+        sql_where += " AND s.title LIKE %s"
+        params.append(f"%{title}%")
+    if h_a in ("H", "A"):
+        sql_where += " AND s.h_a = %s"
+        params.append(h_a)
+    if result in ("W", "D", "L"):
+        sql_where += " AND s.result = %s"
+        params.append(result)
+
+    try:
+        # COUNT
+        count_sql = f"""
+            SELECT COUNT(*) AS total
+            FROM season s
+            LEFT JOIN teams t ON t.team_id = s.team_id
+            {sql_where}
+        """
+        count_rows = db.execute_query(count_sql, params)
+        total = count_rows[0]["total"]
+
+        # DATA
+        sql = f"""
+            SELECT
+                s.seasonentryid AS seasonentryid,
+                s.team_id       AS team_id,
+                t.team_name     AS team_name,
+                s.title         AS title,
+                s.year          AS year,
+                s.h_a           AS h_a,
+                s.xG            AS xG,
+                s.xGA           AS xGA,
+                s.npxG          AS npxG,
+                s.npxGA         AS npxGA,
+                s.deep          AS deep,
+                s.deep_allowed  AS deep_allowed,
+                s.scored        AS scored,
+                s.missed        AS missed,
+                s.xpts          AS xpts,
+                s.result        AS result,
+                s.date          AS date,
+                s.wins          AS wins,
+                s.draws         AS draws,
+                s.loses         AS loses,
+                s.pts           AS pts,
+                s.npxGD         AS npxGD,
+                s.ppda_att      AS ppda_att,
+                s.ppda_def      AS ppda_def,
+                s.ppda_allowed_att AS ppda_allowed_att,
+                s.ppda_allowed_def AS ppda_allowed_def
+            FROM season s
+            LEFT JOIN teams t ON t.team_id = s.team_id
+            {sql_where}
+            ORDER BY s.year DESC, t.team_name ASC
+            LIMIT %s OFFSET %s
+        """
+
+        rows = db.execute_query(sql, params + [per_page, offset])
+
+        return jsonify({
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "items": rows
+        })
+
+    except Exception as e:
+        logger.exception("Error listing seasons: %s", e)
+        return jsonify({"error": "Database error", "items": []}), 500
+
+
+@app.route("/api/seasons", methods=["POST"])
+def api_season_create():
+    data = request.get_json(silent=True) or {}
+
+    if not data.get("team_id") or not data.get("year"):
+        return jsonify({"error": "team_id and year are required"}), 400
+
+    fields = []
+    values = []
+    params = []
+
+    for k, v in data.items():
+        if v not in (None, ""):
+            fields.append(k)
+            values.append("%s")
+            params.append(v)
+
+    sql = f"INSERT INTO season ({', '.join(fields)}) VALUES ({', '.join(values)})"
+
+    try:
+        db.execute_query(sql, params, fetch_all=False)
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.exception("Error creating season: %s", e)
+        return jsonify({"error": "Database error"}), 500
+
+
+@app.route("/api/seasons/<int:seasonentryid>/update", methods=["POST"])
+def api_season_update(seasonentryid):
+    data = request.get_json(silent=True) or {}
+
+    fields = []
+    params = []
+
+    for k, v in data.items():
+        fields.append(f"{k}=%s")
+        params.append(v)
+
+    if not fields:
+        return jsonify({"error": "no fields to update"}), 400
+
+    params.append(seasonentryid)
+
+    sql = f"UPDATE season SET {', '.join(fields)} WHERE seasonentryid=%s"
+
+    try:
+        db.execute_query(sql, params, fetch_all=False)
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.exception("Error updating season: %s", e)
+        return jsonify({"error": "Database error"}), 500
+
+
+@app.route("/api/seasons/<int:seasonentryid>/delete", methods=["POST"])
+def api_season_delete(seasonentryid):
+    try:
+        db.execute_query(
+            "DELETE FROM season WHERE seasonentryid=%s",
+            [seasonentryid],
+            fetch_all=False
+        )
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.exception("Error deleting season: %s", e)
+        return jsonify({"error": "Cannot delete season"}), 400
 
 #--------------BILGE-END-------------------------------
+
+
 @app.route("/talha")
 def talha():
     """Talha sayfası"""
     return render_template("talha.html", title="Talha")
 #--------------TALHA-START-----------------------------
 
+@app.route("/api/players/fut23", methods=['GET'])
+def api_fut23_all():
+    """Get all rows from fut23 table"""
+    try:
+        query = "SELECT * FROM fut23"
+        results = db.execute_query(query)
+        return jsonify({"players": results or [], "count": len(results) if results else 0})
+    except Exception as e:
+        logger.exception("Error fetching fut23 data: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
 
+@app.route("/api/players/analysis", methods=['GET'])
+def api_players_analysis():
+    """Get players with most goals but least FIFA ratings (joined player + fut23 tables)"""
+    try:
+        query = """
+        SELECT 
+            p.player_id,
+            p.player_name,
+            p.goals,
+            p.assists,
+            p.games,
+            p.xG,
+            p.position,
+            p.team_title,
+            p.year,
+            f.Rating AS fifa_rating,
+            f.Pace,
+            f.Shoot,
+            f.Pass,
+            f.Drible,
+            f.Defense,
+            f.Physical,
+            f.Base_Stats,
+            f.In_Game_Stats,
+            f.Country,
+            f.League
+        FROM player p
+        INNER JOIN fut23 f ON p.player_id = f.player_id
+        WHERE p.goals IS NOT NULL AND f.Rating IS NOT NULL
+        ORDER BY p.goals DESC, f.Rating ASC
+        LIMIT 50
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [], 
+            "count": len(results) if results else 0,
+            "description": "Players with most goals and least FIFA ratings"
+        })
+    except Exception as e:
+        logger.exception("Error fetching player analysis data: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
 
+@app.route("/api/players/search", methods=['GET'])
+def api_players_search():
+    """Search players by name, team, or position"""
+    try:
+        search_query = request.args.get('q', '').strip()
+        if not search_query:
+            return jsonify({"players": [], "count": 0})
+        
+        # Use LIKE for partial matching
+        search_pattern = f"%{search_query}%"
+        query = """
+        SELECT DISTINCT
+            p.player_id,
+            p.player_name,
+            p.goals,
+            p.assists,
+            p.games,
+            p.xG,
+            p.position,
+            p.team_title,
+            p.year,
+            f.Rating AS fifa_rating,
+            f.Pace,
+            f.Shoot,
+            f.Pass,
+            f.Drible,
+            f.Defense,
+            f.Physical,
+            f.Country,
+            f.League
+        FROM player p
+        LEFT JOIN fut23 f ON p.player_id = f.player_id
+        WHERE p.player_name LIKE %s 
+           OR p.team_title LIKE %s 
+           OR p.position LIKE %s
+        ORDER BY p.player_name
+        LIMIT 50
+        """
+        results = db.execute_query(query, params=[search_pattern, search_pattern, search_pattern])
+        return jsonify({
+            "players": results or [], 
+            "count": len(results) if results else 0
+        })
+    except Exception as e:
+        logger.exception("Error searching players: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/api/players/<int:player_id>", methods=['GET'])
+def api_player_detail(player_id):
+    """Get full player details by player_id"""
+    try:
+        query = """
+        SELECT 
+            p.season_player_id,
+            p.player_id,
+            p.player_name,
+            p.games,
+            p.time,
+            p.goals,
+            p.xG,
+            p.assists,
+            p.xA,
+            p.shots,
+            p.key_passes,
+            p.yellow_cards,
+            p.red_cards,
+            p.position,
+            p.team_title,
+            p.npg,
+            p.npxG,
+            p.xGChain,
+            p.xGBuildup,
+            p.year,
+            f.Name AS fut23_name,
+            f.Team AS fut23_team,
+            f.team_id,
+            f.Country,
+            f.League,
+            f.Rating,
+            f.Position AS fut23_position,
+            f.Other_Positions,
+            f.Run_type,
+            f.Price,
+            f.Skill,
+            f.Weak_foot,
+            f.Attack_rate,
+            f.Defense_rate,
+            f.Pace,
+            f.Shoot,
+            f.Pass,
+            f.Drible,
+            f.Defense,
+            f.Physical,
+            f.Body_type,
+            f.Height_cm,
+            f.Weight,
+            f.Popularity,
+            f.Base_Stats,
+            f.In_Game_Stats
+        FROM player p
+        LEFT JOIN fut23 f ON p.player_id = f.player_id
+        WHERE p.player_id = %s
+        LIMIT 1
+        """
+        results = db.execute_query(query, params=[player_id])
+        if not results or len(results) == 0:
+            return jsonify({"error": "Player not found"}), 404
+        return jsonify({"player": results[0]})
+    except Exception as e:
+        logger.exception("Error fetching player detail: %s", e)
+        return jsonify({"error": "Database error"}), 500
+
+@app.route("/talha/<int:player_id>")
+def player_detail(player_id):
+    """Individual player detail page"""
+    return render_template("player_detail.html", title="Player Details", player_id=player_id)
 
 #--------------TALHA-END-------------------------------
+
+
 
 @app.route("/osman")
 def osman():
@@ -674,14 +1117,31 @@ def api_data():
 
 @app.route("/api/matches", methods=['POST'])
 def api_matches():
-    """execute query and return matches filtered by supplied JSON filters."""
+    """Return matches filtered by supplied JSON filters."""
     filters = request.get_json(silent=True) or {}
+    limit = min(int(filters.get('limit', 50)), 5000)
     
+    # Build parameterized query
     sql = [
-        # query here
+        "SELECT mi.match_id, mi.date, mi.season, mi.league,",
+        "       mi.team_h, mi.team_a, mi.h_goals, mi.a_goals,",
+        "       mi.h_xg, mi.a_xg, mi.h_shot, mi.a_shot,",
+        "       md.isResult, md.xG_h, md.xG_a, md.forecast_w, md.forecast_d, md.forecast_l",
+        "FROM match_info mi",
+        "LEFT JOIN match_data md ON mi.match_id = md.match_id",
+        "WHERE 1=1"
     ]
     params = []
 
+    if filters.get('q'):
+        sql.append("AND (LOWER(mi.team_h) LIKE %s OR LOWER(mi.team_a) LIKE %s OR mi.match_id = %s)")
+        q = f"%{filters['q'].lower()}%"
+        params.extend([q, q, filters['q']])
+    
+    if filters.get('season'):
+        sql.append("AND mi.season = %s")
+        params.append(filters['season'])
+    
     if filters.get('team_home'):
         sql.append("AND mi.team_h = %s")
         params.append(filters['team_home'])
@@ -690,16 +1150,45 @@ def api_matches():
         sql.append("AND mi.team_a = %s")
         params.append(filters['team_away'])
     
-    # others filters
+    if filters.get('date_from'):
+        sql.append("AND mi.date >= %s")
+        params.append(filters['date_from'])
+    
+    if filters.get('date_to'):
+        sql.append("AND mi.date <= %s")
+        params.append(filters['date_to'])
+    
+    if filters.get('min_goals'):
+        sql.append("AND (COALESCE(mi.h_goals,0) + COALESCE(mi.a_goals,0)) >= %s")
+        params.append(int(filters['min_goals']))
+    
+    if filters.get('max_goals'):
+        sql.append("AND (COALESCE(mi.h_goals,0) + COALESCE(mi.a_goals,0)) <= %s")
+        params.append(int(filters['max_goals']))
+    
+    if filters.get('min_xg'):
+        sql.append("AND (COALESCE(mi.h_xg,0) + COALESCE(mi.a_xg,0)) >= %s")
+        params.append(float(filters['min_xg']))
 
+    sql.append(f"ORDER BY mi.date DESC LIMIT {limit}")
     query = " ".join(sql)
 
     try:
         matches = db.execute_query(query, params=params)
-        return jsonify({"matches": matches or []})
+        return jsonify({"matches": matches or [], "limit": limit})
     except Exception as e:
         logger.exception("Error fetching matches: %s", e)
         return jsonify({"error": "Database error", "matches": []}), 500
+
+@app.route("/api/add_match", methods=['POST'])
+def api_add_match():
+    """Create a new match entry in the database.""" # admin user only
+    pass
+
+@app.route("/api/modify_match", methods=['POST'])
+def api_delete_match():
+    """Modify a match entry from the database. It can be used to delete a match as well.""" # admin user only
+    pass
 
 
 # -------------------------------------------------
