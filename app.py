@@ -28,15 +28,287 @@ def about():
     """Hakkında sayfası"""
     return render_template("about.html", title="About Us")
 
+#--------------BILGE-START------------------------------
 
-@app.route("/bilge")
-def bilge():
-    """Bilge sayfası"""
-    return render_template("bilge.html", title="Bilge")
-#--------------BILGE-START-----------------------------
+# ========= BILGE: Teams & Seasons pages =========
+
+@app.route("/teams")
+def teams_page():
+    return render_template("teams.html", title="Teams")
+
+@app.route("/seasons")
+def seasons_page():
+    return render_template("seasons_user.html", title="Seasons")
+
+# ========= BILGE: Teams API =========
+
+@app.route("/api/teams", methods=["GET"])
+def api_teams_list():
+    """
+    GET /api/teams?q=Ar&page=1&per_page=20
+    """
+    q = request.args.get("q", "").strip()
+    page = max(int(request.args.get("page", 1)), 1)
+    per_page = int(request.args.get("per_page", 20))
+    if per_page < 1:
+         per_page = 1
+
+    offset = (page - 1) * per_page
+
+    sql_base = "FROM teams WHERE 1=1"
+    params = []
+
+    if q:
+        sql_base += " AND team_name LIKE %s"
+        params.append(f"%{q}%")
+
+    try:
+        # COUNT
+        count_rows = db.execute_query(f"SELECT COUNT(*) AS total {sql_base}", params)
+        total = count_rows[0]["total"]
+
+        # DATA
+        rows = db.execute_query(
+            f"""
+            SELECT 
+                team_id AS team_id,
+                team_name AS team_name
+            {sql_base}
+            ORDER BY team_name ASC
+            LIMIT %s OFFSET %s
+            """,
+            params + [per_page, offset]
+        )
+
+        return jsonify({
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "items": rows
+        })
+
+    except Exception as e:
+        logger.exception("Error listing teams: %s", e)
+        return jsonify({"error": "Database error", "items": []}), 500
+
+
+@app.route("/api/teams", methods=["POST"])
+def api_team_create():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("team_name") or "").strip()
+    
+    if not name:
+        return jsonify({"error": "team_name is required"}), 400
+
+    try:
+        db.execute_query(
+            "INSERT INTO teams (team_name) VALUES (%s)",
+            [name],
+            fetch_all=False
+        )
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.exception("Error creating team: %s", e)
+        return jsonify({"error": "Database error"}), 500
+
+
+@app.route("/api/teams/<int:team_id>/update", methods=["POST"])
+def api_team_update(team_id):
+    data = request.get_json(silent=True) or {}
+    name = (data.get("team_name") or "").strip()
+
+    if not name:
+        return jsonify({"error": "team_name is required"}), 400
+    
+    try:
+        db.execute_query(
+            "UPDATE teams SET team_name=%s WHERE team_id=%s",
+            [name, team_id],
+            fetch_all=False
+        )
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.exception("Error updating team: %s", e)
+        return jsonify({"error": "Database error"}), 500
+
+
+@app.route("/api/teams/<int:team_id>/delete", methods=["POST"])
+def api_team_delete(team_id):
+    try:
+        db.execute_query(
+            "DELETE FROM teams WHERE team_id=%s",
+            [team_id],
+            fetch_all=False
+        )
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.exception("Error deleting team: %s", e)
+        return jsonify({"error": "Cannot delete team (FK in use?)"}), 400
 
 
 
+# ========= BILGE: Seasons API =========
+
+@app.route("/api/seasons", methods=["GET"])
+def api_seasons_list():
+    """
+    GET /api/seasons?team_id=1&year=2022&h_a=H&result=W
+    """
+    team_id = request.args.get("team_id")
+    year = request.args.get("year")
+    title = request.args.get("title", "").strip()
+    h_a = request.args.get("h_a")
+    result = request.args.get("result")
+
+    page = max(int(request.args.get("page", 1)), 1)
+    per_page = min(max(int(request.args.get("per_page", 20)), 1), 200)
+    offset = (page - 1) * per_page
+
+    sql_where = "WHERE 1=1"
+    params = []
+
+    if team_id:
+        sql_where += " AND s.team_id = %s"
+        params.append(team_id)
+    if year:
+        sql_where += " AND s.year = %s"
+        params.append(year)
+    if title:
+        sql_where += " AND s.title LIKE %s"
+        params.append(f"%{title}%")
+    if h_a in ("H", "A"):
+        sql_where += " AND s.h_a = %s"
+        params.append(h_a)
+    if result in ("W", "D", "L"):
+        sql_where += " AND s.result = %s"
+        params.append(result)
+
+    try:
+        # COUNT
+        count_sql = f"""
+            SELECT COUNT(*) AS total
+            FROM season s
+            LEFT JOIN teams t ON t.team_id = s.team_id
+            {sql_where}
+        """
+        count_rows = db.execute_query(count_sql, params)
+        total = count_rows[0]["total"]
+
+        # DATA
+        sql = f"""
+            SELECT
+                s.seasonentryid AS seasonentryid,
+                s.team_id       AS team_id,
+                t.team_name     AS team_name,
+                s.title         AS title,
+                s.year          AS year,
+                s.h_a           AS h_a,
+                s.xG            AS xG,
+                s.xGA           AS xGA,
+                s.npxG          AS npxG,
+                s.npxGA         AS npxGA,
+                s.deep          AS deep,
+                s.deep_allowed  AS deep_allowed,
+                s.scored        AS scored,
+                s.missed        AS missed,
+                s.xpts          AS xpts,
+                s.result        AS result,
+                s.date          AS date,
+                s.wins          AS wins,
+                s.draws         AS draws,
+                s.loses         AS loses,
+                s.pts           AS pts,
+                s.npxGD         AS npxGD,
+                s.ppda_att      AS ppda_att,
+                s.ppda_def      AS ppda_def,
+                s.ppda_allowed_att AS ppda_allowed_att,
+                s.ppda_allowed_def AS ppda_allowed_def
+            FROM season s
+            LEFT JOIN teams t ON t.team_id = s.team_id
+            {sql_where}
+            ORDER BY s.year DESC, t.team_name ASC
+            LIMIT %s OFFSET %s
+        """
+
+        rows = db.execute_query(sql, params + [per_page, offset])
+
+        return jsonify({
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "items": rows
+        })
+
+    except Exception as e:
+        logger.exception("Error listing seasons: %s", e)
+        return jsonify({"error": "Database error", "items": []}), 500
+
+
+@app.route("/api/seasons", methods=["POST"])
+def api_season_create():
+    data = request.get_json(silent=True) or {}
+
+    if not data.get("team_id") or not data.get("year"):
+        return jsonify({"error": "team_id and year are required"}), 400
+
+    fields = []
+    values = []
+    params = []
+
+    for k, v in data.items():
+        if v not in (None, ""):
+            fields.append(k)
+            values.append("%s")
+            params.append(v)
+
+    sql = f"INSERT INTO season ({', '.join(fields)}) VALUES ({', '.join(values)})"
+
+    try:
+        db.execute_query(sql, params, fetch_all=False)
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.exception("Error creating season: %s", e)
+        return jsonify({"error": "Database error"}), 500
+
+
+@app.route("/api/seasons/<int:seasonentryid>/update", methods=["POST"])
+def api_season_update(seasonentryid):
+    data = request.get_json(silent=True) or {}
+
+    fields = []
+    params = []
+
+    for k, v in data.items():
+        fields.append(f"{k}=%s")
+        params.append(v)
+
+    if not fields:
+        return jsonify({"error": "no fields to update"}), 400
+
+    params.append(seasonentryid)
+
+    sql = f"UPDATE season SET {', '.join(fields)} WHERE seasonentryid=%s"
+
+    try:
+        db.execute_query(sql, params, fetch_all=False)
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.exception("Error updating season: %s", e)
+        return jsonify({"error": "Database error"}), 500
+
+
+@app.route("/api/seasons/<int:seasonentryid>/delete", methods=["POST"])
+def api_season_delete(seasonentryid):
+    try:
+        db.execute_query(
+            "DELETE FROM season WHERE seasonentryid=%s",
+            [seasonentryid],
+            fetch_all=False
+        )
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.exception("Error deleting season: %s", e)
+        return jsonify({"error": "Cannot delete season"}), 400
 
 #--------------BILGE-END-------------------------------
 
@@ -226,6 +498,8 @@ def osman():
     """Osman sayfası"""
     return render_template("osman.html", title="Osman")
 #--------------OSMAN-START-----------------------------
+#2sr -------------------------------------------------------------------------------------------------------------------------------
+
 
 @app.route('/shots')
 def index():
@@ -364,7 +638,194 @@ def shot_detail(shot_id):
                              error="Database Error",
                              message=str(e)), 500
 
+@app.route('/api/search/shots/advanced')
+def search_shots_advanced():
+    """Advanced API endpoint with complex filtering"""
+    try:
+        # Extract all filter parameters
+        player_name = request.args.get('player', '').strip()
+        team = request.args.get('team', '').strip()
+        season = request.args.get('season', '').strip()
+        league = request.args.get('league', '').strip()
+        
+        # Range filters
+        xg_min = request.args.get('xg_min', '0')
+        xg_max = request.args.get('xg_max', '1')
+        minute_min = request.args.get('minute_min', '0')
+        minute_max = request.args.get('minute_max', '120')
+        
+        # Multiple select filters
+        results = request.args.getlist('results')
+        shot_types = request.args.getlist('shot_types')
+        situations = request.args.getlist('situations')
+        positions = request.args.getlist('positions')
+        assist_status = request.args.getlist('assist_status')
+        
+        limit = int(request.args.get('limit', 50))
+        
+        # Build dynamic query
+        query = """
+            SELECT 
+                s.shot_id,
+                s.player,
+                s.h_team,
+                s.a_team,
+                s.minute,
+                s.result,
+                s.xG,
+                s.situation,
+                s.season,
+                s.date,
+                s.h_a,
+                s.shotType,
+                s.player_assisted,
+                m.league
+            FROM shot_data s
+            LEFT JOIN match_info m ON s.match_id = m.match_id
+            WHERE 1=1
+        """
+        
+        params = []
+        
+        # Player filter
+        if player_name:
+            query += " AND s.player LIKE %s"
+            params.append(f"%{player_name}%")
+        
+        # Team filter (both home and away)
+        if team:
+            query += " AND (s.h_team LIKE %s OR s.a_team LIKE %s)"
+            params.append(f"%{team}%")
+            params.append(f"%{team}%")
+        
+        # Season filter
+        if season:
+            query += " AND s.season = %s"
+            params.append(int(season))
+        
+        # League filter
+        if league:
+            query += " AND m.league = %s"
+            params.append(league)
+        
+        # xG range filter
+        try:
+            xg_min = float(xg_min)
+            xg_max = float(xg_max)
+            query += " AND s.xG BETWEEN %s AND %s"
+            params.extend([xg_min, xg_max])
+        except ValueError:
+            pass
+        
+        # Minute range filter
+        try:
+            minute_min = int(minute_min)
+            minute_max = int(minute_max)
+            query += " AND s.minute BETWEEN %s AND %s"
+            params.extend([minute_min, minute_max])
+        except ValueError:
+            pass
+        
+        # Shot result filter (multiple selections)
+        if results:
+            placeholders = ','.join(['%s'] * len(results))
+            query += f" AND s.result IN ({placeholders})"
+            params.extend(results)
+        
+        # Shot type filter
+        if shot_types:
+            placeholders = ','.join(['%s'] * len(shot_types))
+            query += f" AND s.shotType IN ({placeholders})"
+            params.extend(shot_types)
+        
+        # Situation filter
+        if situations:
+            placeholders = ','.join(['%s'] * len(situations))
+            query += f" AND s.situation IN ({placeholders})"
+            params.extend(situations)
+        
+        # Home/Away position filter
+        if positions:
+            placeholders = ','.join(['%s'] * len(positions))
+            query += f" AND s.h_a IN ({placeholders})"
+            params.extend(positions)
+        
+        # Assist status filter
+        if assist_status:
+            if 'assisted' in assist_status and 'unassisted' in assist_status:
+                pass  # Both selected, no filter needed
+            elif 'assisted' in assist_status:
+                query += " AND s.player_assisted IS NOT NULL AND s.player_assisted != ''"
+            elif 'unassisted' in assist_status:
+                query += " AND (s.player_assisted IS NULL OR s.player_assisted = '')"
+        
+        # Order and limit
+        query += " ORDER BY s.date DESC, s.minute DESC LIMIT %s"
+        params.append(limit)
+        
+        results_data = db.execute_query(query, tuple(params), fetch_all=True)
+        
+        return jsonify({
+            'success': True,
+            'count': len(results_data),
+            'shots': results_data,
+            'applied_filters': {
+                'player': player_name,
+                'team': team,
+                'season': season,
+                'league': league,
+                'xg_range': f"{xg_min}-{xg_max}",
+                'minute_range': f"{minute_min}-{minute_max}",
+                'results': results,
+                'shot_types': shot_types,
+                'situations': situations,
+                'positions': positions,
+                'assist_status': assist_status
+            }
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error in advanced search: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
+
+@app.route('/api/filters/options')
+def get_filter_options():
+    """Get available filter options for dropdown/select elements"""
+    try:
+        # Get unique seasons
+        seasons_query = "SELECT DISTINCT season FROM shot_data ORDER BY season DESC"
+        seasons = db.execute_query(seasons_query, fetch_all=True)
+        
+        # Get unique leagues
+        leagues_query = "SELECT DISTINCT league FROM match_info WHERE league IS NOT NULL ORDER BY league"
+        leagues = db.execute_query(leagues_query, fetch_all=True)
+        
+        # Get unique shot types
+        shot_types_query = "SELECT DISTINCT shotType FROM shot_data WHERE shotType IS NOT NULL ORDER BY shotType"
+        shot_types = db.execute_query(shot_types_query, fetch_all=True)
+        
+        # Get unique situations
+        situations_query = "SELECT DISTINCT situation FROM shot_data WHERE situation IS NOT NULL ORDER BY situation"
+        situations = db.execute_query(situations_query, fetch_all=True)
+        
+        return jsonify({
+            'success': True,
+            'seasons': [row['season'] for row in seasons],
+            'leagues': [row['league'] for row in leagues],
+            'shot_types': [row['shotType'] for row in shot_types],
+            'situations': [row['situation'] for row in situations]
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error fetching filter options: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
     
 @app.route('/api/search/shots')
 def search_shots():
@@ -578,13 +1039,14 @@ def login():
 def admin():
     return render_template("admin.html", username=session.get("username"))
 
+"""
 @app.route("/admin/shots")
 @login_required
 def admin_shots():
     # Fetch shots data
     sql = "SELECT * FROM shots ORDER BY date DESC LIMIT 100"
     shots = db.execute_query(sql)
-    return render_template("admin_shots.html", shots=shots, username=session.get("username"))
+    return render_template("admin_shots.html", shots=shots, username=session.get("username"))"""
 
 @app.route("/admin/players")
 @login_required
@@ -611,6 +1073,216 @@ def admin_settings():
 def logout():
     session.clear()
     return redirect("/login?logged_out=true")
+
+#2sg - - - - - - - - - - - - - - - - - - below is for admin page : 
+
+# Add these routes to your app.py (in OSMAN section or appropriate place)
+
+@app.route("/admin/shots")
+@login_required
+def admin_shots():
+    """Display shots management page"""
+    try:
+        sql = "SELECT * FROM shot_data ORDER BY date DESC LIMIT 100"
+        shots = db.execute_query(sql, fetch_all=True)
+        return render_template("admin_shots.html", 
+                             shots=shots, 
+                             username=session.get("username"))
+    except Exception as e:
+        logger.exception(f"Error fetching shots: {e}")
+        return render_template("admin_shots.html", 
+                             shots=[], 
+                             error="Failed to load shots",
+                             username=session.get("username"))
+
+@app.route("/api/admin/shots", methods=['GET'])
+@login_required
+def api_get_shots():
+    """API endpoint to fetch shots with pagination and filtering"""
+    try:
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 20))
+        player = request.args.get('player', '').strip()
+        result = request.args.get('result', '').strip()
+        
+        offset = (page - 1) * limit
+        
+        # Count total records
+        count_sql = "SELECT COUNT(*) as total FROM shot_data WHERE 1=1"
+        count_params = []
+        
+        base_sql = "SELECT * FROM shot_data WHERE 1=1"
+        params = []
+        
+        if player:
+            base_sql += " AND player LIKE %s"
+            count_sql += " AND player LIKE %s"
+            params.append(f"%{player}%")
+            count_params.append(f"%{player}%")
+        
+        if result:
+            base_sql += " AND result = %s"
+            count_sql += " AND result = %s"
+            params.append(result)
+            count_params.append(result)
+        
+        count_result = db.execute_query(count_sql, tuple(count_params), fetch_all=True)
+        total = count_result[0]['total'] if count_result else 0
+        
+        base_sql += " ORDER BY date DESC LIMIT %s OFFSET %s"
+        params.extend([limit, offset])
+        
+        shots = db.execute_query(base_sql, tuple(params), fetch_all=True)
+        
+        return jsonify({
+            'success': True,
+            'shots': shots,
+            'total': total,
+            'page': page,
+            'limit': limit
+        })
+    except Exception as e:
+        logger.exception(f"Error fetching shots API: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route("/api/admin/shots", methods=['POST'])
+@login_required
+def api_create_shot():
+    """API endpoint to create a new shot"""
+    try:
+        data = request.get_json()
+        
+        # Validation
+        required_fields = ['player', 'player_id', 'match_id', 'minute', 'result', 'xG', 'h_team', 'a_team', 'season']
+        if not all(field in data for field in required_fields):
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        sql = """
+            INSERT INTO shot_data 
+            (player, player_id, match_id, minute, result, xG, X, Y, 
+             shotType, situation, h_a, h_team, a_team, season, date, 
+             h_goals, a_goals, player_assisted, lastAction)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        
+        params = (
+            data.get('player'),
+            data.get('player_id'),
+            data.get('match_id'),
+            data.get('minute'),
+            data.get('result'),
+            data.get('xG'),
+            data.get('X'),
+            data.get('Y'),
+            data.get('shotType', 'Open Play'),
+            data.get('situation', 'Regular'),
+            data.get('h_a', 'h'),
+            data.get('h_team'),
+            data.get('a_team'),
+            data.get('season'),
+            data.get('date'),
+            data.get('h_goals', 0),
+            data.get('a_goals', 0),
+            data.get('player_assisted'),
+            data.get('lastAction')
+        )
+        
+        db.execute_query(sql, params, fetch_all=False)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Shot created successfully'
+        }), 201
+        
+    except Exception as e:
+        logger.exception(f"Error creating shot: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route("/api/admin/shots/<int:shot_id>", methods=['GET'])
+@login_required
+def api_get_shot(shot_id):
+    """API endpoint to fetch a specific shot"""
+    try:
+        sql = "SELECT * FROM shot_data WHERE shot_id = %s"
+        result = db.execute_query(sql, (shot_id,), fetch_all=True)
+        
+        if not result:
+            return jsonify({'success': False, 'error': 'Shot not found'}), 404
+        
+        return jsonify({
+            'success': True,
+            'shot': result[0]
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error fetching shot {shot_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route("/api/admin/shots/<int:shot_id>", methods=['PUT'])
+@login_required
+def api_update_shot(shot_id):
+    """API endpoint to update a shot"""
+    try:
+        data = request.get_json()
+        
+        # Build dynamic update query
+        update_fields = []
+        params = []
+        
+        updatable_fields = [
+            'player', 'minute', 'result', 'X', 'Y', 'xG', 
+            'shotType', 'situation', 'h_a', 'h_goals', 'a_goals',
+            'player_assisted', 'lastAction'
+        ]
+        
+        for field in updatable_fields:
+            if field in data:
+                update_fields.append(f"{field} = %s")
+                params.append(data[field])
+        
+        if not update_fields:
+            return jsonify({'success': False, 'error': 'No fields to update'}), 400
+        
+        params.append(shot_id)
+        
+        sql = f"UPDATE shot_data SET {', '.join(update_fields)} WHERE shot_id = %s"
+        db.execute_query(sql, tuple(params), fetch_all=False)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Shot updated successfully'
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error updating shot {shot_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route("/api/admin/shots/<int:shot_id>", methods=['DELETE'])
+@login_required
+def api_delete_shot(shot_id):
+    """API endpoint to delete a shot"""
+    try:
+        # Check if shot exists
+        check_sql = "SELECT shot_id FROM shot_data WHERE shot_id = %s"
+        result = db.execute_query(check_sql, (shot_id,), fetch_all=True)
+        
+        if not result:
+            return jsonify({'success': False, 'error': 'Shot not found'}), 404
+        
+        sql = "DELETE FROM shot_data WHERE shot_id = %s"
+        db.execute_query(sql, (shot_id,), fetch_all=False)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Shot deleted successfully'
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error deleting shot {shot_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+#2sr -------------------------------------------------------------------------------------------------------------------------------
 #--------------OSMAN-END-------------------------------
 
 @app.route("/matches")
