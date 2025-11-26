@@ -29,35 +29,27 @@ function renderTable(matches, limit = 50) {
         return;
     }
 
-    const cols = [
-        'match_id', 'date', 'season', 'league',
-        'team_h', 'team_a', 'h_goals', 'a_goals',
-        'h_xg', 'a_xg', 'h_shot', 'a_shot'
-    ];
-    
+    //  build and render results table
     let html = '<div class="results-container">';
-    html += '<div class="results-header">';
-    html += '<h3>Search Results</h3>';
+    html += '<div class="results-header"><h3>Search Results</h3>';
     html += '<div class="results-controls">';
     html += `<span class="results-count">${matches.length} matches</span>`;
-    html += '<select class="limit-selector" id="limitSelector" onchange="updateLimit(this.value)">';
+    html += '<select class="limit-selector" onchange="updateLimit(this.value)">';
     html += '<option value="50"' + (limit === 50 ? ' selected' : '') + '>50 Matches</option>';
     html += '<option value="100"' + (limit === 100 ? ' selected' : '') + '>100 Matches</option>';
     html += '<option value="200"' + (limit === 200 ? ' selected' : '') + '>200 Matches</option>';
     html += '<option value="500"' + (limit === 500 ? ' selected' : '') + '>500 Matches</option>';
-    html += '</select>';
-    html += '</div></div>';
-    html += '<table class="results-table">';
-    html += '<thead><tr>' + cols.map(c => 
-        `<th>${c.replace(/_/g, ' ').toUpperCase()}</th>`
-    ).join('') + '</tr></thead>';
-    html += '<tbody>' + matches.map(m => {
-        return '<tr>' + cols.map(c =>
-            `<td>${m[c] ?? ''}</td>`
-        ).join('') + '</tr>';
-    }).join('') + '</tbody>';
-    html += '</table></div>';
-    
+    html += '</select></div></div>';
+    html += '<table class="results-table"><thead><tr>';
+    html += ['HOME', 'SCORE', 'AWAY', 'SEASON', 'DATE'].map(h => `<th>${h}</th>`).join('');
+    html += '</tr></thead><tbody>';
+    html += matches.map(m => {
+        const date = m.date ? new Date(m.date).toLocaleDateString() : '';
+        const scoreHtml = `<div class="score-badge"><span class="home">${m.h_goals != null ? m.h_goals : '-'}</span><span class="sep">:</span><span class="away">${m.a_goals != null ? m.a_goals : '-'}</span></div>`;
+        return `<tr class="result-row" onclick="window.location='/match/${m.match_id}'"><td>${m.team_h ?? ''}</td><td>${scoreHtml}</td><td>${m.team_a ?? ''}</td><td>${m.season ?? ''}</td><td>${date}</td></tr>`;
+    }).join('');
+    html += '</tbody></table></div>';
+
     container.innerHTML = html;
 }
 
@@ -132,51 +124,20 @@ async function doSearch() {
     }
 }
 
-// Event Listeners
+// Event listeners
 document.addEventListener('DOMContentLoaded', async () => {
-    // Setup event listeners
-    document.getElementById('btn_search')
-        .addEventListener('click', async e => {
-            e.preventDefault();
-            await doSearch();
-        });
+    document.getElementById('btn_search').addEventListener('click', async e => {
+        e.preventDefault();
+        await doSearch();
+    });
 
-    document.getElementById('btn_reset')
-        .addEventListener('click', e => {
-            e.preventDefault();
-            // Reset all form fields
-            [
-                'q', 'season', 'date_from', 'date_to',
-                'min_goals', 'max_goals', 'min_xg',
-                'team_home', 'team_away'
-            ].forEach(id => document.getElementById(id).value = '');
-            // Clear results
-            document.getElementById('results').innerHTML = '';
-        });
+    document.getElementById('btn_reset').addEventListener('click', e => {
+        e.preventDefault();
+        ['q', 'season', 'date_from', 'date_to', 'min_goals', 'max_goals', 'min_xg', 'team_home', 'team_away']
+            .forEach(id => document.getElementById(id).value = '');
+        document.getElementById('results').innerHTML = '';
+    });
 
-    document.getElementById('btn_team_headtohead')
-        .addEventListener('click', async e => {
-            e.preventDefault();
-            const home = document.getElementById('team_home').value;
-            const away = document.getElementById('team_away').value;
-            
-            if (!home || !away) {
-                alert('Please select both home and away teams to show head-to-head matches.');
-                return;
-            }
-            
-            const filters = { team_home: home, team_away: away, limit: 50 };
-            try {
-                const matches = await fetchMatches(filters);
-                renderTable(matches, 50);
-            } catch (error) {
-                console.error('H2H search failed:', error);
-                document.getElementById('results').innerHTML = 
-                    '<p class="error">Error loading head-to-head matches. Please try again.</p>';
-            }
-        });
-
-    // Load team and season options but don't fetch all matches yet
     try {
         const initial = await fetchMatches({ limit: 5000 });
         populateTeamSelects(initial);
