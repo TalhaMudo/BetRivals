@@ -155,6 +155,17 @@
             }
         }
 
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* ====== HEADER ====== */
         header {
             background: rgba(15, 20, 25, 0.92);
@@ -201,6 +212,39 @@
 
         h1:hover {
             animation: pulseGlow 1.5s ease-in-out infinite;
+        }
+
+        /* Hamburger Menu Button */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1001;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 28px;
+            height: 3px;
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            border-radius: 3px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: translateY(8px) rotate(45deg);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: translateY(-8px) rotate(-45deg);
         }
 
         nav {
@@ -479,20 +523,16 @@
         /* ====== RESPONSIVE ====== */
         @media (max-width: 1024px) {
             .header-content {
-                flex-wrap: wrap;
                 gap: 1.5rem;
             }
 
-            h1 {
-                order: 1;
-                width: 100%;
-                margin-bottom: 0.5rem;
+            nav {
+                gap: 0.5rem;
             }
 
-            nav {
-                order: 2;
-                width: 100%;
-                justify-content: center;
+            nav a {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
             }
 
             main {
@@ -501,13 +541,55 @@
         }
 
         @media (max-width: 768px) {
+            .header-content {
+                padding: 1rem 1.5rem;
+            }
+
             h1 {
                 font-size: 1.5rem;
             }
 
+            h1 span {
+                font-size: 2rem;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            nav {
+                position: fixed;
+                top: 70px;
+                right: -100%;
+                width: 280px;
+                height: calc(100vh - 70px);
+                background: rgba(15, 20, 25, 0.98);
+                backdrop-filter: blur(20px);
+                flex-direction: column;
+                padding: 2rem 1.5rem;
+                gap: 0.5rem;
+                box-shadow: -5px 0 30px rgba(0, 0, 0, 0.5);
+                border-left: 2px solid #2ecc71;
+                transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                overflow-y: auto;
+                z-index: 999;
+            }
+
+            nav.active {
+                right: 0;
+                animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
             nav a {
-                padding: 0.55rem 1rem;
-                font-size: 0.85rem;
+                width: 100%;
+                text-align: center;
+                padding: 1rem 1.5rem;
+                font-size: 1rem;
+                transform: none;
+            }
+
+            nav a:hover {
+                transform: translateX(-5px);
             }
 
             .hero-section,
@@ -526,6 +608,10 @@
         }
 
         @media (max-width: 480px) {
+            .header-content {
+                padding: 0.8rem 1rem;
+            }
+
             h1 {
                 font-size: 1.3rem;
                 gap: 0.4rem;
@@ -536,16 +622,14 @@
             }
 
             nav {
-                gap: 0.3rem;
-            }
-
-            nav a {
-                padding: 0.5rem 0.8rem;
-                font-size: 0.75rem;
+                width: 100%;
+                top: 60px;
+                height: calc(100vh - 60px);
             }
 
             main {
                 padding: 0 1rem 2rem;
+                margin-top: 2rem;
             }
 
             .hero-section,
@@ -567,6 +651,11 @@
     <header>
         <div class="header-content">
             <h1><span>🏆</span> BetRivals</h1>
+            <button class="hamburger" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
             <nav>
                 <a href="{{ url_for('home') }}">Home</a>
                 <a href="{{ url_for('about') }}">About</a>
@@ -588,6 +677,35 @@
     <footer>
         <p>&copy; 2025 BetRivals Team | Advanced Football Analytics</p>
     </footer>
+
+    <script>
+        // Hamburger menu toggle
+        const hamburger = document.querySelector('.hamburger');
+        const nav = document.querySelector('nav');
+
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            nav.classList.toggle('active');
+        });
+
+        // Close menu when clicking on a link
+        const navLinks = document.querySelectorAll('nav a');
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                nav.classList.remove('active');
+            });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!hamburger.contains(e.target) && !nav.contains(e.target)) {
+                hamburger.classList.remove('active');
+                nav.classList.remove('active');
+            }
+        });
+    </script>
+
     {% block scripts %}{% endblock %}
 
 </body>
