@@ -949,7 +949,7 @@ def player_stats_api(player_id):
             'error': str(e)
         }), 500
 
-
+#2sg - - - - - - - - - - - - - - - - - - below is for admin page : 
 
 # --- Authentication Middleware --- #
 def login_required(f):
@@ -1074,7 +1074,7 @@ def logout():
     session.clear()
     return redirect("/login?logged_out=true")
 
-#2sg - - - - - - - - - - - - - - - - - - below is for admin page : 
+
 
 # Add these routes to your app.py (in OSMAN section or appropriate place)
 
