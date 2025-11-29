@@ -9,6 +9,8 @@ osman - Apo benim url hazır, /shot/SHOT_ID vererek url yi gönderebilirsin. ma�
 
 osman - Talha benim url hazır, /shot/SHOT_ID vererek url yi gönderebilirsin. maçtaki gollere ithafen. senden de url bekliyorum, /player/ID şeklinde olursa iyi olur benim shot inceleme ekranından sana yönlendireyim.
 
+talha- Osman istedigin sekilde olan player ve id kismi hazir. dedigin urlden erisebiliyorsun.
+
 --------
 
 
