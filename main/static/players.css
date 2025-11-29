@@ -489,6 +489,17 @@
     margin: 0 auto;
 }
 
+.fifa-frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url('/static/fifaframe.png'); /* optional: add a transparent PNG overlay */
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    pointer-events: none;
+}
+
 .fifa-frame .frame-photo {
     position: absolute;
     top: var(--photo-top, 5%);
@@ -504,6 +515,17 @@
 .fifa-frame #player-photo-img {
     border: none;
     border-radius: var(--photo-radius, 10px);
+}
+
+.fifa-frame.mask .frame-photo {
+    -webkit-mask-image: url('/static/fifaframe-mask.png'); /* white areas visible, black hidden */
+    mask-image: url('/static/fifaframe-mask.png');
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
 }
 
 .fifa-frame #player-photo-img.frame-photo {
