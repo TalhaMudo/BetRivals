@@ -1,0 +1,624 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .shots-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .shots-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .shots-header h2 {
+        color: #2ecc71;
+        font-size: 2em;
+    }
+
+    .btn-add {
+        padding: 12px 25px;
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: #0f1419;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-add:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(46, 204, 113, 0.3);
+    }
+
+    .filters-section {
+        background: rgba(15, 20, 25, 0.95);
+        border: 1px solid rgba(46, 204, 113, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 30px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .filter-input {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        border-radius: 6px;
+        padding: 10px;
+        color: #fff;
+        font-size: 0.95em;
+    }
+
+    .filter-input::placeholder {
+        color: #888;
+    }
+
+    .shots-table {
+        background: rgba(15, 20, 25, 0.95);
+        border: 1px solid rgba(46, 204, 113, 0.2);
+        border-radius: 12px;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead {
+        background: rgba(46, 204, 113, 0.1);
+        border-bottom: 2px solid rgba(46, 204, 113, 0.3);
+    }
+
+    th {
+        padding: 15px;
+        text-align: left;
+        color: #2ecc71;
+        font-weight: 600;
+    }
+
+    td {
+        padding: 12px 15px;
+        border-bottom: 1px solid rgba(46, 204, 113, 0.1);
+        color: #b8b8b8;
+    }
+
+    tbody tr:hover {
+        background: rgba(46, 204, 113, 0.05);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-edit, .btn-delete {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.85em;
+        transition: all 0.3s;
+    }
+
+    .btn-edit {
+        background: rgba(52, 152, 219, 0.2);
+        color: #3498db;
+        border: 1px solid rgba(52, 152, 219, 0.5);
+    }
+
+    .btn-edit:hover {
+        background: rgba(52, 152, 219, 0.3);
+    }
+
+    .btn-delete {
+        background: rgba(231, 76, 60, 0.2);
+        color: #ff6b6b;
+        border: 1px solid rgba(231, 76, 60, 0.5);
+    }
+
+    .btn-delete:hover {
+        background: rgba(231, 76, 60, 0.3);
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: rgba(15, 20, 25, 0.98);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(46, 204, 113, 0.2);
+    }
+
+    .modal-header h3 {
+        color: #2ecc71;
+        margin: 0;
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 1.5em;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .close-modal:hover {
+        color: #fff;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2ecc71;
+        font-weight: 600;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        border-radius: 6px;
+        color: #fff;
+        font-family: inherit;
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .form-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 25px;
+    }
+
+    .btn-submit, .btn-cancel {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: #0f1419;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(46, 204, 113, 0.3);
+    }
+
+    .btn-cancel {
+        background: rgba(255, 255, 255, 0.1);
+        color: #b8b8b8;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-cancel:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 30px;
+    }
+
+    .page-btn {
+        padding: 8px 15px;
+        background: rgba(46, 204, 113, 0.1);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        color: #2ecc71;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .page-btn:hover,
+    .page-btn.active {
+        background: rgba(46, 204, 113, 0.3);
+    }
+
+    .alert {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+    }
+
+    .alert.show {
+        display: block;
+    }
+
+    .alert-success {
+        background: rgba(46, 204, 113, 0.1);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        color: #2ecc71;
+    }
+
+    .alert-error {
+        background: rgba(231, 76, 60, 0.1);
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        color: #ff6b6b;
+    }
+
+    .no-data {
+        text-align: center;
+        padding: 60px 20px;
+        color: #888;
+    }
+</style>
+
+<div class="shots-container">
+    <div class="shots-header">
+        <h2>⚽ Shots Management</h2>
+        <button class="btn-add" onclick="openCreateModal()">+ Add Shot</button>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <div class="filters-section">
+        <input type="text" class="filter-input" id="filterPlayer" placeholder="Filter by player name..." onkeyup="loadShots()">
+        <select class="filter-input" id="filterResult" onchange="loadShots()">
+            <option value="">All Results</option>
+            <option value="Goal">Goal</option>
+            <option value="Off Target">Off Target</option>
+            <option value="On Target">On Target</option>
+            <option value="Blocked">Blocked</option>
+        </select>
+        <button class="btn-add" onclick="loadShots()" style="grid-column: auto;">🔄 Refresh</button>
+    </div>
+
+    <div class="shots-table">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Player</th>
+                        <th>Team</th>
+                        <th>Minute</th>
+                        <th>Result</th>
+                        <th>xG</th>
+                        <th>Shot Type</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="shotsTableBody">
+                    <tr>
+                        <td colspan="9" class="no-data">Loading shots...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="pagination" id="paginationContainer"></div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div id="shotModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Add New Shot</h3>
+            <button class="close-modal" onclick="closeModal()">×</button>
+        </div>
+        <form id="shotForm" onsubmit="saveShotAction(event)">
+            <div class="form-group">
+                <label>Player Name *</label>
+                <input type="text" id="player" required>
+            </div>
+            <div class="form-group">
+                <label>Player ID *</label>
+                <input type="number" id="player_id" required>
+            </div>
+            <div class="form-group">
+                <label>Match ID *</label>
+                <input type="number" id="match_id" required>
+            </div>
+            <div class="form-group">
+                <label>Minute *</label>
+                <input type="number" id="minute" required>
+            </div>
+            <div class="form-group">
+                <label>Result *</label>
+                <select id="result" required>
+                    <option value="">Select Result</option>
+                    <option value="Goal">Goal</option>
+                    <option value="Off Target">Off Target</option>
+                    <option value="On Target">On Target</option>
+                    <option value="Blocked">Blocked</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>xG *</label>
+                <input type="number" id="xG" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>X Position</label>
+                <input type="number" id="X" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Y Position</label>
+                <input type="number" id="Y" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Shot Type</label>
+                <input type="text" id="shotType" placeholder="e.g., Open Play">
+            </div>
+            <div class="form-group">
+                <label>Home Team *</label>
+                <input type="text" id="h_team" required>
+            </div>
+            <div class="form-group">
+                <label>Away Team *</label>
+                <input type="text" id="a_team" required>
+            </div>
+            <div class="form-group">
+                <label>Home/Away *</label>
+                <select id="h_a" required>
+                    <option value="h">Home</option>
+                    <option value="a">Away</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Season *</label>
+                <input type="number" id="season" required>
+            </div>
+            <div class="form-group">
+                <label>Goals Home</label>
+                <input type="number" id="h_goals">
+            </div>
+            <div class="form-group">
+                <label>Goals Away</label>
+                <input type="number" id="a_goals">
+            </div>
+            <div class="form-buttons">
+                <button type="submit" class="btn-submit" id="submitBtn">Add Shot</button>
+                <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    let currentEditId = null;
+
+    function showAlert(message, type = 'success') {
+        const alert = document.getElementById('alert');
+        alert.textContent = message;
+        alert.className = `alert show alert-${type}`;
+        setTimeout(() => alert.classList.remove('show'), 3000);
+    }
+
+    function openCreateModal() {
+        currentEditId = null;
+        document.getElementById('shotForm').reset();
+        document.getElementById('modalTitle').textContent = 'Add New Shot';
+        document.getElementById('submitBtn').textContent = 'Add Shot';
+        document.getElementById('shotModal').classList.add('active');
+    }
+
+    function openEditModal(shotId) {
+        fetch(`/api/admin/shots/${shotId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const shot = data.shot;
+                    currentEditId = shotId;
+                    document.getElementById('player').value = shot.player;
+                    document.getElementById('player_id').value = shot.player_id;
+                    document.getElementById('match_id').value = shot.match_id;
+                    document.getElementById('minute').value = shot.minute;
+                    document.getElementById('result').value = shot.result;
+                    document.getElementById('xG').value = shot.xG;
+                    document.getElementById('X').value = shot.X || '';
+                    document.getElementById('Y').value = shot.Y || '';
+                    document.getElementById('shotType').value = shot.shotType || '';
+                    document.getElementById('h_team').value = shot.h_team;
+                    document.getElementById('a_team').value = shot.a_team;
+                    document.getElementById('h_a').value = shot.h_a;
+                    document.getElementById('season').value = shot.season;
+                    document.getElementById('h_goals').value = shot.h_goals || '';
+                    document.getElementById('a_goals').value = shot.a_goals || '';
+                    
+                    document.getElementById('modalTitle').textContent = 'Edit Shot';
+                    document.getElementById('submitBtn').textContent = 'Update Shot';
+                    document.getElementById('shotModal').classList.add('active');
+                }
+            })
+            .catch(err => showAlert('Error loading shot', 'error'));
+    }
+
+    function closeModal() {
+        document.getElementById('shotModal').classList.remove('active');
+    }
+
+    function saveShotAction(event) {
+        event.preventDefault();
+        
+        const formData = {
+            player: document.getElementById('player').value,
+            player_id: parseInt(document.getElementById('player_id').value),
+            match_id: parseInt(document.getElementById('match_id').value),
+            minute: parseInt(document.getElementById('minute').value),
+            result: document.getElementById('result').value,
+            xG: parseFloat(document.getElementById('xG').value),
+            X: document.getElementById('X').value ? parseFloat(document.getElementById('X').value) : null,
+            Y: document.getElementById('Y').value ? parseFloat(document.getElementById('Y').value) : null,
+            shotType: document.getElementById('shotType').value,
+            h_team: document.getElementById('h_team').value,
+            a_team: document.getElementById('a_team').value,
+            h_a: document.getElementById('h_a').value,
+            season: parseInt(document.getElementById('season').value),
+            h_goals: document.getElementById('h_goals').value ? parseInt(document.getElementById('h_goals').value) : null,
+            a_goals: document.getElementById('a_goals').value ? parseInt(document.getElementById('a_goals').value) : null
+        };
+
+        const method = currentEditId ? 'PUT' : 'POST';
+        const url = currentEditId ? `/api/admin/shots/${currentEditId}` : '/api/admin/shots';
+
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message, 'success');
+                closeModal();
+                loadShots();
+            } else {
+                showAlert(data.error, 'error');
+            }
+        })
+        .catch(err => showAlert('Error saving shot', 'error'));
+    }
+
+    function deleteShotAction(shotId) {
+        if (confirm('Are you sure you want to delete this shot?')) {
+            fetch(`/api/admin/shots/${shotId}`, { method: 'DELETE' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert(data.message, 'success');
+                        loadShots();
+                    } else {
+                        showAlert(data.error, 'error');
+                    }
+                })
+                .catch(err => showAlert('Error deleting shot', 'error'));
+        }
+    }
+
+    function loadShots(page = 1) {
+        currentPage = page;
+        const player = document.getElementById('filterPlayer').value;
+        const result = document.getElementById('filterResult').value;
+        
+        const params = new URLSearchParams({
+            page: page,
+            limit: 20,
+            player: player,
+            result: result
+        });
+
+        fetch(`/api/admin/shots?${params}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderTable(data.shots);
+                    renderPagination(data.total, data.limit);
+                }
+            })
+            .catch(err => console.error(err));
+    }
+
+    function renderTable(shots) {
+        const tbody = document.getElementById('shotsTableBody');
+        
+        if (!shots || shots.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="no-data">No shots found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = shots.map(shot => `
+            <tr>
+                <td>${shot.shot_id}</td>
+                <td>${shot.player}</td>
+                <td>${shot.h_team} vs ${shot.a_team}</td>
+                <td>${shot.minute}'</td>
+                <td>${shot.result}</td>
+                <td>${shot.xG.toFixed(2)}</td>
+                <td>${shot.shotType || '-'}</td>
+                <td>${shot.date}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-edit" onclick="openEditModal(${shot.shot_id})">Edit</button>
+                        <button class="btn-delete" onclick="deleteShotAction(${shot.shot_id})">Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderPagination(total, limit) {
+        const totalPages = Math.ceil(total / limit);
+        const container = document.getElementById('paginationContainer');
+        
+        let html = '';
+        for (let i = 1; i <= totalPages; i++) {
+            html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="loadShots(${i})">${i}</button>`;
+        }
+        
+        container.innerHTML = html;
+    }
+
+    // Load shots on page load
+    loadShots();
+</script>
+{% endblock %}

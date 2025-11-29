@@ -1,0 +1,106 @@
+.teams-page {
+    max-width: 1100px;
+    margin: 2rem auto;
+}
+
+.filter-card {
+    background: rgba(15, 20, 25, 0.9);
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    backdrop-filter: blur(8px);
+}
+
+.row {
+    display: flex;
+    gap: 1rem;
+}
+
+input {
+    flex: 1;
+    padding: .65rem;
+    border-radius: 6px;
+    background: #121212;
+    border: 1px solid #2ecc71;
+    color: #eee;
+}
+
+button {
+    padding: .65rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    background: #2ecc71;
+    color: #111;
+}
+
+button.secondary {
+    background: #444;
+    color: #ddd;
+}
+
+button.outline {
+    background: transparent;
+    border: 1px solid #2ecc71;
+    color: #2ecc71;
+}
+
+.teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+.team-card {
+    background: rgba(15, 20, 25, 0.95);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid rgba(46, 204, 113, 0.25);
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+    transition: 0.3s;
+}
+
+.team-card:hover {
+    transform: translateY(-4px);
+    border-color: #2ecc71;
+    box-shadow: 0 0 18px rgba(46, 204, 113, 0.3);
+}
+
+.team-card h3 {
+    color: #2ecc71;
+    margin-bottom: .3rem;
+}
+
+.team-card button {
+    margin-top: 1rem;
+    width: 100%;
+}
+
+#seasonsTableContainer {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+#seasonsTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#seasonsTable th,
+#seasonsTable td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#seasonsTable th {
+    background: #0f3f1a;
+    color: white;
+}
+
+#seasonsTable tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
