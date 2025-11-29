@@ -121,62 +121,135 @@ function displayAnalysisResults(data) {
         return;
     }
 
-    // Create analysis table with key metrics
-    let tableHTML = `
-        <div class="results-container">
-            <div class="results-header">
-                <span>⚽</span>
-                <span>${data.description || 'Player Analysis'}</span>
-            </div>
-            <div class="results-count">Showing top ${data.count} players (sorted by: Most Goals ↓, Lowest FIFA Rating ↑)</div>
-            <div class="players-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Player Name</th>
-                            <th>Team</th>
-                            <th>Position</th>
-                            <th>Goals ⚽</th>
-                            <th>Assists</th>
-                            <th>Games</th>
-                            <th>xG</th>
-                            <th>FIFA Rating</th>
-                            <th>Pace</th>
-                            <th>Shoot</th>
-                            <th>Pass</th>
-                            <th>Defense</th>
-                            <th>Physical</th>
-                            <th>Year</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.players.map((player, index) => `
-                            <tr>
-                                <td><strong>#${index + 1}</strong></td>
-                                <td><strong>${player.player_name || '-'}</strong></td>
-                                <td>${player.team_title || '-'}</td>
-                                <td>${player.position || '-'}</td>
-                                <td><span style="color: #2ecc71; font-weight: 700;">${player.goals || 0}</span></td>
-                                <td>${player.assists || 0}</td>
-                                <td>${player.games || 0}</td>
-                                <td>${player.xG ? player.xG.toFixed(2) : '-'}</td>
-                                <td><span style="color: #e74c3c; font-weight: 700;">${player.fifa_rating || '-'}</span></td>
-                                <td>${player.Pace || '-'}</td>
-                                <td>${player.Shoot || '-'}</td>
-                                <td>${player.Pass || '-'}</td>
-                                <td>${player.Defense || '-'}</td>
-                                <td>${player.Physical || '-'}</td>
-                                <td>${player.year || '-'}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    `;
+    // Store original data for sorting
+    let playersData = data.players.map((player, index) => ({
+        ...player,
+        originalIndex: index + 1
+    }));
+    let currentSort = { column: null, direction: null };
 
-    resultsDiv.innerHTML = tableHTML;
+    // Column definitions for sorting
+    const columns = [
+        { key: 'originalIndex', label: 'Rank', type: 'number' },
+        { key: 'player_name', label: 'Player Name', type: 'string' },
+        { key: 'team_title', label: 'Team', type: 'string' },
+        { key: 'position', label: 'Position', type: 'string' },
+        { key: 'goals', label: 'Goals', type: 'number' },
+        { key: 'assists', label: 'Assists', type: 'number' },
+        { key: 'games', label: 'Games', type: 'number' },
+        { key: 'xG', label: 'xG', type: 'number' },
+        { key: 'fifa_rating', label: 'FIFA Rating', type: 'number' },
+        { key: 'Pace', label: 'Pace', type: 'number' },
+        { key: 'Shoot', label: 'Shoot', type: 'number' },
+        { key: 'Pass', label: 'Pass', type: 'number' },
+        { key: 'Defense', label: 'Defense', type: 'number' },
+        { key: 'Physical', label: 'Physical', type: 'number' },
+        { key: 'year', label: 'Year', type: 'number' }
+    ];
+
+    // Sort function
+    function sortTable(columnKey, columnType) {
+        if (currentSort.column === columnKey) {
+            // Toggle direction
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.column = columnKey;
+            currentSort.direction = 'asc';
+        }
+
+        playersData.sort((a, b) => {
+            let aVal = a[columnKey];
+            let bVal = b[columnKey];
+
+            // Handle null/undefined values
+            if (aVal === null || aVal === undefined || aVal === '-') aVal = columnType === 'number' ? -Infinity : '';
+            if (bVal === null || bVal === undefined || bVal === '-') bVal = columnType === 'number' ? -Infinity : '';
+
+            if (columnType === 'number') {
+                aVal = parseFloat(aVal) || 0;
+                bVal = parseFloat(bVal) || 0;
+            } else {
+                aVal = String(aVal).toLowerCase();
+                bVal = String(bVal).toLowerCase();
+            }
+
+            if (currentSort.direction === 'asc') {
+                return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+            } else {
+                return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+            }
+        });
+
+        renderTable();
+    }
+
+    // Render table function
+    function renderTable() {
+        const sortIndicator = (colKey) => {
+            if (currentSort.column === colKey) {
+                return currentSort.direction === 'asc' ? ' ↑' : ' ↓';
+            }
+            return '';
+        };
+
+        const tableHTML = `
+            <div class="results-container">
+                <div class="results-header">
+                    <span>⚽</span>
+                    <span>${data.description || 'Player Analysis'}</span>
+                </div>
+                <div class="results-count">Showing ${data.count} players${currentSort.column ? ` (sorted by: ${columns.find(c => c.key === currentSort.column)?.label} ${currentSort.direction === 'asc' ? '↑' : '↓'})` : ''}</div>
+                <div class="players-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                ${columns.map(col => `
+                                    <th class="sortable" data-column="${col.key}" data-type="${col.type}">
+                                        ${col.label}${sortIndicator(col.key)}
+                                    </th>
+                                `).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${playersData.map((player) => `
+                                <tr>
+                                    <td><strong>#${player.originalIndex}</strong></td>
+                                    <td><strong>${player.player_name || '-'}</strong></td>
+                                    <td>${player.team_title || '-'}</td>
+                                    <td>${player.position || '-'}</td>
+                                    <td><span style="color: #2ecc71; font-weight: 700;">${player.goals || 0}</span></td>
+                                    <td>${player.assists || 0}</td>
+                                    <td>${player.games || 0}</td>
+                                    <td>${player.xG ? player.xG.toFixed(2) : '-'}</td>
+                                    <td><span style="color: #e74c3c; font-weight: 700;">${player.fifa_rating || '-'}</span></td>
+                                    <td>${player.Pace || '-'}</td>
+                                    <td>${player.Shoot || '-'}</td>
+                                    <td>${player.Pass || '-'}</td>
+                                    <td>${player.Defense || '-'}</td>
+                                    <td>${player.Physical || '-'}</td>
+                                    <td>${player.year || '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        resultsDiv.innerHTML = tableHTML;
+
+        // Add click event listeners to sortable headers
+        document.querySelectorAll('.sortable').forEach(header => {
+            header.addEventListener('click', () => {
+                const columnKey = header.getAttribute('data-column');
+                const columnType = header.getAttribute('data-type');
+                sortTable(columnKey, columnType);
+            });
+        });
+    }
+
+    // Initial render
+    renderTable();
 }
 
 function displayResults(data) {
@@ -189,35 +262,115 @@ function displayResults(data) {
 
     // Get all column names from the first player object
     const columns = Object.keys(data.players[0]);
+    
+    // Store original data for sorting
+    let playersData = [...data.players];
+    let currentSort = { column: null, direction: null };
 
-    // Create table HTML
-    let tableHTML = `
-        <div class="results-container">
-            <div class="results-header">
-                <span>🏆</span>
-                <span>FUT23 Players Data</span>
-            </div>
-            <div class="results-count">Total players: ${data.count}</div>
-            <div class="players-table">
-                <table>
-                    <thead>
-                        <tr>
-                            ${columns.map(col => `<th>${col}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.players.map(player => `
+    // Detect column type (number or string)
+    function detectColumnType(columnKey) {
+        const sampleValue = playersData[0]?.[columnKey];
+        if (sampleValue === null || sampleValue === undefined || sampleValue === '-') {
+            // Check other rows
+            for (let i = 1; i < Math.min(10, playersData.length); i++) {
+                const val = playersData[i]?.[columnKey];
+                if (val !== null && val !== undefined && val !== '-') {
+                    return !isNaN(parseFloat(val)) ? 'number' : 'string';
+                }
+            }
+            return 'string'; // default
+        }
+        return !isNaN(parseFloat(sampleValue)) ? 'number' : 'string';
+    }
+
+    // Sort function
+    function sortTable(columnKey, columnType) {
+        if (currentSort.column === columnKey) {
+            // Toggle direction
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.column = columnKey;
+            currentSort.direction = 'asc';
+        }
+
+        playersData.sort((a, b) => {
+            let aVal = a[columnKey];
+            let bVal = b[columnKey];
+
+            // Handle null/undefined values
+            if (aVal === null || aVal === undefined || aVal === '-') aVal = columnType === 'number' ? -Infinity : '';
+            if (bVal === null || bVal === undefined || bVal === '-') bVal = columnType === 'number' ? -Infinity : '';
+
+            if (columnType === 'number') {
+                aVal = parseFloat(aVal) || 0;
+                bVal = parseFloat(bVal) || 0;
+            } else {
+                aVal = String(aVal).toLowerCase();
+                bVal = String(bVal).toLowerCase();
+            }
+
+            if (currentSort.direction === 'asc') {
+                return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+            } else {
+                return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+            }
+        });
+
+        renderTable();
+    }
+
+    // Render table function
+    function renderTable() {
+        const sortIndicator = (colKey) => {
+            if (currentSort.column === colKey) {
+                return currentSort.direction === 'asc' ? ' ↑' : ' ↓';
+            }
+            return '';
+        };
+
+        const tableHTML = `
+            <div class="results-container">
+                <div class="results-header">
+                    <span>🏆</span>
+                    <span>FUT23 Players Data</span>
+                </div>
+                <div class="results-count">Total players: ${data.count}${currentSort.column ? ` (sorted by: ${currentSort.column} ${currentSort.direction === 'asc' ? '↑' : '↓'})` : ''}</div>
+                <div class="players-table">
+                    <table>
+                        <thead>
                             <tr>
-                                ${columns.map(col => `<td>${player[col] !== null && player[col] !== undefined ? player[col] : '-'}</td>`).join('')}
+                                ${columns.map(col => {
+                                    const colType = detectColumnType(col);
+                                    return `<th class="sortable" data-column="${col}" data-type="${colType}">${col}${sortIndicator(col)}</th>`;
+                                }).join('')}
                             </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            ${playersData.map(player => `
+                                <tr>
+                                    ${columns.map(col => `<td>${player[col] !== null && player[col] !== undefined ? player[col] : '-'}</td>`).join('')}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-    `;
+        `;
 
-    resultsDiv.innerHTML = tableHTML;
+        resultsDiv.innerHTML = tableHTML;
+
+        // Add click event listeners to sortable headers
+        document.querySelectorAll('.sortable').forEach(header => {
+            header.addEventListener('click', () => {
+                const columnKey = header.getAttribute('data-column');
+                const columnType = header.getAttribute('data-type');
+                sortTable(columnKey, columnType);
+            });
+        });
+    }
+
+    // Initial render
+    renderTable();
 }
 
 function displaySearchResults(data) {
@@ -235,7 +388,7 @@ function displaySearchResults(data) {
         </div>
         <div class="player-cards-grid">
             ${data.players.map(player => `
-                <div class="player-card" data-player-name="${player.player_name || ''}" onclick="window.location.href='/talha/${player.player_id}'">
+                <div class="player-card" data-player-name="${player.player_name || ''}" onclick="window.location.href='/players/${player.player_id}'">
                     <div class="player-photo-placeholder">
                         <span>📷</span>
                         <small>Loading photo...</small>

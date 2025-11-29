@@ -41,10 +41,10 @@ def bilge():
 #--------------BILGE-END-------------------------------
 
 
-@app.route("/talha")
-def talha():
-    """Talha sayfası"""
-    return render_template("talha.html", title="Talha")
+@app.route("/players")
+def players():
+    """Players sayfası"""
+    return render_template("players.html", title="Players")
 #--------------TALHA-START-----------------------------
 
 @app.route("/api/players/fut23", methods=['GET'])
@@ -212,7 +212,7 @@ def api_player_detail(player_id):
         logger.exception("Error fetching player detail: %s", e)
         return jsonify({"error": "Database error"}), 500
 
-@app.route("/talha/<int:player_id>")
+@app.route("/players/<int:player_id>")
 def player_detail(player_id):
     """Individual player detail page"""
     return render_template("player_detail.html", title="Player Details", player_id=player_id)
