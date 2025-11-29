@@ -466,127 +466,149 @@ function displayPlayerDetail(player) {
         return;
     }
 
+    const preferredTeam = player.team_title || player.fut23_team || '-';
+    const preferredPositionText = player.fut23_position || player.position || '-';
+    const primaryPosition = getPrimaryPosition(player);
+    const pitchPos = getPitchCoordinatesForPosition(primaryPosition);
+
+    const hasFifa = !!(player && (player.Rating || player.Pace || player.Shoot || player.Pass || player.Drible || player.Defense || player.Physical));
+
     const html = `
         <div class="player-detail-header">
-            <div class="player-photo-large">
-                <img id="player-photo-img" src="" alt="${player.player_name || 'Player'}" style="display: none;" />
-                <div id="player-photo-placeholder" class="photo-placeholder-large">
-                    <span>📷</span>
-                    <small>Photo placeholder</small>
+            <div class="player-left-col">
+                <div class="fifa-frame">
+                    <img id="player-photo-img" class="frame-photo" src="" alt="${player.player_name || 'Player'}" style="display: none;" />
+                    <div id="player-photo-placeholder" class="photo-placeholder-large">
+                        <span>📷</span>
+                        <small>Photo placeholder</small>
+                    </div>
                 </div>
+                <div class="photo-kpis">
+                    <div class="kpi">
+                        <div class="kpi-label">Goals</div>
+                        <div class="kpi-value">${player.goals || 0}</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="kpi-label">Assists</div>
+                        <div class="kpi-value">${player.assists || 0}</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="kpi-label">Games</div>
+                        <div class="kpi-value">${player.games || 0}</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="kpi-label">Shots</div>
+                        <div class="kpi-value">${player.shots || 0}</div>
+                    </div>
+                </div>
+                ${player.best_shot_id ? `<a class="btn-best-shot" href="/shot/${player.best_shot_id}">Best Shot</a>` : ''}
             </div>
-            <div class="player-header-info">
+            <div class="player-right-col">
                 <h1 class="player-detail-name">${player.player_name || 'Unknown Player'}</h1>
-                <div class="player-header-details">
-                    <div class="header-detail-item">
-                        <span class="header-label">Team:</span>
-                        <span class="header-value">${player.team_title || player.fut23_team || '-'}</span>
+                <div class="tabs">
+                    <button class="tab active" data-tab="player">Player</button>
+                    ${hasFifa ? `<button class="tab" data-tab="fifa">FIFA 23</button>` : ''}
+                </div>
+                <div class="tab-panels">
+                    <div id="tab-player" class="tab-panel active">
+                        <div class="main-stats-grid">
+                            <div class="stat-tile">
+                                <div class="tile-label">Team</div>
+                                <div class="tile-value">${preferredTeam}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Position</div>
+                                <div class="tile-value"><span class="pos-chip">${preferredPositionText}</span></div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Games</div>
+                                <div class="tile-value">${player.games || 0}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Goals</div>
+                                <div class="tile-value goals-highlight">${player.goals || 0}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Assists</div>
+                                <div class="tile-value">${player.assists || 0}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">xG</div>
+                                <div class="tile-value">${player.xG ? Number(player.xG).toFixed(2) : '-'}</div>
+                            </div>
+                        </div>
+                        <div class="mini-pitch">
+                            <div class="position-marker" style="left: ${pitchPos.left}%; top: ${pitchPos.top}%;">
+                                <span>${primaryPosition}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="header-detail-item">
-                        <span class="header-label">Position:</span>
-                        <span class="header-value">${player.position || player.fut23_position || '-'}</span>
-                    </div>
-                    <div class="header-detail-item">
-                        <span class="header-label">Country:</span>
-                        <span class="header-value">${player.Country || '-'}</span>
-                    </div>
-                    <div class="header-detail-item">
-                        <span class="header-label">League:</span>
-                        <span class="header-value">${player.League || '-'}</span>
-                    </div>
+                    ${hasFifa ? `
+                    <div id="tab-fifa" class="tab-panel">
+                        <div class="main-stats-grid">
+                            <div class="stat-tile">
+                                <div class="tile-label">Overall</div>
+                                <div class="tile-value rating-highlight">${player.Rating || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Pace</div>
+                                <div class="tile-value">${player.Pace || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Shooting</div>
+                                <div class="tile-value">${player.Shoot || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Passing</div>
+                                <div class="tile-value">${player.Pass || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Dribbling</div>
+                                <div class="tile-value">${player.Drible || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Defense</div>
+                                <div class="tile-value">${player.Defense || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Physical</div>
+                                <div class="tile-value">${player.Physical || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Skill</div>
+                                <div class="tile-value">${player.Skill || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Weak Foot</div>
+                                <div class="tile-value">${player.Weak_foot || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Other Positions</div>
+                                <div class="tile-value">${player.Other_Positions || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Attack Rate</div>
+                                <div class="tile-value">${player.Attack_rate || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Defense Rate</div>
+                                <div class="tile-value">${player.Defense_rate || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">Base Stats</div>
+                                <div class="tile-value">${player.Base_Stats || '-'}</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="tile-label">In-Game Stats</div>
+                                <div class="tile-value">${player.In_Game_Stats || '-'}</div>
+                            </div>
+                        </div>
+                    </div>` : ''}
                 </div>
             </div>
         </div>
 
-        <div class="player-detail-grid">
-            <div class="detail-box performance-box">
-                <h3 class="box-title">⚽ Performance Stats</h3>
-                <div class="box-content">
-                    <div class="stat-row">
-                        <span class="stat-name">Games:</span>
-                        <span class="stat-number">${player.games || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Goals:</span>
-                        <span class="stat-number goals-highlight">${player.goals || 0}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Assists:</span>
-                        <span class="stat-number">${player.assists || 0}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">xG:</span>
-                        <span class="stat-number">${player.xG ? player.xG.toFixed(2) : '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">xA:</span>
-                        <span class="stat-number">${player.xA ? player.xA.toFixed(2) : '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Shots:</span>
-                        <span class="stat-number">${player.shots || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Key Passes:</span>
-                        <span class="stat-number">${player.key_passes || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Time Played:</span>
-                        <span class="stat-number">${player.time ? Math.floor(player.time / 60) + ' min' : '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Yellow Cards:</span>
-                        <span class="stat-number">${player.yellow_cards || 0}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Red Cards:</span>
-                        <span class="stat-number">${player.red_cards || 0}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="detail-box fifa-box">
-                <h3 class="box-title">🎮 FIFA 23 Ratings</h3>
-                <div class="box-content">
-                    <div class="stat-row">
-                        <span class="stat-name">Overall Rating:</span>
-                        <span class="stat-number rating-highlight">${player.Rating || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Pace:</span>
-                        <span class="stat-number">${player.Pace || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Shooting:</span>
-                        <span class="stat-number">${player.Shoot || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Passing:</span>
-                        <span class="stat-number">${player.Pass || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Dribbling:</span>
-                        <span class="stat-number">${player.Drible || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Defending:</span>
-                        <span class="stat-number">${player.Defense || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Physical:</span>
-                        <span class="stat-number">${player.Physical || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Skill Moves:</span>
-                        <span class="stat-number">${player.Skill || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Weak Foot:</span>
-                        <span class="stat-number">${player.Weak_foot || '-'}</span>
-                    </div>
-                </div>
-            </div>
-
+        <div class="detail-sections">
             <div class="detail-box advanced-box">
                 <h3 class="box-title">📊 Advanced Stats</h3>
                 <div class="box-content">
@@ -596,23 +618,15 @@ function displayPlayerDetail(player) {
                     </div>
                     <div class="stat-row">
                         <span class="stat-name">npxG:</span>
-                        <span class="stat-number">${player.npxG ? player.npxG.toFixed(2) : '-'}</span>
+                        <span class="stat-number">${player.npxG ? Number(player.npxG).toFixed(2) : '-'}</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-name">xG Chain:</span>
-                        <span class="stat-number">${player.xGChain ? player.xGChain.toFixed(2) : '-'}</span>
+                        <span class="stat-number">${player.xGChain ? Number(player.xGChain).toFixed(2) : '-'}</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-name">xG Buildup:</span>
-                        <span class="stat-number">${player.xGBuildup ? player.xGBuildup.toFixed(2) : '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Base Stats:</span>
-                        <span class="stat-number">${player.Base_Stats || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">In-Game Stats:</span>
-                        <span class="stat-number">${player.In_Game_Stats || '-'}</span>
+                        <span class="stat-number">${player.xGBuildup ? Number(player.xGBuildup).toFixed(2) : '-'}</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-name">Year:</span>
@@ -625,40 +639,24 @@ function displayPlayerDetail(player) {
                 <h3 class="box-title">ℹ️ Additional Information</h3>
                 <div class="box-content">
                     <div class="stat-row">
-                        <span class="stat-name">Other Positions:</span>
-                        <span class="stat-number">${player.Other_Positions || '-'}</span>
+                        <span class="stat-name">Shots:</span>
+                        <span class="stat-number">${player.shots || 0}</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-name">Run Type:</span>
-                        <span class="stat-number">${player.Run_type || '-'}</span>
+                        <span class="stat-name">Key Passes:</span>
+                        <span class="stat-number">${player.key_passes || 0}</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-name">Price:</span>
-                        <span class="stat-number">${player.Price || '-'}</span>
+                        <span class="stat-name">Yellow Cards:</span>
+                        <span class="stat-number">${player.yellow_cards || 0}</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-name">Attack Rate:</span>
-                        <span class="stat-number">${player.Attack_rate || '-'}</span>
+                        <span class="stat-name">Red Cards:</span>
+                        <span class="stat-number">${player.red_cards || 0}</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-name">Defense Rate:</span>
-                        <span class="stat-number">${player.Defense_rate || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Body Type:</span>
-                        <span class="stat-number">${player.Body_type || '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Height:</span>
-                        <span class="stat-number">${player.Height_cm ? player.Height_cm + ' cm' : '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Weight:</span>
-                        <span class="stat-number">${player.Weight ? player.Weight + ' kg' : '-'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">Popularity:</span>
-                        <span class="stat-number">${player.Popularity || '-'}</span>
+                        <span class="stat-name">Time Played:</span>
+                        <span class="stat-number">${player.time ? Math.floor(player.time / 60) + ' min' : '-'}</span>
                     </div>
                 </div>
             </div>
@@ -671,6 +669,70 @@ function displayPlayerDetail(player) {
     if (player && player.player_name) {
         loadPlayerImageFromUnsplash(player.player_name);
     }
+
+    // Initialize tabs
+    initTabs();
+}
+
+// Tabs init
+function initTabs() {
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.tab-panel');
+    if (!tabs || tabs.length === 0) return;
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.getAttribute('data-tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            const panel = document.getElementById(`tab-${target}`);
+            if (panel) panel.classList.add('active');
+        });
+    });
+}
+
+// Position helpers
+function getPrimaryPosition(player) {
+    if (player && player.fut23_position) {
+        return String(player.fut23_position).toUpperCase();
+    }
+    const raw = (player && player.position ? String(player.position) : '').toUpperCase();
+    if (!raw) return 'CM';
+    if (raw.includes('GK')) return 'GK';
+    if (raw.includes('F') || raw.includes('S')) return 'ST';
+    if (raw.includes('M')) return 'CM';
+    if (raw.includes('D')) return 'CB';
+    return 'CM';
+}
+
+function getPitchCoordinatesForPosition(pos) {
+    const P = String(pos || '').toUpperCase();
+    const map = {
+        'GK': { left: 50, top: 92 },
+        'CB': { left: 50, top: 75 },
+        'LB': { left: 20, top: 75 },
+        'RB': { left: 80, top: 75 },
+        'LWB': { left: 25, top: 68 },
+        'RWB': { left: 75, top: 68 },
+        'CDM': { left: 50, top: 65 },
+        'CM': { left: 50, top: 55 },
+        'LM': { left: 20, top: 55 },
+        'RM': { left: 80, top: 55 },
+        'CAM': { left: 50, top: 45 },
+        'LW': { left: 15, top: 35 },
+        'RW': { left: 85, top: 35 },
+        'CF': { left: 50, top: 30 },
+        'ST': { left: 50, top: 25 }
+    };
+    if (map[P]) return map[P];
+    // heuristic
+    if (P.includes('WB')) return { left: 25, top: 68 };
+    if (P.includes('B')) return { left: 50, top: 75 };
+    if (P.includes('W')) return { left: P.includes('L') ? 20 : 80, top: 40 };
+    if (P.includes('F')) return { left: 50, top: 25 };
+    if (P.includes('M')) return { left: 50, top: 55 };
+    if (P.includes('D')) return { left: 50, top: 75 };
+    return { left: 50, top: 55 };
 }
 
 // Shared Unsplash helper: fetch a player image URL

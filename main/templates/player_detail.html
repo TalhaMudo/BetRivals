@@ -1,10 +1,7 @@
 {% extends "base.html" %}
 
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='players.css') }}">
-{% endblock %}
-
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='players.css') }}">
 <section class="content-section player-detail-section">
     <div id="player-detail-container">
         <div class="loading">Loading player details...</div>
