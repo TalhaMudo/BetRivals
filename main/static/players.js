@@ -262,7 +262,7 @@ function displayResults(data) {
 
     // Get all column names from the first player object
     const columns = Object.keys(data.players[0]);
-    
+
     // Store original data for sorting
     let playersData = [...data.players];
     let currentSort = { column: null, direction: null };
@@ -340,9 +340,9 @@ function displayResults(data) {
                         <thead>
                             <tr>
                                 ${columns.map(col => {
-                                    const colType = detectColumnType(col);
-                                    return `<th class="sortable" data-column="${col}" data-type="${colType}">${col}${sortIndicator(col)}</th>`;
-                                }).join('')}
+            const colType = detectColumnType(col);
+            return `<th class="sortable" data-column="${col}" data-type="${colType}">${col}${sortIndicator(col)}</th>`;
+        }).join('')}
                             </tr>
                         </thead>
                         <tbody>
@@ -672,6 +672,9 @@ function displayPlayerDetail(player) {
 
     // Initialize tabs
     initTabs();
+
+    // Enable mask automatically if mask asset exists
+    enableFifaMaskIfAvailable();
 }
 
 // Tabs init
@@ -733,6 +736,22 @@ function getPitchCoordinatesForPosition(pos) {
     if (P.includes('M')) return { left: 50, top: 55 };
     if (P.includes('D')) return { left: 50, top: 75 };
     return { left: 50, top: 55 };
+}
+
+// Try enabling CSS mask if the mask asset exists
+function enableFifaMaskIfAvailable() {
+    try {
+        const frame = document.querySelector('.fifa-frame');
+        if (!frame) return;
+        const img = new Image();
+        img.onload = () => {
+            frame.classList.add('mask');
+        };
+        img.onerror = () => { };
+        img.src = '/static/fifaframe-mask.png';
+    } catch (e) {
+        // ignore
+    }
 }
 
 // Shared Unsplash helper: fetch a player image URL

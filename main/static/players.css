@@ -482,34 +482,53 @@
     width: 100%;
     max-width: 280px;
     aspect-ratio: 3 / 4;
-    background-image: url('/static/fifaframe.jpg');
+    background-image: none;
     background-repeat: no-repeat;
     background-size: contain;
     background-position: center;
     margin: 0 auto;
+    isolation: isolate;
 }
 
 .fifa-frame::after {
     content: "";
     position: absolute;
     inset: 0;
-    background-image: url('/static/fifaframe.png'); /* optional: add a transparent PNG overlay */
+    background-image: url('/static/fifaframe.png');
+    /* optional: add a transparent PNG overlay */
     background-repeat: no-repeat;
     background-size: contain;
     background-position: center;
     pointer-events: none;
+    z-index: var(--frame-overlay-z, 1);
 }
 
 .fifa-frame .frame-photo {
     position: absolute;
-    top: var(--photo-top, 5%);
-    left: var(--photo-left, 5%);
-    width: var(--photo-width, 5%);
-    height: var(--photo-height, 5%);
+    top: var(--photo-top, 17%);
+    left: var(--photo-left, 18%);
+    width: var(--photo-width, 64%);
+    height: var(--photo-height, 66%);
     object-fit: cover;
     transform: scale(var(--photo-scale, 1));
     border-radius: var(--photo-radius, 10px);
     border: var(--photo-border, none);
+    z-index: var(--photo-z, 2);
+}
+
+.fifa-frame .photo-placeholder-large {
+    position: absolute;
+    top: var(--photo-top, 17%);
+    left: var(--photo-left, 18%);
+    width: var(--photo-width, 64%);
+    height: var(--photo-height, 66%);
+    z-index: var(--photo-z, 2);
+    background: rgba(46, 204, 113, 0.08);
+    border: 1px dashed rgba(46, 204, 113, 0.3);
+    border-radius: var(--photo-radius, 10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .fifa-frame #player-photo-img {
@@ -518,7 +537,8 @@
 }
 
 .fifa-frame.mask .frame-photo {
-    -webkit-mask-image: url('/static/fifaframe-mask.png'); /* white areas visible, black hidden */
+    -webkit-mask-image: url('/static/fifaframe-mask.png');
+    /* white areas visible, black hidden */
     mask-image: url('/static/fifaframe-mask.png');
     -webkit-mask-size: contain;
     mask-size: contain;
