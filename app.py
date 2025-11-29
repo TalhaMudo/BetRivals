@@ -313,10 +313,10 @@ def api_season_delete(seasonentryid):
 #--------------BILGE-END-------------------------------
 
 
-@app.route("/talha")
-def talha():
-    """Talha sayfası"""
-    return render_template("talha.html", title="Talha")
+@app.route("/players")
+def players():
+    """Players sayfası"""
+    return render_template("players.html", title="Players")
 #--------------TALHA-START-----------------------------
 
 @app.route("/api/players/fut23", methods=['GET'])
@@ -425,6 +425,7 @@ def api_player_detail(player_id):
     try:
         query = """
         SELECT 
+            p.best_shot_id,
             p.season_player_id,
             p.player_id,
             p.player_name,
@@ -479,12 +480,31 @@ def api_player_detail(player_id):
         results = db.execute_query(query, params=[player_id])
         if not results or len(results) == 0:
             return jsonify({"error": "Player not found"}), 404
-        return jsonify({"player": results[0]})
+        player = results[0]
+
+        # Fallback: if best_shot_id is missing, pick the highest xG shot for this player
+        if not player.get("best_shot_id"):
+            try:
+                best_shot_query = """
+                    SELECT shot_id
+                    FROM shot_data
+                    WHERE player_id = %s
+                    ORDER BY xG DESC
+                    LIMIT 1
+                """
+                best_results = db.execute_query(best_shot_query, (player_id,), fetch_all=True)
+                if best_results and len(best_results) > 0:
+                    player["best_shot_id"] = best_results[0]["shot_id"]
+            except Exception as _:
+                # Swallow fallback errors silently; API still returns player data
+                pass
+
+        return jsonify({"player": player})
     except Exception as e:
         logger.exception("Error fetching player detail: %s", e)
         return jsonify({"error": "Database error"}), 500
 
-@app.route("/talha/<int:player_id>")
+@app.route("/players/<int:player_id>")
 def player_detail(player_id):
     """Individual player detail page"""
     return render_template("player_detail.html", title="Player Details", player_id=player_id)
