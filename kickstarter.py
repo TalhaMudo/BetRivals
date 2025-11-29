@@ -201,6 +201,53 @@ def create_tables():
     conn.close()
     print("✅ Tables created successfully.")
 
+def enable_autoincrement_for_shot_data():
+    conn = connect_db(True)
+    cur = conn.cursor()
+    try:
+        print("🔧 Dropping FK constraint on player.best_shot_id ...")
+
+        # 1. FK'yi kaldır
+        cur.execute("""
+            ALTER TABLE player 
+            DROP FOREIGN KEY player_ibfk_1;
+        """)
+
+        print("🔧 Modifying shot_data.shot_id to AUTO_INCREMENT ...")
+
+        # 2. AUTO_INCREMENT'e çevir
+        cur.execute("""
+            ALTER TABLE shot_data
+            MODIFY shot_id BIGINT NOT NULL AUTO_INCREMENT;
+        """)
+
+        print("🔧 Setting AUTO_INCREMENT start value ...")
+
+        # 3. Başlangıç değerini ayarla
+        cur.execute("""
+            ALTER TABLE shot_data AUTO_INCREMENT = 600000;
+        """)
+
+        print("🔧 Re-creating FK constraint on player.best_shot_id ...")
+
+        # 4. FK'yi geri ekle
+        cur.execute("""
+            ALTER TABLE player
+            ADD CONSTRAINT player_ibfk_1
+            FOREIGN KEY (best_shot_id) REFERENCES shot_data(shot_id)
+                ON UPDATE CASCADE ON DELETE SET NULL;
+        """)
+
+        conn.commit()
+        print("✅ AUTO_INCREMENT successfully enabled (start=600000).")
+
+    except mysql.connector.Error as err:
+        print(f"❌ Error altering shot_data: {err}")
+        conn.rollback()
+
+    finally:
+        cur.close()
+        conn.close()
 
 def insert_from_csv(table, filename):
     path = CSV_DIR / filename
@@ -309,6 +356,7 @@ If you want to continue, press ENTER or stop via CTRL^C
     for table, file in CSV_MAP_ORDERED:
         insert_from_csv(table, file)
     
+    enable_autoincrement_for_shot_data()
     # Verify foreign keys were created
     verify_foreign_keys()
     

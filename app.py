@@ -949,7 +949,7 @@ def player_stats_api(player_id):
             'error': str(e)
         }), 500
 
-
+#2sg - - - - - - - - - - - - - - - - - - below is for admin page : 
 
 # --- Authentication Middleware --- #
 def login_required(f):
@@ -1074,9 +1074,8 @@ def logout():
     session.clear()
     return redirect("/login?logged_out=true")
 
-#2sg - - - - - - - - - - - - - - - - - - below is for admin page : 
 
-# Add these routes to your app.py (in OSMAN section or appropriate place)
+
 
 @app.route("/admin/shots")
 @login_required
@@ -1281,6 +1280,117 @@ def api_delete_shot(shot_id):
         logger.exception(f"Error deleting shot {shot_id}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+#3srg below is for add shot:
+# Add these routes in the OSMAN section of app.py
+# Add this route in the OSMAN section of app.py
+
+@app.route('/api/match/<int:match_id>')
+@login_required
+def api_get_match(match_id):
+    """API endpoint to fetch match details by match_id"""
+    try:
+        # Query match_info table for match details
+        query = """
+            SELECT 
+                match_id,
+                date,
+                season,
+                team_h,
+                team_a,
+                h_goals,
+                a_goals,
+                league
+            FROM match_info
+            WHERE match_id = %s
+            LIMIT 1
+        """
+        
+        results = db.execute_query(query, (match_id,), fetch_all=True)
+        
+        if not results or len(results) == 0:
+            return jsonify({
+                'success': False,
+                'error': 'Match not found'
+            }), 404
+        
+        match = results[0]
+        
+        return jsonify({
+            'success': True,
+            'match': match
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error fetching match {match_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    
+    
+@app.route("/admin/shots/add")
+@login_required
+def admin_add_shot():
+    """Display add shot form"""
+    return render_template("admin_add_shot.html", username=session.get("username"))
+
+@app.route('/api/autocomplete/players')
+def autocomplete_players():
+    """API endpoint for player name autocomplete"""
+    try:
+        query_str = request.args.get('q', '').strip()
+        
+        if len(query_str) < 2:
+            return jsonify([])
+        
+        # Search in both player and shot_data tables for MySQL
+        query = """
+            SELECT player_id, player_name FROM (
+                SELECT DISTINCT player_id, player_name 
+                FROM player 
+                WHERE player_name LIKE %s
+                UNION
+                SELECT DISTINCT player_id, player 
+                FROM shot_data 
+                WHERE player LIKE %s
+            ) AS combined
+            ORDER BY player_name
+            LIMIT 20
+        """
+        
+        results = db.execute_query(query, (f"%{query_str}%", f"%{query_str}%"), fetch_all=True)
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        logger.exception(f"Error in player autocomplete: {e}")
+        return jsonify([]), 500
+
+@app.route('/api/autocomplete/teams')
+def autocomplete_teams():
+    """API endpoint for team name autocomplete"""
+    try:
+        query_str = request.args.get('q', '').strip()
+        
+        if len(query_str) < 1:
+            return jsonify([])
+        
+        # Search in teams table
+        query = """
+            SELECT DISTINCT team_name
+            FROM teams
+            WHERE team_name LIKE %s
+            ORDER BY team_name
+            LIMIT 20
+        """
+        
+        results = db.execute_query(query, (f"%{query_str}%",), fetch_all=True)
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        logger.exception(f"Error in team autocomplete: {e}")
+        return jsonify([]), 500
 
 #2sr -------------------------------------------------------------------------------------------------------------------------------
 #--------------OSMAN-END-------------------------------

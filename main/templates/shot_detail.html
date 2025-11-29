@@ -295,6 +295,7 @@
         align-items: center;
         transition: transform 0.2s, background 0.2s;
         border: 1px solid rgba(46, 204, 113, 0.2);
+        cursor: pointer;
     }
 
     .shot-item:hover {
@@ -330,6 +331,17 @@
         height: 100%;
         background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
         transition: width 0.3s;
+    }
+
+    /* Make player card clickable */
+    .card.clickable {
+        cursor: pointer;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .card.clickable:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(46, 204, 113, 0.4);
     }
 
     @media (max-width: 968px) {
@@ -418,7 +430,7 @@
                 <h4 style="color: #2ecc71; margin-bottom: 15px; text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);">Other Shots in This Match</h4>
                 <div class="shot-list">
                     {% for other in other_shots %}
-                    <div class="shot-item">
+                    <div class="shot-item" onclick="window.location.href='/shot/{{ other.shot_id }}'">
                         <div class="shot-item-details">
                             <div><span class="minute">{{ other.minute }}'</span> - {{ other.shotType }}</div>
                             <div class="situation">{{ other.situation }}</div>
@@ -438,7 +450,7 @@
 
         <div>
             {% if player %}
-            <div class="card">
+            <div class="card clickable" onclick="window.location.href='/player/{{ player.player_id }}'">
                 <h3>👤 Player Profile</h3>
                 
                 <div class="player-info">
