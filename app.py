@@ -270,6 +270,69 @@ def api_season_create():
         logger.exception("Error creating season: %s", e)
         return jsonify({"error": "Database error"}), 500
 
+# Yeni Eklenen Seasons Detay Rotası (Season Detay Sayfası)
+@app.route("/seasons/<int:seasonentryid>")
+def season_detail(seasonentryid):
+    """Bireysel sezon girişi detay sayfası"""
+    return render_template(
+        "season_detail.html",
+        title="Season Details",
+        seasonentryid=seasonentryid
+    )
+
+
+# Yeni Eklenen Seasons Detay API'si
+@app.route("/api/seasons/<int:seasonentryid>", methods=["GET"])
+def api_season_detail(seasonentryid):
+    """
+    GET /api/seasons/<int:seasonentryid>
+    Tek bir sezon girişinin detaylarını döndürür.
+    """
+    try:
+        sql = f"""
+            SELECT
+                s.seasonentryid AS seasonentryid,
+                s.team_id AS team_id,
+                t.team_name AS team_name,
+                s.title AS title,
+                s.year AS year,
+                s.h_a AS h_a,
+                s.xG AS xG,
+                s.xGA AS xGA,
+                s.npxG AS npxG,
+                s.npxGA AS npxGA,
+                s.deep AS deep,
+                s.deep_allowed AS deep_allowed,
+                s.scored AS scored,
+                s.missed AS missed,
+                s.xpts AS xpts,
+                s.result AS result,
+                s.date AS date,
+                s.wins AS wins,
+                s.draws AS draws,
+                s.loses AS loses,
+                s.pts AS pts,
+                s.npxGD AS npxGD,
+                s.ppda_att AS ppda_att,
+                s.ppda_def AS ppda_def,
+                s.ppda_allowed_att AS ppda_allowed_att,
+                s.ppda_allowed_def AS ppda_allowed_def
+            FROM season s
+            LEFT JOIN teams t ON t.team_id = s.team_id
+            WHERE s.seasonentryid = %s
+            LIMIT 1
+        """
+
+        rows = db.execute_query(sql, [seasonentryid])
+
+        if not rows:
+            return jsonify({"error": "Season entry not found"}), 404
+
+        return jsonify(rows[0])
+
+    except Exception as e:
+        logger.exception("Error fetching season detail: %s", e)
+        return jsonify({"error": "Database error"}), 500
 
 @app.route("/api/seasons/<int:seasonentryid>/update", methods=["POST"])
 def api_season_update(seasonentryid):
