@@ -170,6 +170,33 @@
             </div>
 
     </div>
+
+    <div class="match-card" style="margin-top:18px;">
+        <h3>Shots in this match</h3>
+        <div class="table-wrapper">
+            <table class="results-table">
+                <thead>
+                    <tr><th>Min</th><th>Player</th><th>Result</th><th>xG</th><th>Home</th><th>Away</th></tr>
+                </thead>
+                <tbody>
+                    {% if shots %}
+                        {% for s in shots %}
+                        <tr class="result-row" onclick="window.location='/shot/{{ s.shot_id }}'">
+                            <td>{{ s.minute or '' }}</td>
+                            <td><a href="/talha/{{ s.player_id }}" onclick="event.stopPropagation();">{{ s.player_name or s.player }}</a></td>
+                            <td>{{ s.result or '' }}</td>
+                            <td>{{ '%.2f' % (s.xG or 0) }}</td>
+                            <td>{{ s.h_team or '' }}</td>
+                            <td>{{ s.a_team or '' }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="6" style="color:#888; text-align:center;">No shots recorded for this match</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 {% endblock %}

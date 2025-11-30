@@ -1,0 +1,44 @@
+.matches-admin-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.admin-header h2 { color: #2ecc71; }
+
+.filters-section { display: grid; grid-template-columns: 1fr 300px auto; gap: 12px; margin-bottom: 16px; }
+.filter-input { padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); color: #fff; }
+
+.matches-table { background: rgba(15,20,25,0.95); border-radius: 12px; border: 1px solid rgba(46,204,113,0.08); overflow: hidden; }
+.table-wrapper { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead { background: rgba(46,204,113,0.06); }
+th, td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.02); color: #e8e8e8; }
+td.actions { display:flex; gap:8px; }
+.btn-add { padding: 8px 14px; background: linear-gradient(90deg,#2ecc71,#27ae60); color:#0f1419; border-radius:8px; border:none; font-weight:700; cursor:pointer; }
+.btn-cancel, .btn-submit { padding: 10px 14px; border-radius:6px; }
+.form-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:12px; margin-bottom: 12px; }
+
+.pagination { display:flex; justify-content:center; gap:8px; margin-top:16px; }
+.page-btn { padding:6px 10px; border-radius:6px; border:1px solid rgba(46,204,113,0.08); background:rgba(255,255,255,0.02); color:#b8b8b8; cursor:pointer; }
+
+/* Modal */
+.modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:1000; }
+.modal.active { display:flex; }
+.modal-content { background: rgba(15,20,25,0.98); border-radius:12px; padding:20px; max-width:920px; width:95%; }
+.modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+
+.form-group label { color:#9be6b7; font-weight:700; display:block; margin-bottom:6px; }
+.form-group input, .form-group select { width:100%; padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#fff; }
+
+.alert { display:none; padding:10px; border-radius:8px; margin-bottom:12px; }
+.alert.show { display:block; }
+
+@media (max-width:900px) { .filters-section { grid-template-columns: 1fr; } .table-wrapper { max-height: 40vh; } }
