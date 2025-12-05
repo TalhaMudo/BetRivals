@@ -1,0 +1,761 @@
+<!-- ADMIN_ADD_SHOT.HTML -->
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .admin-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .admin-header h1 {
+        font-size: 2.5em;
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .back-btn {
+        padding: 10px 20px;
+        background: rgba(46, 204, 113, 0.1);
+        border: 2px solid rgba(46, 204, 113, 0.3);
+        color: #2ecc71;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .back-btn:hover {
+        background: rgba(46, 204, 113, 0.2);
+        border-color: #2ecc71;
+    }
+
+    .form-card {
+        background: rgba(15, 20, 25, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .form-section {
+        margin-bottom: 35px;
+    }
+
+    .form-section h3 {
+        color: #2ecc71;
+        font-size: 1.3em;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(46, 204, 113, 0.2);
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        display: block;
+        color: #b8b8b8;
+        font-size: 0.95em;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+
+    .form-group label.required::after {
+        content: " *";
+        color: #e74c3c;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        background: rgba(30, 40, 50, 0.8);
+        border: 2px solid rgba(46, 204, 113, 0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1em;
+        transition: all 0.3s;
+        box-sizing: border-box;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #2ecc71;
+        background: rgba(30, 40, 50, 0.95);
+        box-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
+    }
+
+    .form-control:disabled {
+        background: rgba(30, 40, 50, 0.5);
+        color: #888;
+        cursor: not-allowed;
+    }
+
+    .form-control::placeholder {
+        color: #666;
+    }
+
+    .autocomplete-container {
+        position: relative;
+    }
+
+    .autocomplete-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(20, 30, 40, 0.98);
+        border: 2px solid rgba(46, 204, 113, 0.3);
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        max-height: 250px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .autocomplete-results.show {
+        display: block;
+    }
+
+    .autocomplete-item {
+        padding: 12px 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #b8b8b8;
+        border-bottom: 1px solid rgba(46, 204, 113, 0.1);
+    }
+
+    .autocomplete-item:hover,
+    .autocomplete-item.selected {
+        background: rgba(46, 204, 113, 0.1);
+        color: #2ecc71;
+    }
+
+    .autocomplete-item:last-child {
+        border-bottom: none;
+    }
+
+    .autocomplete-loading {
+        padding: 15px;
+        text-align: center;
+        color: #666;
+        font-style: italic;
+    }
+
+    .coordinate-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .alert {
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        font-weight: 500;
+        display: none;
+    }
+
+    .alert.show {
+        display: block;
+    }
+
+    .alert-success {
+        background: rgba(46, 204, 113, 0.15);
+        border: 2px solid rgba(46, 204, 113, 0.4);
+        color: #2ecc71;
+    }
+
+    .alert-error {
+        background: rgba(231, 76, 60, 0.15);
+        border: 2px solid rgba(231, 76, 60, 0.4);
+        color: #ff6b6b;
+    }
+
+    .alert-info {
+        background: rgba(52, 152, 219, 0.15);
+        border: 2px solid rgba(52, 152, 219, 0.4);
+        color: #5dade2;
+    }
+
+    .btn-container {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 15px 30px;
+        border-radius: 10px;
+        font-size: 1.05em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: none;
+        text-align: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: #0f1419;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(46, 204, 113, 0.4);
+    }
+
+    .btn-secondary {
+        background: rgba(46, 204, 113, 0.1);
+        border: 2px solid rgba(46, 204, 113, 0.3);
+        color: #2ecc71;
+    }
+
+    .btn-secondary:hover {
+        background: rgba(46, 204, 113, 0.2);
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .field-help {
+        font-size: 0.85em;
+        color: #777;
+        margin-top: 5px;
+        font-style: italic;
+    }
+
+    .match-info-badge {
+        display: inline-block;
+        padding: 8px 15px;
+        background: rgba(46, 204, 113, 0.1);
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        border-radius: 6px;
+        color: #2ecc71;
+        font-size: 0.9em;
+        margin-top: 8px;
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(46, 204, 113, 0.3);
+        border-top-color: #2ecc71;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        margin-left: 8px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+        .admin-header h1 {
+            font-size: 1.8em;
+        }
+
+        .form-card {
+            padding: 25px;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .coordinate-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-container {
+            flex-direction: column;
+        }
+    }
+
+    .autocomplete-results::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .autocomplete-results::-webkit-scrollbar-track {
+        background: rgba(46, 204, 113, 0.05);
+    }
+
+    .autocomplete-results::-webkit-scrollbar-thumb {
+        background: rgba(46, 204, 113, 0.3);
+        border-radius: 4px;
+    }
+
+    .autocomplete-results::-webkit-scrollbar-thumb:hover {
+        background: rgba(46, 204, 113, 0.5);
+    }
+</style>
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>⚽ Add New Shot</h1>
+        <a href="/admin/shots" class="back-btn">← Back to Shots</a>
+    </div>
+
+    <div class="form-card">
+        <div id="alertContainer"></div>
+
+        <form id="addShotForm">
+            <!-- Match Context -->
+            <div class="form-section">
+                <h3>Match Context</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="required">Match ID</label>
+                        <input type="number" 
+                               id="match_id" 
+                               name="match_id" 
+                               class="form-control" 
+                               placeholder="Enter match ID"
+                               required>
+                        <div class="field-help">Type match ID and press Tab or Enter to load match details</div>
+                        <div id="matchLoadingIndicator"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="required">Season</label>
+                        <input type="text" 
+                               id="season" 
+                               name="season" 
+                               class="form-control" 
+                               placeholder="e.g., 2023/24 or 2023"
+                               required
+                               disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="required">Match Date</label>
+                        <input type="date" 
+                               id="date" 
+                               name="date" 
+                               class="form-control"
+                               required
+                               disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="required">Home Team</label>
+                        <input type="text" 
+                               id="h_team" 
+                               name="h_team" 
+                               class="form-control" 
+                               placeholder="Will be auto-filled"
+                               required
+                               disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="required">Away Team</label>
+                        <input type="text" 
+                               id="a_team" 
+                               name="a_team" 
+                               class="form-control" 
+                               placeholder="Will be auto-filled"
+                               required
+                               disabled>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shot Details -->
+            <div class="form-section">
+                <h3>Shot Details</h3>
+                <div class="form-grid">
+                    <div class="form-group autocomplete-container">
+                        <label class="required">Player</label>
+                        <input type="text" 
+                               id="player" 
+                               name="player" 
+                               class="form-control" 
+                               placeholder="Start typing player name..."
+                               required
+                               autocomplete="off">
+                        <div id="playerResults" class="autocomplete-results"></div>
+                        <input type="hidden" id="player_id" name="player_id">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="required">Minute</label>
+                        <input type="number" 
+                               id="minute" 
+                               name="minute" 
+                               class="form-control" 
+                               placeholder="e.g., 45"
+                               required
+                               min="0"
+                               max="120">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="required">Result</label>
+                        <select id="result" name="result" class="form-control" required>
+                            <option value="">Select result...</option>
+                            <option value="Goal">Goal</option>
+                            <option value="SavedShot">Saved Shot</option>
+                            <option value="MissedShots">Missed Shot</option>
+                            <option value="BlockedShot">Blocked Shot</option>
+                            <option value="ShotOnPost">Shot On Post</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="required">xG (Expected Goals)</label>
+                        <input type="number" 
+                               id="xG" 
+                               name="xG" 
+                               class="form-control" 
+                               placeholder="e.g., 0.25"
+                               required
+                               step="0.01"
+                               min="0"
+                               max="1">
+                        <div class="field-help">Value between 0 and 1</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Situation</label>
+                        <select id="situation" name="situation" class="form-control">
+                            <option value="OpenPlay">Open Play</option>
+                            <option value="FromCorner">From Corner</option>
+                            <option value="SetPiece">Set Piece</option>
+                            <option value="DirectFreekick">Direct Free Kick</option>
+                            <option value="Penalty">Penalty</option>
+                            <option value="FastBreak">Fast Break</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Shot Coordinates</label>
+                    <div class="coordinate-grid">
+                        <div>
+                            <input type="number" 
+                                   id="X" 
+                                   name="X" 
+                                   class="form-control" 
+                                   placeholder="X coordinate (0-1)"
+                                   step="0.01"
+                                   min="0"
+                                   max="1">
+                        </div>
+                        <div>
+                            <input type="number" 
+                                   id="Y" 
+                                   name="Y" 
+                                   class="form-control" 
+                                   placeholder="Y coordinate (0-1)"
+                                   step="0.01"
+                                   min="0"
+                                   max="1">
+                        </div>
+                    </div>
+                    <div class="field-help">Optional: Shot position on pitch (normalized 0-1)</div>
+                </div>
+            </div>
+
+            <div class="btn-container">
+                <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                    🔄 Reset Form
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    ✅ Add Shot
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let matchDataLoaded = false;
+
+    // Match ID field handler
+    const matchIdInput = document.getElementById('match_id');
+    matchIdInput.addEventListener('blur', fetchMatchData);
+    matchIdInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            fetchMatchData();
+        }
+    });
+
+    async function fetchMatchData() {
+        const matchId = matchIdInput.value.trim();
+        
+        if (!matchId) return;
+
+        const indicator = document.getElementById('matchLoadingIndicator');
+        indicator.innerHTML = '<span class="loading-spinner"></span>';
+
+        try {
+            const response = await fetch(`/api/match/${matchId}`);
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                const match = result.match;
+                
+                // Fill in the form fields
+                document.getElementById('season').value = match.season || '';
+                document.getElementById('h_team').value = match.team_h || '';
+                document.getElementById('a_team').value = match.team_a || '';
+                
+                // Format date for input
+                if (match.date) {
+                    const date = new Date(match.date);
+                    const formattedDate = date.toISOString().split('T')[0];
+                    document.getElementById('date').value = formattedDate;
+                }
+
+                // Enable the fields
+                document.getElementById('season').disabled = false;
+                document.getElementById('h_team').disabled = false;
+                document.getElementById('a_team').disabled = false;
+                document.getElementById('date').disabled = false;
+
+                matchDataLoaded = true;
+                
+                indicator.innerHTML = `<span class="match-info-badge">✓ Match loaded: ${match.team_h} vs ${match.team_a}</span>`;
+                showAlert('Match details loaded successfully! ✅', 'info');
+                
+            } else {
+                indicator.innerHTML = '';
+                showAlert('Match not found. You can still fill the fields manually.', 'error');
+                
+                // Enable manual entry
+                document.getElementById('season').disabled = false;
+                document.getElementById('h_team').disabled = false;
+                document.getElementById('a_team').disabled = false;
+                document.getElementById('date').disabled = false;
+            }
+        } catch (error) {
+            console.error('Error fetching match:', error);
+            indicator.innerHTML = '';
+            showAlert('Error loading match. You can fill the fields manually.', 'error');
+            
+            // Enable manual entry on error
+            document.getElementById('season').disabled = false;
+            document.getElementById('h_team').disabled = false;
+            document.getElementById('a_team').disabled = false;
+            document.getElementById('date').disabled = false;
+        }
+    }
+
+    // Autocomplete configuration
+    const autocompleteConfig = {
+        player: {
+            input: document.getElementById('player'),
+            results: document.getElementById('playerResults'),
+            hiddenInput: document.getElementById('player_id'),
+            endpoint: '/api/autocomplete/players',
+            minChars: 2,
+            delay: 300
+        }
+    };
+
+    // Initialize autocomplete
+    setupAutocomplete(autocompleteConfig.player);
+
+    function setupAutocomplete(config) {
+        let timeout;
+        let selectedIndex = -1;
+
+        config.input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const query = this.value.trim();
+
+            if (query.length < config.minChars) {
+                config.results.classList.remove('show');
+                return;
+            }
+
+            timeout = setTimeout(() => {
+                fetchAutocomplete(config, query);
+            }, config.delay);
+        });
+
+        config.input.addEventListener('keydown', function(e) {
+            const items = config.results.querySelectorAll('.autocomplete-item');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateSelection(items, selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                updateSelection(items, selectedIndex);
+            } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                e.preventDefault();
+                items[selectedIndex].click();
+            } else if (e.key === 'Escape') {
+                config.results.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!config.input.contains(e.target) && !config.results.contains(e.target)) {
+                config.results.classList.remove('show');
+                selectedIndex = -1;
+            }
+        });
+    }
+
+    function updateSelection(items, index) {
+        items.forEach((item, i) => {
+            item.classList.toggle('selected', i === index);
+        });
+        if (items[index]) {
+            items[index].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    async function fetchAutocomplete(config, query) {
+        config.results.innerHTML = '<div class="autocomplete-loading">Searching...</div>';
+        config.results.classList.add('show');
+
+        try {
+            const response = await fetch(`${config.endpoint}?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+
+            if (data.length === 0) {
+                config.results.innerHTML = '<div class="autocomplete-loading">No results found</div>';
+                return;
+            }
+
+            config.results.innerHTML = data.map(item => {
+                const displayText = item.player_name || item.player || item.team_name || item;
+                const id = item.player_id || item.team_id || '';
+                return `<div class="autocomplete-item" data-id="${id}" data-value="${displayText}">${displayText}</div>`;
+            }).join('');
+
+            config.results.querySelectorAll('.autocomplete-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    config.input.value = this.dataset.value;
+                    if (config.hiddenInput && this.dataset.id) {
+                        config.hiddenInput.value = this.dataset.id;
+                    }
+                    config.results.classList.remove('show');
+                });
+            });
+        } catch (error) {
+            console.error('Autocomplete error:', error);
+            config.results.innerHTML = '<div class="autocomplete-loading">Error fetching results</div>';
+        }
+    }
+
+    // Form submission
+    document.getElementById('addShotForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '⏳ Saving...';
+
+        const formData = new FormData(this);
+        const data = {};
+
+        formData.forEach((value, key) => {
+            if (value !== '') {
+                data[key] = value;
+            }
+        });
+
+        // Ensure player_id is included
+        if (document.getElementById('player_id').value) {
+            data.player_id = document.getElementById('player_id').value;
+        }
+
+        try {
+            const response = await fetch('/api/admin/shots', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                showAlert('Shot added successfully! ✅', 'success');
+                setTimeout(() => {
+                    window.location.href = '/admin/shots';
+                }, 1500);
+            } else {
+                showAlert('Error: ' + (result.error || 'Failed to add shot'), 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '✅ Add Shot';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Network error: Failed to add shot', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = '✅ Add Shot';
+        }
+    });
+
+    function showAlert(message, type) {
+        const container = document.getElementById('alertContainer');
+        container.innerHTML = `<div class="alert alert-${type} show">${message}</div>`;
+        
+        setTimeout(() => {
+            const alert = container.querySelector('.alert');
+            if (alert) alert.classList.remove('show');
+        }, 5000);
+    }
+
+    function resetForm() {
+        if (confirm('Are you sure you want to reset the form?')) {
+            document.getElementById('addShotForm').reset();
+            document.getElementById('player_id').value = '';
+            document.getElementById('matchLoadingIndicator').innerHTML = '';
+            
+            // Disable match fields again
+            document.getElementById('season').disabled = true;
+            document.getElementById('h_team').disabled = true;
+            document.getElementById('a_team').disabled = true;
+            document.getElementById('date').disabled = true;
+            
+            matchDataLoaded = false;
+            
+            document.querySelectorAll('.autocomplete-results').forEach(el => {
+                el.classList.remove('show');
+            });
+        }
+    }
+</script>
+{% endblock %}

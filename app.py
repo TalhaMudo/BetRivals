@@ -313,10 +313,10 @@ def api_season_delete(seasonentryid):
 #--------------BILGE-END-------------------------------
 
 
-@app.route("/talha")
-def talha():
-    """Talha sayfası"""
-    return render_template("talha.html", title="Talha")
+@app.route("/players")
+def players():
+    """Players sayfası"""
+    return render_template("players.html", title="Players")
 #--------------TALHA-START-----------------------------
 
 @app.route("/api/players/fut23", methods=['GET'])
@@ -425,6 +425,7 @@ def api_player_detail(player_id):
     try:
         query = """
         SELECT 
+            p.best_shot_id,
             p.season_player_id,
             p.player_id,
             p.player_name,
@@ -479,12 +480,31 @@ def api_player_detail(player_id):
         results = db.execute_query(query, params=[player_id])
         if not results or len(results) == 0:
             return jsonify({"error": "Player not found"}), 404
-        return jsonify({"player": results[0]})
+        player = results[0]
+
+        # Fallback: if best_shot_id is missing, pick the highest xG shot for this player
+        if not player.get("best_shot_id"):
+            try:
+                best_shot_query = """
+                    SELECT shot_id
+                    FROM shot_data
+                    WHERE player_id = %s
+                    ORDER BY xG DESC
+                    LIMIT 1
+                """
+                best_results = db.execute_query(best_shot_query, (player_id,), fetch_all=True)
+                if best_results and len(best_results) > 0:
+                    player["best_shot_id"] = best_results[0]["shot_id"]
+            except Exception as _:
+                # Swallow fallback errors silently; API still returns player data
+                pass
+
+        return jsonify({"player": player})
     except Exception as e:
         logger.exception("Error fetching player detail: %s", e)
         return jsonify({"error": "Database error"}), 500
 
-@app.route("/talha/<int:player_id>")
+@app.route("/players/<int:player_id>")
 def player_detail(player_id):
     """Individual player detail page"""
     return render_template("player_detail.html", title="Player Details", player_id=player_id)
@@ -949,7 +969,7 @@ def player_stats_api(player_id):
             'error': str(e)
         }), 500
 
-
+#2sg - - - - - - - - - - - - - - - - - - below is for admin page : 
 
 # --- Authentication Middleware --- #
 def login_required(f):
@@ -1074,9 +1094,8 @@ def logout():
     session.clear()
     return redirect("/login?logged_out=true")
 
-#2sg - - - - - - - - - - - - - - - - - - below is for admin page : 
 
-# Add these routes to your app.py (in OSMAN section or appropriate place)
+
 
 @app.route("/admin/shots")
 @login_required
@@ -1281,6 +1300,117 @@ def api_delete_shot(shot_id):
         logger.exception(f"Error deleting shot {shot_id}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+#3srg below is for add shot:
+# Add these routes in the OSMAN section of app.py
+# Add this route in the OSMAN section of app.py
+
+@app.route('/api/match/<int:match_id>')
+@login_required
+def api_get_match(match_id):
+    """API endpoint to fetch match details by match_id"""
+    try:
+        # Query match_info table for match details
+        query = """
+            SELECT 
+                match_id,
+                date,
+                season,
+                team_h,
+                team_a,
+                h_goals,
+                a_goals,
+                league
+            FROM match_info
+            WHERE match_id = %s
+            LIMIT 1
+        """
+        
+        results = db.execute_query(query, (match_id,), fetch_all=True)
+        
+        if not results or len(results) == 0:
+            return jsonify({
+                'success': False,
+                'error': 'Match not found'
+            }), 404
+        
+        match = results[0]
+        
+        return jsonify({
+            'success': True,
+            'match': match
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error fetching match {match_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    
+    
+@app.route("/admin/shots/add")
+@login_required
+def admin_add_shot():
+    """Display add shot form"""
+    return render_template("admin_add_shot.html", username=session.get("username"))
+
+@app.route('/api/autocomplete/players')
+def autocomplete_players():
+    """API endpoint for player name autocomplete"""
+    try:
+        query_str = request.args.get('q', '').strip()
+        
+        if len(query_str) < 2:
+            return jsonify([])
+        
+        # Search in both player and shot_data tables for MySQL
+        query = """
+            SELECT player_id, player_name FROM (
+                SELECT DISTINCT player_id, player_name 
+                FROM player 
+                WHERE player_name LIKE %s
+                UNION
+                SELECT DISTINCT player_id, player 
+                FROM shot_data 
+                WHERE player LIKE %s
+            ) AS combined
+            ORDER BY player_name
+            LIMIT 20
+        """
+        
+        results = db.execute_query(query, (f"%{query_str}%", f"%{query_str}%"), fetch_all=True)
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        logger.exception(f"Error in player autocomplete: {e}")
+        return jsonify([]), 500
+
+@app.route('/api/autocomplete/teams')
+def autocomplete_teams():
+    """API endpoint for team name autocomplete"""
+    try:
+        query_str = request.args.get('q', '').strip()
+        
+        if len(query_str) < 1:
+            return jsonify([])
+        
+        # Search in teams table
+        query = """
+            SELECT DISTINCT team_name
+            FROM teams
+            WHERE team_name LIKE %s
+            ORDER BY team_name
+            LIMIT 20
+        """
+        
+        results = db.execute_query(query, (f"%{query_str}%",), fetch_all=True)
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        logger.exception(f"Error in team autocomplete: {e}")
+        return jsonify([]), 500
 
 #2sr -------------------------------------------------------------------------------------------------------------------------------
 #--------------OSMAN-END-------------------------------
@@ -1603,4 +1733,4 @@ def api_matches():
 #  Main Entry Point
 # -------------------------------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
