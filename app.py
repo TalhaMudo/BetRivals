@@ -1526,7 +1526,37 @@ def match_page(match_id):
         """
         shots = db.execute_query(shots_q, (match_id,), fetch_all=True) or []
 
-        return render_template('match_detail.html', match=match, home_recent=home_recent, away_recent=away_recent, h2h_recent=h2h_recent, h2h_stats=h2h_stats, shots=shots)
+        # Top performers in this match
+        # 4 table join: match_info, shot_data, player, teams
+        top_performers_q = """
+            SELECT 
+                p.player_id,
+                COALESCE(p.player_name, s.player) AS player_name,
+                p.position,
+                CASE 
+                    WHEN s.h_a = 'h' THEN mi.team_h
+                    WHEN s.h_a = 'a' THEN mi.team_a
+                    ELSE COALESCE(s.h_team, s.a_team)
+                END AS team,
+                COUNT(s.shot_id) AS shots_taken,
+                SUM(s.xG) AS total_xg,
+                SUM(CASE WHEN s.result = 'Goal' THEN 1 ELSE 0 END) AS goals_scored,
+                AVG(s.xG) AS avg_xg_per_shot,
+                p.goals AS season_goals,
+                p.assists AS season_assists,
+                p.year AS season_year
+            FROM match_info mi
+            INNER JOIN shot_data s ON mi.match_id = s.match_id
+            LEFT JOIN player p ON s.player_id = p.player_id AND p.year = mi.season
+            WHERE mi.match_id = %s
+            GROUP BY p.player_id, p.player_name, s.player, p.position, s.h_a, mi.team_h, mi.team_a, s.h_team, s.a_team, p.goals, p.assists, p.year
+            HAVING shots_taken > 0
+            ORDER BY total_xg DESC, shots_taken DESC
+            LIMIT 10
+        """
+        top_performers = db.execute_query(top_performers_q, (match_id,), fetch_all=True) or []
+
+        return render_template('match_detail.html', match=match, home_recent=home_recent, away_recent=away_recent, h2h_recent=h2h_recent, h2h_stats=h2h_stats, shots=shots, top_performers=top_performers)
     except Exception as e:
         logger.exception(f"Error fetching match {match_id}: %s", e)
         return render_template('error.html', error='Database Error', message=str(e)), 500
@@ -1659,6 +1689,18 @@ def api_delete_match(match_id):
     except Exception as e:
         logger.exception(f"Error deleting match {match_id}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/match/seasons', methods=['GET'])
+def api_match_seasons():
+    """Return distinct seasons available in match_info"""
+    try:
+        rows = db.execute_query("SELECT DISTINCT season FROM match_info WHERE season IS NOT NULL ORDER BY season DESC", fetch_all=True)
+        seasons = [r['season'] for r in rows if r.get('season') is not None]
+        return jsonify({'seasons': seasons})
+    except Exception as e:
+        logger.exception(f"Error fetching match seasons: {e}")
+        return jsonify({'seasons': []}), 500
 
 
 @app.route("/api/matches", methods=['POST'])

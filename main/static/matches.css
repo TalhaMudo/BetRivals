@@ -20,6 +20,13 @@
     background-clip: text;
     text-shadow: 0 0 20px rgba(46, 204, 113, 0.3);
 }
+/* the above style code messes up the ball emoji rendering, this fixes it */
+.hero h2 .emoji {
+    -webkit-text-fill-color: initial;
+    background: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+}
 
 .hero p {
     font-size: 1.3em;
@@ -400,6 +407,49 @@
     min-width: 90px;
     font-size: 0.95em;
 }
+/* sliding advanced filter section, like Osman's search page. helal et abi */
+#advancedFilters {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-top:16px;
+    overflow: hidden; max-height: 0; opacity: 0; transition: max-height 360ms cubic-bezier(0.2,0.8,0.2,1), opacity 220ms ease;
+}
+#advancedFilters.open { opacity: 1; }
+
+input[type="date"], input[type="datetime-local"], input[type="time"] {
+    -webkit-appearance: none; appearance: none;
+    background: linear-gradient(180deg, rgba(10,14,20,0.6), rgba(12,16,20,0.72));
+    color: #e8e8e8;
+    border: 2px solid rgba(46,204,113,0.18);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.95em;
+    transition: all 0.2s ease;
+}
+input[type="date"]:focus, input[type="datetime-local"]:focus, input[type="time"]:focus {
+    border-color: #2ecc71;
+    box-shadow: 0 0 8px rgba(46,204,113,0.3);
+    background: linear-gradient(180deg, rgba(10,14,20,0.8), rgba(12,16,20,0.9));
+}
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) sepia(0.2) saturate(0.8) hue-rotate(70deg) brightness(1.2);
+    cursor: pointer;
+}
+input[type="date"]:not(:focus):invalid,
+input[type="date"]:not(:focus):placeholder-shown {
+    color: #718096;
+}
+input[type="date"]::before {
+    content: attr(placeholder);
+    color: #718096;
+    width: 100%;
+}
+input[type="date"]:focus::before,
+input[type="date"]:valid::before {
+    content: "";
+}
+
+@media (max-width:900px) { #advancedFilters.open { max-height: 1200px; } }
+@media (min-width:901px) { #advancedFilters.open { max-height: 800px; } }
 
 .results-table tbody tr.result-row {
     cursor: pointer;
@@ -436,8 +486,13 @@
     flex: 1 1 40%;
 }
 
-.team-block.team-home .team-name { text-align: right; padding-right: 12px; }
-.team-block.team-away .team-name { text-align: left; padding-left: 12px; }
+.team-block.team-home .team-name { 
+    text-align: right; 
+    padding-right: 12px; 
+}
+.team-block.team-away .team-name { 
+    text-align: left; 
+    padding-left: 12px; }
 
 .team-block .team-name {
     font-weight: 700;
@@ -658,4 +713,158 @@
         padding: 6px 4px;
         margin: 0 -4px;
     }
+}
+
+/* team logos */
+.team-block { display:flex; align-items:center; gap:16px; }
+.team-logo { width:120px; height:120px; border-radius:12px; object-fit:cover; background:linear-gradient(135deg,#0f1419,#1b1f23); border:2px solid rgba(46,204,113,0.22); box-shadow: 0 10px 34px rgba(0,0,0,0.65); }
+.team-logo.no-logo { display:flex; align-items:center; justify-content:center; font-weight:800; color:#e8e8e8; background:linear-gradient(135deg,#2c3e50,#4b5563); font-size:2.0em; }
+
+.shots-card { padding:18px; border-radius:12px; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
+.shots-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.shots-head h3 { margin:0; color:#2ecc71; }
+.shots-stats { color:#b8b8b8; font-size:0.9em; }
+.shots-table-wrap { overflow:auto; }
+.shots-table th { background: linear-gradient(135deg,#163a2b,#0f241a); color:#aee6c3; }
+.shots-table td { padding:12px 14px; }
+.shots-table tr:hover { background: linear-gradient(90deg, rgba(46,204,113,0.03), rgba(46,204,113,0.02)); transform: translateY(-1px); }
+.col-min { width:60px; font-weight:700; color:#cfeedd; }
+.col-player a { color:#e8e8e8; text-decoration:none; font-weight:600; }
+.col-player a:hover { text-decoration:underline; }
+.col-xg { font-family:monospace; color:#a6f3c6; }
+.col-team { color:#b8d8c3; }
+.col-position { color:#9be6b7; font-size:0.9em; font-weight:600; }
+.col-shots { color:#cfeedd; }
+.col-goals { color:#2ecc71 !important; }
+.col-avg-xg { color:#88e6b0; }
+.col-season-stats { color:#b8b8b8; font-style:italic; }
+
+@media (max-width:900px) { .team-logo{ width:96px; height:96px; } .shots-table th, .shots-table td{ padding:8px 10px; } }
+
+/* ========== Flatpickr Calendar Theme ========== */
+.flatpickr-calendar { 
+    background: linear-gradient(180deg, #0a0e14, #0f1419) !important; 
+    border: 1px solid rgba(46,204,113,0.2) !important; 
+    border-radius: 12px !important; 
+    box-shadow: 0 12px 40px rgba(0,0,0,0.7) !important;
+}
+.flatpickr-months { 
+    background: rgba(15,20,25,0.95) !important; 
+    border-bottom: 1px solid rgba(46,204,113,0.15) !important;
+}
+.flatpickr-month { 
+    color: #e8e8e8 !important; 
+}
+.flatpickr-current-month { 
+    padding: 7px 0 !important;
+}
+.flatpickr-current-month .flatpickr-monthDropdown-months { 
+    background: rgba(10,14,20,0.8) !important;
+    color: #e8e8e8 !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    padding: 4px 8px !important;
+}
+.flatpickr-current-month .flatpickr-monthDropdown-months:hover {
+    background: rgba(46,204,113,0.1) !important;
+    border-color: rgba(46,204,113,0.4) !important;
+}
+.flatpickr-current-month .numInputWrapper {
+    background: rgba(10,14,20,0.8) !important;
+    border-radius: 6px !important;
+}
+.flatpickr-current-month .numInputWrapper:hover {
+    background: rgba(46,204,113,0.1) !important;
+}
+.flatpickr-current-month .numInputWrapper input.cur-year { 
+    color: #e8e8e8 !important; 
+    font-weight: 600 !important;
+    background: transparent !important;
+}
+.flatpickr-monthDropdown-months option { 
+    background: #0f1419 !important; 
+    color: #e8e8e8 !important; 
+}
+.flatpickr-weekdays { 
+    background: rgba(46,204,113,0.08) !important; 
+    border-bottom: 1px solid rgba(46,204,113,0.15) !important;
+}
+.flatpickr-weekday { 
+    color: #2ecc71 !important; 
+    font-weight: 700 !important; 
+    font-size: 0.9em !important;
+}
+.flatpickr-days { 
+    background: rgba(15,20,25,0.95) !important;
+}
+.flatpickr-day { 
+    color: #e8e8e8 !important; 
+    border: 1px solid transparent !important;
+}
+.flatpickr-day:hover:not(.flatpickr-disabled) { 
+    background: rgba(46,204,113,0.15) !important; 
+    border-color: rgba(46,204,113,0.3) !important; 
+    cursor: pointer !important;
+}
+.flatpickr-day.selected { 
+    background: linear-gradient(135deg, #2ecc71, #27ae60) !important; 
+    color: #0f1419 !important; 
+    border-color: #2ecc71 !important; 
+    font-weight: 700 !important;
+}
+.flatpickr-day.today { 
+    border-color: rgba(46,204,113,0.5) !important; 
+    background: rgba(46,204,113,0.12) !important;
+    font-weight: 600 !important;
+}
+.flatpickr-day.today:hover {
+    background: rgba(46,204,113,0.2) !important;
+}
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay { 
+    color: #555 !important; 
+}
+.flatpickr-day.disabled { 
+    color: #3a4a4a !important; 
+}
+.flatpickr-prev-month, 
+.flatpickr-next-month { 
+    fill: #e8e8e8 !important;
+}
+.flatpickr-prev-month:hover, 
+.flatpickr-next-month:hover { 
+    fill: #2ecc71 !important;
+}
+.flatpickr-prev-month svg, 
+.flatpickr-next-month svg { 
+    fill: #e8e8e8 !important;
+}
+.flatpickr-prev-month:hover svg, 
+.flatpickr-next-month:hover svg { 
+    fill: #2ecc71 !important;
+}
+.numInputWrapper span {
+    border: none !important;
+    background: rgba(46,204,113,0.1) !important;
+}
+.numInputWrapper span:hover {
+    background: rgba(46,204,113,0.2) !important;
+}
+.numInputWrapper span:after {
+    border-bottom-color: #e8e8e8 !important;
+}
+.numInputWrapper span.arrowUp:after {
+    border-bottom-color: #e8e8e8 !important;
+}
+.numInputWrapper span.arrowDown:after {
+    border-top-color: #e8e8e8 !important;
+}
+.numInputWrapper span:hover:after {
+    border-bottom-color: #2ecc71 !important;
+}
+.numInputWrapper span.arrowUp:hover:after {
+    border-bottom-color: #2ecc71 !important;
+}
+.numInputWrapper span.arrowDown:hover:after {
+    border-top-color: #2ecc71 !important;
 }

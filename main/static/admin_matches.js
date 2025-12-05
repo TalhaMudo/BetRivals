@@ -43,8 +43,8 @@ function renderMatchesTable(matches) {
             <td>${m.team_a ?? ''}</td>
             <td>${m.league ?? ''}</td>
             <td class="actions">
-                <button class="btn-edit" onclick="editMatch(${m.match_id})">Edit</button>
-                <button class="btn-delete" onclick="deleteMatchAction(${m.match_id})">Delete</button>
+                <button class="edit-btn" onclick="editMatch(${m.match_id})">Edit</button>
+                <button class="del-btn" onclick="deleteMatchAction(${m.match_id})">Delete</button>
             </td>
         </tr>
     `).join('');
@@ -65,6 +65,13 @@ function openCreateModal() {
     document.getElementById('matchForm').reset();
     document.getElementById('modalTitle').textContent = 'Add Match';
     document.getElementById('submitBtn').textContent = 'Add Match';
+    const mid = document.getElementById('field_match_id'); if (mid) mid.disabled = false;
+    // today's date is default for new matches
+    const dateField = document.getElementById('field_date');
+    if (dateField) {
+        const today = new Date().toISOString().slice(0, 16);
+        dateField.value = today;
+    }
     document.getElementById('matchModal').classList.add('active');
 }
 
@@ -91,6 +98,7 @@ async function editMatch(id) {
 
         document.getElementById('modalTitle').textContent = `Edit Match ${id}`;
         document.getElementById('submitBtn').textContent = 'Save changes';
+        const mid = document.getElementById('field_match_id'); if (mid) { mid.disabled = true; }
         document.getElementById('matchModal').classList.add('active');
     } catch (err) {
         showAlert(err.message || 'Could not load match', 'error');
@@ -100,13 +108,32 @@ async function editMatch(id) {
 async function saveMatch(e) {
     e.preventDefault();
     const form = document.getElementById('matchForm');
+    
+    // check required fields before sending to backend. other fields may be added later
+    const matchId = document.getElementById('field_match_id').value.trim();
+    const teamH = document.getElementById('field_team_h').value.trim();
+    const teamA = document.getElementById('field_team_a').value.trim();
+    
+    if (!matchId || matchId === '') {
+        showAlert('Match ID is required', 'error');
+        return;
+    }
+    if (!teamH || teamH === '') {
+        showAlert('Home Team is required', 'error');
+        return;
+    }
+    if (!teamA || teamA === '') {
+        showAlert('Away Team is required', 'error');
+        return;
+    }
+    
     const payload = {
-        match_id: parseInt(document.getElementById('field_match_id').value) || null,
+        match_id: parseInt(matchId) || null,
         date: document.getElementById('field_date').value || null,
         season: parseInt(document.getElementById('field_season').value) || null,
         league: document.getElementById('field_league').value || null,
-        team_h: document.getElementById('field_team_h').value || null,
-        team_a: document.getElementById('field_team_a').value || null,
+        team_h: teamH,
+        team_a: teamA,
         h_goals: document.getElementById('field_h_goals').value !== '' ? parseInt(document.getElementById('field_h_goals').value) : null,
         a_goals: document.getElementById('field_a_goals').value !== '' ? parseInt(document.getElementById('field_a_goals').value) : null,
         h_xg: document.getElementById('field_h_xg').value !== '' ? parseFloat(document.getElementById('field_h_xg').value) : null,
@@ -146,5 +173,22 @@ function showAlert(message, type = 'success') {
     setTimeout(()=> el.classList.remove('show'), 3000);
 }
 
+async function loadSeasons() {
+    try {
+        const res = await fetch('/api/match/seasons');
+        const data = await res.json();
+        const sel = document.getElementById('filterSeason');
+        const modalSel = document.getElementById('field_season');
+        if (sel && data.seasons) {
+            sel.innerHTML = '<option value="">Any Season</option>' + data.seasons.map(s => `<option value="${s}">${s}</option>`).join('');
+        }
+        if (modalSel && data.seasons) {
+            modalSel.innerHTML = '<option value="">-- select season --</option>' + data.seasons.map(s => `<option value="${s}">${s}</option>`).join('');
+        }
+    } catch (e) {
+        console.warn('Could not load seasons', e);
+    }
+}
+
 // load initial
-document.addEventListener('DOMContentLoaded', () => loadMatches());
+document.addEventListener('DOMContentLoaded', async () => { await loadSeasons(); await loadMatches(); });

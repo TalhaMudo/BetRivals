@@ -54,18 +54,26 @@ function renderTable(matches, limit = 50) {
 }
 
 function collectFilters() {
-    return {
+    const filters = {
         q: document.getElementById('q').value.trim(),
         season: document.getElementById('season').value,
-        date_from: document.getElementById('date_from').value,
-        date_to: document.getElementById('date_to').value,
-        min_goals: document.getElementById('min_goals').value,
-        max_goals: document.getElementById('max_goals').value,
-        min_xg: document.getElementById('min_xg').value,
+        date_from: document.getElementById('date_from').value || '',
+        date_to: document.getElementById('date_to').value || '',
+        min_goals: document.getElementById('min_goals').value || '',
+        max_goals: document.getElementById('max_goals').value || '',
+        min_xg: document.getElementById('min_xg').value || '',
         team_home: document.getElementById('team_home').value,
         team_away: document.getElementById('team_away').value,
         limit: 50
     };
+    // remove empty string keys so backend only sees non-empty filters
+    // this was working before, but after making the filters a sliding section. it just broke
+    return Object.keys(filters).reduce((acc, key) => {
+        if (filters[key] !== '' && filters[key] !== null) {
+            acc[key] = filters[key];
+        }
+        return acc;
+    }, {});
 }
 
 async function updateLimit(newLimit) {
@@ -138,6 +146,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('results').innerHTML = '';
     });
 
+    const advBtn = document.getElementById('btn_toggle_advanced');
+    if (advBtn) {
+        advBtn.addEventListener('click', e => {
+            e.preventDefault();
+            const adv = document.getElementById('advancedFilters');
+            if (!adv) return;
+
+            adv.style.display = 'grid';
+            const opening = !adv.classList.contains('open');
+            if (opening) {
+                adv.classList.add('open');
+                adv.setAttribute('aria-hidden', 'false');
+                advBtn.setAttribute('aria-expanded', 'true');
+                adv.style.maxHeight = adv.scrollHeight + 'px';
+            } else {
+                adv.style.maxHeight = adv.scrollHeight + 'px';
+                void adv.offsetHeight;
+                adv.style.maxHeight = '0px';
+                adv.classList.remove('open');
+                adv.setAttribute('aria-hidden', 'true');
+                advBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
     try {
         const initial = await fetchMatches({ limit: 5000 });
         populateTeamSelects(initial);
@@ -145,4 +178,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error('Failed to load team and season options:', error);
     }
+});
+
+// flatpickr date pickers
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        if (window.flatpickr) {
+            flatpickr('#date_from', {
+                mode: 'single',
+                dateFormat: 'Y-m-d',
+                disableMobile: false
+            });
+            
+            flatpickr('#date_to', {
+                mode: 'single',
+                dateFormat: 'Y-m-d',
+                disableMobile: false
+            });
+        }
+    }, 100);
 });

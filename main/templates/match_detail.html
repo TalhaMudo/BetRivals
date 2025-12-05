@@ -40,6 +40,7 @@
         <div class="match-card">
             <div class="match-top">
                 <div class="team-block team-home">
+                    <img class="team-logo" data-team="{{ match.team_h }}" alt="{{ match.team_h }}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" />
                     <div class="team-name">{{ match.team_h }}</div>
                 </div>
 
@@ -50,6 +51,7 @@
 
                 <div class="team-block team-away">
                     <div class="team-name">{{ match.team_a }}</div>
+                    <img class="team-logo" data-team="{{ match.team_a }}" alt="{{ match.team_a }}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" />
                 </div>
             </div>
 
@@ -172,31 +174,86 @@
     </div>
 
     <div class="match-card" style="margin-top:18px;">
-        <h3>Shots in this match</h3>
-        <div class="table-wrapper">
-            <table class="results-table">
+        <div class="shots-head">
+            <h3>⭐ Top Performers in This Match</h3>
+            <div class="shots-stats">Players with highest expected goals (xG)</div>
+        </div>
+        <div class="table-wrapper shots-table-wrap">
+            <table class="results-table shots-table">
                 <thead>
-                    <tr><th>Min</th><th>Player</th><th>Result</th><th>xG</th><th>Home</th><th>Away</th></tr>
+                    <tr>
+                        <th>Player</th>
+                        <th>Position</th>
+                        <th>Team</th>
+                        <th>Shots</th>
+                        <th>Total xG</th>
+                        <th>Goals</th>
+                        <th>Avg xG/Shot</th>
+                        <th>Season Stats</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if top_performers %}
+                        {% for perf in top_performers %}
+                        <tr class="result-row" onclick="window.location='/players/{{ perf.player_id }}'">
+                            <td class="col-player">
+                                <a href="/players/{{ perf.player_id }}" onclick="event.stopPropagation();">
+                                    {{ perf.player_name or 'Unknown' }}
+                                </a>
+                            </td>
+                            <td class="col-position">{{ perf.position or '—' }}</td>
+                            <td class="col-team">{{ perf.team or '—' }}</td>
+                            <td class="col-shots" style="text-align:center; font-weight:700;">{{ perf.shots_taken }}</td>
+                            <td class="col-xg">{{ '%.2f' % (perf.total_xg or 0) }}</td>
+                            <td class="col-goals" style="text-align:center; font-weight:700; color:#2ecc71;">{{ perf.goals_scored }}</td>
+                            <td class="col-avg-xg" style="font-family:monospace;">{{ '%.3f' % (perf.avg_xg_per_shot or 0) }}</td>
+                            <td class="col-season-stats" style="font-size:0.9em; color:#b8b8b8;">
+                                {% if perf.season_goals is not none and perf.season_assists is not none %}
+                                    {{ perf.season_goals }}G / {{ perf.season_assists }}A
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="8" style="color:#888; text-align:center;">No player performance data available</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="match-card shots-card" style="margin-top:18px;">
+        <div class="shots-head">
+            <h3>Highlighted Shots In This Match</h3>
+            <div class="shots-stats">Total: <strong>{{ shots|length }}</strong></div>
+        </div>
+        <div class="table-wrapper shots-table-wrap">
+            <table class="results-table shots-table">
+                <thead>
+                    <tr><th>Min</th><th>Player</th><th>Result</th><th>xG</th><th>Team</th></tr>
                 </thead>
                 <tbody>
                     {% if shots %}
                         {% for s in shots %}
                         <tr class="result-row" onclick="window.location='/shot/{{ s.shot_id }}'">
-                            <td>{{ s.minute or '' }}</td>
-                            <td><a href="/talha/{{ s.player_id }}" onclick="event.stopPropagation();">{{ s.player_name or s.player }}</a></td>
-                            <td>{{ s.result or '' }}</td>
-                            <td>{{ '%.2f' % (s.xG or 0) }}</td>
-                            <td>{{ s.h_team or '' }}</td>
-                            <td>{{ s.a_team or '' }}</td>
+                            <td class="col-min">{{ s.minute or '' }}</td>
+                            <td class="col-player"><a href="/players/{{ s.player_id }}" onclick="event.stopPropagation();">{{ s.player_name or s.player }}</a></td>
+                            <td class="col-result">{{ s.result or '' }}</td>
+                            <td class="col-xg">{{ '%.2f' % (s.xG or 0) }}</td>
+                            <td class="col-team">{{ s.h_team or s.a_team or '' }}</td>
                         </tr>
                         {% endfor %}
                     {% else %}
-                        <tr><td colspan="6" style="color:#888; text-align:center;">No shots recorded for this match</td></tr>
+                        <tr><td colspan="5" style="color:#888; text-align:center;">No shots recorded for this match</td></tr>
                     {% endif %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<script src="{{ url_for('static', filename='match_detail.js') }}"></script>
 
 {% endblock %}
