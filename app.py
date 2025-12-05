@@ -1306,7 +1306,7 @@ def api_delete_shot(shot_id):
 
 @app.route('/api/match/<int:match_id>')
 @login_required
-def api_get_match(match_id):
+def api_get_match_info(match_id):
     """API endpoint to fetch match details by match_id"""
     try:
         # Query match_info table for match details
@@ -1514,10 +1514,193 @@ def match_page(match_id):
         match['h_xg_width'] = f"{h_xg_pct}%"
         match['a_xg_width'] = f"{a_xg_pct}%"
 
-        return render_template('match_detail.html', match=match, home_recent=home_recent, away_recent=away_recent, h2h_recent=h2h_recent, h2h_stats=h2h_stats)
+        # shots in this match
+        shots_q = """
+            SELECT s.shot_id, s.minute, s.result, s.xG, s.player, s.player_id,
+                   COALESCE(p.player_name, s.player) AS player_name,
+                   s.h_team, s.a_team
+            FROM shot_data s
+            LEFT JOIN player p ON s.player_id = p.player_id
+            WHERE s.match_id = %s
+            ORDER BY s.minute ASC
+        """
+        shots = db.execute_query(shots_q, (match_id,), fetch_all=True) or []
+
+        # Top performers in this match
+        # 4 table join: match_info, shot_data, player, teams
+        top_performers_q = """
+            SELECT 
+                p.player_id,
+                COALESCE(p.player_name, s.player) AS player_name,
+                p.position,
+                CASE 
+                    WHEN s.h_a = 'h' THEN mi.team_h
+                    WHEN s.h_a = 'a' THEN mi.team_a
+                    ELSE COALESCE(s.h_team, s.a_team)
+                END AS team,
+                COUNT(s.shot_id) AS shots_taken,
+                SUM(s.xG) AS total_xg,
+                SUM(CASE WHEN s.result = 'Goal' THEN 1 ELSE 0 END) AS goals_scored,
+                AVG(s.xG) AS avg_xg_per_shot,
+                p.goals AS season_goals,
+                p.assists AS season_assists,
+                p.year AS season_year
+            FROM match_info mi
+            INNER JOIN shot_data s ON mi.match_id = s.match_id
+            LEFT JOIN player p ON s.player_id = p.player_id AND p.year = mi.season
+            WHERE mi.match_id = %s
+            GROUP BY p.player_id, p.player_name, s.player, p.position, s.h_a, mi.team_h, mi.team_a, s.h_team, s.a_team, p.goals, p.assists, p.year
+            HAVING shots_taken > 0
+            ORDER BY total_xg DESC, shots_taken DESC
+            LIMIT 10
+        """
+        top_performers = db.execute_query(top_performers_q, (match_id,), fetch_all=True) or []
+
+        return render_template('match_detail.html', match=match, home_recent=home_recent, away_recent=away_recent, h2h_recent=h2h_recent, h2h_stats=h2h_stats, shots=shots, top_performers=top_performers)
     except Exception as e:
         logger.exception(f"Error fetching match {match_id}: %s", e)
         return render_template('error.html', error='Database Error', message=str(e)), 500
+
+@app.route('/admin/matches')
+@login_required
+def admin_matches():
+    """Render admin page for matches"""
+    try:
+        sql = "SELECT mi.match_id, mi.date, mi.season, mi.league, mi.team_h, mi.team_a, mi.h_goals, mi.a_goals FROM match_info mi ORDER BY date DESC LIMIT 200"
+        matches = db.execute_query(sql, fetch_all=True)
+        return render_template('admin_matches.html', matches=matches, username=session.get('username'))
+    except Exception as e:
+        logger.exception(f"Error fetching matches: {e}")
+        return render_template('admin_matches.html', matches=[], error='Failed to load matches', username=session.get('username'))
+
+
+@app.route('/api/admin/matches', methods=['GET'])
+@login_required
+def api_get_matches():
+    try:
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 50))
+        team = request.args.get('team', '').strip()
+        season = request.args.get('season', '').strip()
+
+        offset = (page - 1) * limit
+
+        count_sql = "SELECT COUNT(*) as total FROM match_info WHERE 1=1"
+        base_sql = "SELECT match_id, date, season, league, team_h, team_a, h_goals, a_goals, h_xg, a_xg FROM match_info WHERE 1=1"
+        params = []
+        count_params = []
+
+        if team:
+            base_sql += " AND (team_h LIKE %s OR team_a LIKE %s)"
+            count_sql += " AND (team_h LIKE %s OR team_a LIKE %s)"
+            params.extend([f"%{team}%", f"%{team}%"])
+            count_params.extend([f"%{team}%", f"%{team}%"])
+
+        if season:
+            base_sql += " AND season = %s"
+            count_sql += " AND season = %s"
+            params.append(season)
+            count_params.append(season)
+
+        count_result = db.execute_query(count_sql, tuple(count_params), fetch_all=True)
+        total = count_result[0]['total'] if count_result else 0
+
+        base_sql += " ORDER BY date DESC LIMIT %s OFFSET %s"
+        params.extend([limit, offset])
+
+        matches = db.execute_query(base_sql, tuple(params), fetch_all=True)
+
+        return jsonify({'success': True, 'matches': matches, 'total': total, 'page': page, 'limit': limit})
+    except Exception as e:
+        logger.exception(f"Error fetching matches API: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/matches', methods=['POST'])
+@login_required
+def api_create_match():
+    try:
+        data = request.get_json() or {}
+        required = ['match_id', 'date', 'team_h', 'team_a']
+        if not all(k in data for k in required):
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+        sql = "INSERT INTO match_info (match_id, date, season, league, team_h, team_a, h_goals, a_goals, h_xg, a_xg) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+        params = (
+            data.get('match_id'), data.get('date'), data.get('season'), data.get('league'),
+            data.get('team_h'), data.get('team_a'), data.get('h_goals'), data.get('a_goals'),
+            data.get('h_xg'), data.get('a_xg')
+        )
+
+        db.execute_query(sql, params, fetch_all=False)
+        return jsonify({'success': True, 'message': 'Match created successfully'}), 201
+    except Exception as e:
+        logger.exception(f"Error creating match: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/matches/<int:match_id>', methods=['GET'])
+@login_required
+def api_get_match(match_id):
+    try:
+        sql = "SELECT * FROM match_info WHERE match_id = %s"
+        result = db.execute_query(sql, (match_id,), fetch_all=True)
+        if not result:
+            return jsonify({'success': False, 'error': 'Match not found'}), 404
+        return jsonify({'success': True, 'match': result[0]})
+    except Exception as e:
+        logger.exception(f"Error fetching match {match_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/matches/<int:match_id>', methods=['PUT'])
+@login_required
+def api_update_match(match_id):
+    try:
+        data = request.get_json() or {}
+        updatable = ['date','season','league','team_h','team_a','h_goals','a_goals','h_xg','a_xg']
+        fields = []
+        params = []
+        for f in updatable:
+            if f in data:
+                fields.append(f + ' = %s')
+                params.append(data[f])
+
+        if not fields:
+            return jsonify({'success': False, 'error': 'No fields to update'}), 400
+        params.append(match_id)
+        sql = f"UPDATE match_info SET {', '.join(fields)} WHERE match_id = %s"
+        db.execute_query(sql, tuple(params), fetch_all=False)
+        return jsonify({'success': True, 'message': 'Match updated successfully'})
+    except Exception as e:
+        logger.exception(f"Error updating match {match_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/matches/<int:match_id>', methods=['DELETE'])
+@login_required
+def api_delete_match(match_id):
+    try:
+        check = db.execute_query('SELECT match_id FROM match_info WHERE match_id = %s', (match_id,), fetch_all=True)
+        if not check:
+            return jsonify({'success': False, 'error': 'Match not found'}), 404
+        db.execute_query('DELETE FROM match_info WHERE match_id = %s', (match_id,), fetch_all=False)
+        return jsonify({'success': True, 'message': 'Match deleted successfully'})
+    except Exception as e:
+        logger.exception(f"Error deleting match {match_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/match/seasons', methods=['GET'])
+def api_match_seasons():
+    """Return distinct seasons available in match_info"""
+    try:
+        rows = db.execute_query("SELECT DISTINCT season FROM match_info WHERE season IS NOT NULL ORDER BY season DESC", fetch_all=True)
+        seasons = [r['season'] for r in rows if r.get('season') is not None]
+        return jsonify({'seasons': seasons})
+    except Exception as e:
+        logger.exception(f"Error fetching match seasons: {e}")
+        return jsonify({'seasons': []}), 500
 
 
 @app.route("/api/matches", methods=['POST'])
@@ -1585,15 +1768,7 @@ def api_matches():
         logger.exception("Error fetching matches: %s", e)
         return jsonify({"error": "Database error", "matches": []}), 500
 
-@app.route("/api/add_match", methods=['POST'])
-def api_add_match():
-    """Create a new match entry in the database.""" # admin user only
-    pass
 
-@app.route("/api/modify_match", methods=['POST'])
-def api_delete_match():
-    """Modify a match entry from the database. It can be used to delete a match as well.""" # admin user only
-    pass
 
 
 # -------------------------------------------------

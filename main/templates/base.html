@@ -189,7 +189,6 @@
         }
 
         h1 {
-            pointer-events: none;
             font-size: 2rem;
             font-weight: 800;
             background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
@@ -650,7 +649,7 @@
     
     <header>
         <div class="header-content">
-            <h1><span>🏆</span> BetRivals</h1>
+            <h1><a href="{{ url_for('home') }}" style="text-decoration: none; color: inherit;"><span>🏆</span> BetRivals</a></h1>
             <button class="hamburger" aria-label="Toggle menu">
                 <span></span>
                 <span></span>
