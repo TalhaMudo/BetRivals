@@ -1306,7 +1306,7 @@ def api_delete_shot(shot_id):
 
 @app.route('/api/match/<int:match_id>')
 @login_required
-def api_get_match(match_id):
+def api_get_match_info(match_id):
     """API endpoint to fetch match details by match_id"""
     try:
         # Query match_info table for match details
