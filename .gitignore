@@ -72,3 +72,4 @@ docker-compose.override.yml
 *.tmp
 tempCodeRunnerFile.py
 gercekapp.py
+main/.DS_Store
