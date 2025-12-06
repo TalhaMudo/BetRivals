@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session
 import os
 import logging
+import requests
 from dotenv import load_dotenv
 from utils import DatabaseConnector
 from functools import wraps
@@ -329,6 +330,128 @@ def api_fut23_all():
     except Exception as e:
         logger.exception("Error fetching fut23 data: %s", e)
         return jsonify({"error": "Database error", "players": []}), 500
+
+# Comparison helpers
+def _ensure_compare_list():
+    if "compare_list" not in session or not isinstance(session.get("compare_list"), list):
+        session["compare_list"] = []
+    # Enforce limit of 4
+    session["compare_list"] = session["compare_list"][:4]
+
+@app.route("/api/players/compare/list", methods=['GET'])
+def api_compare_list():
+    """Return current comparison list (player_ids)"""
+    _ensure_compare_list()
+    return jsonify({"players": session["compare_list"]})
+
+@app.route("/api/players/compare/add/<int:player_id>", methods=['POST'])
+def api_compare_add(player_id):
+    """Add a player to comparison list (max 4)"""
+    _ensure_compare_list()
+    compare = session["compare_list"]
+    if player_id in compare:
+        return jsonify({"players": compare, "message": "Already added"})
+    if len(compare) >= 4:
+        return jsonify({"players": compare, "error": "Limit reached"}), 400
+    compare.append(player_id)
+    session["compare_list"] = compare
+    session.modified = True
+    return jsonify({"players": compare})
+
+@app.route("/api/players/compare/remove/<int:player_id>", methods=['POST'])
+def api_compare_remove(player_id):
+    """Remove a player from comparison list"""
+    _ensure_compare_list()
+    compare = session["compare_list"]
+    compare = [pid for pid in compare if pid != player_id]
+    session["compare_list"] = compare
+    session.modified = True
+    return jsonify({"players": compare})
+
+@app.route("/api/players/compare/data", methods=['GET'])
+def api_compare_data():
+    """Return detailed data for players in comparison list"""
+    _ensure_compare_list()
+    compare = session["compare_list"]
+    if not compare:
+        return jsonify({"players": []})
+
+    placeholders = ", ".join(["%s"] * len(compare))
+    query = f"""
+        SELECT 
+            p.player_id,
+            p.player_name,
+            p.team_title,
+            p.position,
+            p.games,
+            p.goals,
+            p.assists,
+            p.xG,
+            p.shots,
+            p.key_passes,
+            p.time,
+            p.yellow_cards,
+            p.red_cards,
+            f.Rating,
+            f.Pace,
+            f.Shoot,
+            f.Pass,
+            f.Drible,
+            f.Defense,
+            f.Physical,
+            f.Skill,
+            f.Weak_foot
+        FROM player p
+        LEFT JOIN fut23 f ON p.player_id = f.player_id
+        WHERE p.player_id IN ({placeholders})
+    """
+    try:
+        results = db.execute_query(query, params=compare)
+        # preserve order as in session
+        result_map = {r["player_id"]: r for r in results or []}
+        ordered = [result_map[pid] for pid in compare if pid in result_map]
+        return jsonify({"players": ordered})
+    except Exception as e:
+        logger.exception("Error fetching comparison data: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/players/compare")
+def players_compare_page():
+    """Render comparison page"""
+    return render_template("player_compare.html", title="Compare Players")
+
+@app.route("/api/quotes/random", methods=['GET'])
+def api_random_quote():
+    """Fetch a random quote filtered by selected categories from api-ninjas"""
+    api_key = os.getenv("API_NINJAS_KEY")
+    if not api_key:
+        return jsonify({"error": "API key missing"}), 500
+
+    categories = "wisdom,success,inspirational,courage,leadership"
+    url = f"https://api.api-ninjas.com/v2/randomquotes?categories={categories}"
+
+    try:
+        resp = requests.get(
+            url,
+            headers={"X-Api-Key": api_key},
+            timeout=8
+        )
+        if resp.status_code != 200:
+            return jsonify({"error": "Quote service error"}), resp.status_code
+
+        payload = resp.json()
+        if isinstance(payload, list) and payload:
+            item = payload[0]
+            return jsonify({
+                "quote": item.get("quote"),
+                "author": item.get("author"),
+                "work": item.get("work"),
+                "categories": item.get("categories")
+            })
+        return jsonify({"error": "No quote found"}), 502
+    except requests.RequestException as e:
+        logger.exception("Quote fetch failed: %s", e)
+        return jsonify({"error": "Quote fetch failed"}), 500
 
 @app.route("/api/players/analysis", methods=['GET'])
 def api_players_analysis():

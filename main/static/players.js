@@ -2,48 +2,24 @@
 
 document.addEventListener('DOMContentLoaded', function () {
     const btnAnalysis = document.getElementById('btn-analysis');
-    const btnTest = document.getElementById('btn-test-fut23');
     const resultsDiv = document.getElementById('results');
     const searchInput = document.getElementById('player-search');
     const searchBtn = document.getElementById('search-btn');
     const searchResultsDiv = document.getElementById('search-results');
+    const quoteTextEl = document.getElementById('quote-text');
+    const quoteAuthorEl = document.getElementById('quote-author');
 
-    // Analysis button - shows players with most goals but least FIFA ratings
+    // Load quote on page load
+    loadQuote(quoteTextEl, quoteAuthorEl);
+
+    // Init comparison floating button (every page)
+    initComparisonButton();
+
+    // Show All Players button
     if (btnAnalysis) {
         btnAnalysis.addEventListener('click', async function () {
             btnAnalysis.disabled = true;
             btnAnalysis.textContent = 'Loading...';
-            resultsDiv.innerHTML = '<div class="loading">Analyzing player data</div>';
-
-            try {
-                const response = await fetch('/api/players/analysis');
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to fetch data');
-                }
-
-                displayAnalysisResults(data);
-
-            } catch (error) {
-                console.error('Error:', error);
-                resultsDiv.innerHTML = `
-                    <div class="error-message">
-                        <strong>Error:</strong> ${error.message}
-                    </div>
-                `;
-            } finally {
-                btnAnalysis.disabled = false;
-                btnAnalysis.textContent = '🔍 Show Top Goal Scorers (Low FIFA Rating)';
-            }
-        });
-    }
-
-    // Test button - shows all FUT23 players
-    if (btnTest) {
-        btnTest.addEventListener('click', async function () {
-            btnTest.disabled = true;
-            btnTest.textContent = 'Loading...';
             resultsDiv.innerHTML = '<div class="loading">Loading players data</div>';
 
             try {
@@ -64,8 +40,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 `;
             } finally {
-                btnTest.disabled = false;
-                btnTest.textContent = 'Load All FUT23 Players';
+                btnAnalysis.disabled = false;
+                btnAnalysis.textContent = '👥 Show All Players';
             }
         });
     }
@@ -112,6 +88,137 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+// --- Comparison helpers ---
+const COMPARE_MAIN_STATS = ['goals', 'assists', 'games', 'xG', 'shots', 'key_passes', 'time', 'yellow_cards', 'red_cards'];
+const COMPARE_FIFA_STATS = ['Rating', 'Pace', 'Shoot', 'Pass', 'Drible', 'Defense', 'Physical', 'Skill', 'Weak_foot'];
+const LOWER_BETTER = new Set(['yellow_cards', 'red_cards']);
+
+async function getCompareList() {
+    const resp = await fetch('/api/players/compare/list');
+    const data = await resp.json();
+    return data.players || [];
+}
+
+async function addToCompare(playerId) {
+    const resp = await fetch(`/api/players/compare/add/${playerId}`, { method: 'POST' });
+    return resp.json();
+}
+
+async function removeFromCompare(playerId) {
+    const resp = await fetch(`/api/players/compare/remove/${playerId}`, { method: 'POST' });
+    return resp.json();
+}
+
+function initComparisonButton() {
+    if (document.getElementById('compare-float-btn')) return; // already added
+
+    const btn = document.createElement('div');
+    btn.id = 'compare-float-btn';
+    btn.className = 'compare-float-btn';
+    btn.innerHTML = `<span class="compare-count">0</span>`;
+
+    const popup = document.createElement('div');
+    popup.id = 'compare-popup';
+    popup.className = 'compare-popup hidden';
+    popup.innerHTML = `
+        <div class="compare-popup-header">
+            <span>Comparison List</span>
+            <button id="compare-close" class="compare-close">✕</button>
+        </div>
+        <div class="compare-list" id="compare-list"></div>
+        <div class="compare-popup-actions">
+            <button id="compare-go" class="btn-compare" disabled>Compare</button>
+        </div>
+    `;
+
+    document.body.appendChild(btn);
+    document.body.appendChild(popup);
+
+    const togglePopup = (show) => {
+        popup.classList.toggle('hidden', !show);
+    };
+
+    btn.addEventListener('click', () => togglePopup(true));
+    popup.querySelector('#compare-close').addEventListener('click', () => togglePopup(false));
+    popup.querySelector('#compare-go').addEventListener('click', () => {
+        window.location.href = '/players/compare';
+    });
+
+    refreshCompareUI();
+}
+
+async function refreshCompareUI() {
+    const listEl = document.getElementById('compare-list');
+    const countEl = document.querySelector('#compare-float-btn .compare-count');
+    const goBtn = document.getElementById('compare-go');
+    if (!listEl || !countEl || !goBtn) return;
+
+    try {
+        const list = await getCompareList();
+        countEl.textContent = list.length;
+        listEl.innerHTML = list.length === 0 ? '<div class="empty">No players added</div>' : '';
+        
+        if (list.length > 0) {
+            // Fetch player data to get names
+            const dataResp = await fetch('/api/players/compare/data');
+            const data = await dataResp.json();
+            const players = data.players || [];
+            
+            // Create a map of player_id to player_name
+            const playerMap = {};
+            players.forEach(p => {
+                playerMap[p.player_id] = p.player_name || `Player #${p.player_id}`;
+            });
+            
+            list.forEach(pid => {
+                const row = document.createElement('div');
+                row.className = 'compare-row';
+                const playerName = playerMap[pid] || `Player #${pid}`;
+                row.innerHTML = `
+                    <span class="compare-name">${playerName}</span>
+                    <button class="compare-remove" data-pid="${pid}" title="Remove from comparison">−</button>
+                `;
+                listEl.appendChild(row);
+            });
+            
+            listEl.querySelectorAll('.compare-remove').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const pid = e.target.getAttribute('data-pid');
+                    await removeFromCompare(pid);
+                    refreshCompareUI();
+                    updateCompareButtonsState(pid);
+                });
+            });
+        }
+        
+        goBtn.disabled = list.length === 0;
+    } catch (e) {
+        listEl.innerHTML = '<div class="empty">Error loading list</div>';
+        console.error(e);
+    }
+}
+
+// --- Quotes ---
+async function loadQuote(quoteTextEl, quoteAuthorEl) {
+    if (!quoteTextEl || !quoteAuthorEl) return;
+    quoteTextEl.textContent = 'Loading quote...';
+    quoteAuthorEl.textContent = '';
+    try {
+        const response = await fetch('/api/quotes/random');
+        const data = await response.json();
+        if (!response.ok || data.error) {
+            throw new Error(data.error || 'Failed to fetch quote');
+        }
+        quoteTextEl.textContent = data.quote || 'No quote available';
+        quoteAuthorEl.textContent = data.author ? `— ${data.author}` : '';
+    } catch (err) {
+        console.error('Quote fetch error:', err);
+        quoteTextEl.textContent = 'Could not load quote right now.';
+        quoteAuthorEl.textContent = '';
+    }
+}
 
 function displayAnalysisResults(data) {
     const resultsDiv = document.getElementById('results');
@@ -260,10 +367,27 @@ function displayResults(data) {
         return;
     }
 
-    // Get all column names from the first player object
-    const columns = Object.keys(data.players[0]);
+    // Define preferred column order (most important first)
+    const preferredOrder = [
+        'Name', 'player_id', 'Rating', 'Position', 'Team', 'League', 'Country',
+        'Pace', 'Shoot', 'Pass', 'Drible', 'Defense', 'Physical',
+        'Skill', 'Weak_foot', 'Other_Positions', 'Run_type',
+        'Height_cm', 'Weight', 'Body_type',
+        'Attack_rate', 'Defense_rate', 'Price', 'Popularity',
+        'Base_Stats', 'In_Game_Stats', 'team_id'
+    ];
 
-    // Store original data for sorting
+    // Get all column names from the first player object
+    const allColumns = Object.keys(data.players[0]);
+    
+    // Reorder columns: preferred first, then any remaining columns
+    const columns = [
+        ...preferredOrder.filter(col => allColumns.includes(col)),
+        ...allColumns.filter(col => !preferredOrder.includes(col))
+    ];
+
+    // Store original data for sorting and reset
+    const originalData = [...data.players];
     let playersData = [...data.players];
     let currentSort = { column: null, direction: null };
 
@@ -283,11 +407,20 @@ function displayResults(data) {
         return !isNaN(parseFloat(sampleValue)) ? 'number' : 'string';
     }
 
-    // Sort function
+    // Sort function with reset option (third click resets)
     function sortTable(columnKey, columnType) {
         if (currentSort.column === columnKey) {
-            // Toggle direction
-            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            if (currentSort.direction === 'asc') {
+                // Second click: change to desc
+                currentSort.direction = 'desc';
+            } else {
+                // Third click: reset to original order
+                currentSort.column = null;
+                currentSort.direction = null;
+                playersData = [...originalData];
+                renderTable();
+                return;
+            }
         } else {
             currentSort.column = columnKey;
             currentSort.direction = 'asc';
@@ -331,10 +464,10 @@ function displayResults(data) {
         const tableHTML = `
             <div class="results-container">
                 <div class="results-header">
-                    <span>🏆</span>
-                    <span>FUT23 Players Data</span>
+                    <span>👥</span>
+                    <span>All Players</span>
                 </div>
-                <div class="results-count">Total players: ${data.count}${currentSort.column ? ` (sorted by: ${currentSort.column} ${currentSort.direction === 'asc' ? '↑' : '↓'})` : ''}</div>
+                <div class="results-count">Total players: ${data.count}${currentSort.column ? ` (sorted by: ${currentSort.column} ${currentSort.direction === 'asc' ? '↑' : '↓'})` : ' (unsorted)'}</div>
                 <div class="players-table">
                     <table>
                         <thead>
@@ -347,7 +480,7 @@ function displayResults(data) {
                         </thead>
                         <tbody>
                             ${playersData.map(player => `
-                                <tr>
+                                <tr class="player-row" data-player-id="${player.player_id || ''}" style="cursor: pointer;">
                                     ${columns.map(col => `<td>${player[col] !== null && player[col] !== undefined ? player[col] : '-'}</td>`).join('')}
                                 </tr>
                             `).join('')}
@@ -361,10 +494,21 @@ function displayResults(data) {
 
         // Add click event listeners to sortable headers
         document.querySelectorAll('.sortable').forEach(header => {
-            header.addEventListener('click', () => {
+            header.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent row click when clicking header
                 const columnKey = header.getAttribute('data-column');
                 const columnType = header.getAttribute('data-type');
                 sortTable(columnKey, columnType);
+            });
+        });
+
+        // Add click event listeners to player rows
+        document.querySelectorAll('.player-row').forEach(row => {
+            row.addEventListener('click', () => {
+                const playerId = row.getAttribute('data-player-id');
+                if (playerId) {
+                    window.location.href = `/players/${playerId}`;
+                }
             });
         });
     }
@@ -505,6 +649,9 @@ function displayPlayerDetail(player) {
             </div>
             <div class="player-right-col">
                 <h1 class="player-detail-name">${player.player_name || 'Unknown Player'}</h1>
+                <div class="compare-actions">
+                    <button id="compare-add-btn" class="btn-test btn-secondary" data-player-id="${player.player_id}">Add to Comparison</button>
+                </div>
                 <div class="tabs">
                     <button class="tab active" data-tab="player">Player</button>
                     ${hasFifa ? `<button class="tab" data-tab="fifa">FIFA 23</button>` : ''}
@@ -675,6 +822,9 @@ function displayPlayerDetail(player) {
 
     // Enable mask automatically if mask asset exists
     enableFifaMaskIfAvailable();
+
+    // Init comparison button state for detail page
+    initCompareButtonForDetail(player.player_id);
 }
 
 // Tabs init
@@ -692,6 +842,52 @@ function initTabs() {
             if (panel) panel.classList.add('active');
         });
     });
+}
+
+// Comparison detail button
+async function initCompareButtonForDetail(playerId) {
+    const btn = document.getElementById('compare-add-btn');
+    if (!btn) return;
+    const state = await getCompareList();
+    updateCompareButtonState(btn, state, playerId);
+    btn.addEventListener('click', async () => {
+        const list = await getCompareList();
+        if (list.includes(playerId)) {
+            await removeFromCompare(playerId);
+        } else {
+            const res = await addToCompare(playerId);
+            if (res.error) {
+                alert(res.error);
+            }
+        }
+        const newList = await getCompareList();
+        updateCompareButtonState(btn, newList, playerId);
+        refreshCompareUI();
+    });
+}
+
+function updateCompareButtonState(btn, list, playerId) {
+    const inList = list.includes(playerId);
+    const limit = list.length >= 4 && !inList;
+    btn.disabled = limit;
+    if (inList) {
+        btn.textContent = 'Added to Comparison';
+        btn.classList.add('btn-disabled');
+    } else if (limit) {
+        btn.textContent = 'Limit Reached';
+        btn.classList.add('btn-disabled');
+    } else {
+        btn.textContent = 'Add to Comparison';
+        btn.classList.remove('btn-disabled');
+    }
+}
+
+async function updateCompareButtonsState(playerId) {
+    const btn = document.getElementById('compare-add-btn');
+    if (btn && playerId) {
+        const list = await getCompareList();
+        updateCompareButtonState(btn, list, Number(playerId));
+    }
 }
 
 // Position helpers
@@ -752,6 +948,136 @@ function enableFifaMaskIfAvailable() {
     } catch (e) {
         // ignore
     }
+}
+
+// Comparison page loader
+async function loadComparisonPage() {
+    const container = document.getElementById('compare-container');
+    if (!container) return;
+    try {
+        const listResp = await fetch('/api/players/compare/list');
+        const listData = await listResp.json();
+        const ids = listData.players || [];
+        if (!ids.length) {
+            container.innerHTML = '<div class="error-message">No players in comparison. Add players to compare.</div>';
+            return;
+        }
+        const dataResp = await fetch('/api/players/compare/data');
+        const data = await dataResp.json();
+        const players = data.players || [];
+        if (!players.length) {
+            container.innerHTML = '<div class="error-message">No player data available for comparison.</div>';
+            return;
+        }
+        renderComparison(container, players);
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = '<div class="error-message">Failed to load comparison.</div>';
+    }
+}
+
+function renderComparison(container, players) {
+    const mainStats = COMPARE_MAIN_STATS;
+    const fifaStats = COMPARE_FIFA_STATS;
+
+    const makeSection = (title, stats) => {
+        const rows = stats.map(stat => renderStatRow(stat, players)).join('');
+        return `
+            <div class="compare-section">
+                <div class="compare-section-title">${title}</div>
+                <div class="compare-section-body">
+                    ${rows}
+                </div>
+            </div>
+        `;
+    };
+
+    const headerCols = players.map(p => `
+        <div class="compare-col">
+            <div class="compare-card">
+                <div class="compare-name">${p.player_name || 'Unknown'}</div>
+                <div class="compare-meta">${p.team_title || '-'} · ${p.position || '-'}</div>
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = `
+        <div class="compare-grid">
+            <div class="compare-header">
+                <div class="compare-col compare-label"></div>
+                ${headerCols}
+            </div>
+            ${makeSection('Main Stats', mainStats)}
+            ${makeSection('FIFA Data', fifaStats)}
+        </div>
+    `;
+}
+
+function renderStatRow(statKey, players) {
+    const displayName = statKeyDisplay(statKey);
+    const values = players.map(p => p[statKey]);
+    const classes = classifyValues(statKey, values);
+    const cells = values.map((v, idx) => `
+        <div class="compare-cell ${classes[idx]}">${formatStatValue(statKey, v)}</div>
+    `).join('');
+    return `
+        <div class="compare-row">
+            <div class="compare-label">${displayName}</div>
+            ${cells}
+        </div>
+    `;
+}
+
+function statKeyDisplay(key) {
+    const map = {
+        goals: 'Goals',
+        assists: 'Assists',
+        games: 'Games',
+        xG: 'xG',
+        shots: 'Shots',
+        key_passes: 'Key Passes',
+        time: 'Time Played (min)',
+        yellow_cards: 'Yellow Cards',
+        red_cards: 'Red Cards',
+        Rating: 'Overall',
+        Pace: 'Pace',
+        Shoot: 'Shooting',
+        Pass: 'Passing',
+        Drible: 'Dribbling',
+        Defense: 'Defense',
+        Physical: 'Physical',
+        Skill: 'Skill Moves',
+        Weak_foot: 'Weak Foot'
+    };
+    return map[key] || key;
+}
+
+function classifyValues(statKey, values) {
+    const nums = values.map(v => (v === null || v === undefined || v === '-') ? null : Number(v));
+    const valid = nums.filter(v => v !== null && !isNaN(v));
+    if (!valid.length) return values.map(() => '');
+    const betterIfLower = LOWER_BETTER.has(statKey);
+    const bestVal = betterIfLower ? Math.min(...valid) : Math.max(...valid);
+    const worstVal = betterIfLower ? Math.max(...valid) : Math.min(...valid);
+    return nums.map(v => {
+        if (v === null || isNaN(v)) return '';
+        if (v === bestVal && v === worstVal) return ''; // all equal
+        if (v === bestVal) return 'best';
+        if (v === worstVal) return 'worst';
+        return '';
+    });
+}
+
+function formatStatValue(statKey, value) {
+    if (value === null || value === undefined || value === '-') return '-';
+    if (statKey === 'time') {
+        const num = Number(value);
+        return isNaN(num) ? value : `${Math.round(num / 60)}`;
+    }
+    if (typeof value === 'number') return value;
+    const num = Number(value);
+    if (!isNaN(num)) return num;
+    return value;
 }
 
 // Shared Unsplash helper: fetch a player image URL
