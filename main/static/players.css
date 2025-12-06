@@ -164,6 +164,14 @@
     background: rgba(46, 204, 113, 0.1);
 }
 
+.player-row {
+    transition: background-color 0.2s ease;
+}
+
+.player-row:hover {
+    background: rgba(46, 204, 113, 0.2) !important;
+}
+
 .error-message {
     color: #e74c3c;
     background: rgba(231, 76, 60, 0.1);

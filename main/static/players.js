@@ -2,48 +2,16 @@
 
 document.addEventListener('DOMContentLoaded', function () {
     const btnAnalysis = document.getElementById('btn-analysis');
-    const btnTest = document.getElementById('btn-test-fut23');
     const resultsDiv = document.getElementById('results');
     const searchInput = document.getElementById('player-search');
     const searchBtn = document.getElementById('search-btn');
     const searchResultsDiv = document.getElementById('search-results');
 
-    // Analysis button - shows players with most goals but least FIFA ratings
+    // Show All Players button
     if (btnAnalysis) {
         btnAnalysis.addEventListener('click', async function () {
             btnAnalysis.disabled = true;
             btnAnalysis.textContent = 'Loading...';
-            resultsDiv.innerHTML = '<div class="loading">Analyzing player data</div>';
-
-            try {
-                const response = await fetch('/api/players/analysis');
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to fetch data');
-                }
-
-                displayAnalysisResults(data);
-
-            } catch (error) {
-                console.error('Error:', error);
-                resultsDiv.innerHTML = `
-                    <div class="error-message">
-                        <strong>Error:</strong> ${error.message}
-                    </div>
-                `;
-            } finally {
-                btnAnalysis.disabled = false;
-                btnAnalysis.textContent = '🔍 Show Top Goal Scorers (Low FIFA Rating)';
-            }
-        });
-    }
-
-    // Test button - shows all FUT23 players
-    if (btnTest) {
-        btnTest.addEventListener('click', async function () {
-            btnTest.disabled = true;
-            btnTest.textContent = 'Loading...';
             resultsDiv.innerHTML = '<div class="loading">Loading players data</div>';
 
             try {
@@ -64,8 +32,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 `;
             } finally {
-                btnTest.disabled = false;
-                btnTest.textContent = 'Load All FUT23 Players';
+                btnAnalysis.disabled = false;
+                btnAnalysis.textContent = '👥 Show All Players';
             }
         });
     }
@@ -260,10 +228,27 @@ function displayResults(data) {
         return;
     }
 
-    // Get all column names from the first player object
-    const columns = Object.keys(data.players[0]);
+    // Define preferred column order (most important first)
+    const preferredOrder = [
+        'Name', 'player_id', 'Rating', 'Position', 'Team', 'League', 'Country',
+        'Pace', 'Shoot', 'Pass', 'Drible', 'Defense', 'Physical',
+        'Skill', 'Weak_foot', 'Other_Positions', 'Run_type',
+        'Height_cm', 'Weight', 'Body_type',
+        'Attack_rate', 'Defense_rate', 'Price', 'Popularity',
+        'Base_Stats', 'In_Game_Stats', 'team_id'
+    ];
 
-    // Store original data for sorting
+    // Get all column names from the first player object
+    const allColumns = Object.keys(data.players[0]);
+    
+    // Reorder columns: preferred first, then any remaining columns
+    const columns = [
+        ...preferredOrder.filter(col => allColumns.includes(col)),
+        ...allColumns.filter(col => !preferredOrder.includes(col))
+    ];
+
+    // Store original data for sorting and reset
+    const originalData = [...data.players];
     let playersData = [...data.players];
     let currentSort = { column: null, direction: null };
 
@@ -283,11 +268,20 @@ function displayResults(data) {
         return !isNaN(parseFloat(sampleValue)) ? 'number' : 'string';
     }
 
-    // Sort function
+    // Sort function with reset option (third click resets)
     function sortTable(columnKey, columnType) {
         if (currentSort.column === columnKey) {
-            // Toggle direction
-            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            if (currentSort.direction === 'asc') {
+                // Second click: change to desc
+                currentSort.direction = 'desc';
+            } else {
+                // Third click: reset to original order
+                currentSort.column = null;
+                currentSort.direction = null;
+                playersData = [...originalData];
+                renderTable();
+                return;
+            }
         } else {
             currentSort.column = columnKey;
             currentSort.direction = 'asc';
@@ -331,10 +325,10 @@ function displayResults(data) {
         const tableHTML = `
             <div class="results-container">
                 <div class="results-header">
-                    <span>🏆</span>
-                    <span>FUT23 Players Data</span>
+                    <span>👥</span>
+                    <span>All Players</span>
                 </div>
-                <div class="results-count">Total players: ${data.count}${currentSort.column ? ` (sorted by: ${currentSort.column} ${currentSort.direction === 'asc' ? '↑' : '↓'})` : ''}</div>
+                <div class="results-count">Total players: ${data.count}${currentSort.column ? ` (sorted by: ${currentSort.column} ${currentSort.direction === 'asc' ? '↑' : '↓'})` : ' (unsorted)'}</div>
                 <div class="players-table">
                     <table>
                         <thead>
@@ -347,7 +341,7 @@ function displayResults(data) {
                         </thead>
                         <tbody>
                             ${playersData.map(player => `
-                                <tr>
+                                <tr class="player-row" data-player-id="${player.player_id || ''}" style="cursor: pointer;">
                                     ${columns.map(col => `<td>${player[col] !== null && player[col] !== undefined ? player[col] : '-'}</td>`).join('')}
                                 </tr>
                             `).join('')}
@@ -361,10 +355,21 @@ function displayResults(data) {
 
         // Add click event listeners to sortable headers
         document.querySelectorAll('.sortable').forEach(header => {
-            header.addEventListener('click', () => {
+            header.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent row click when clicking header
                 const columnKey = header.getAttribute('data-column');
                 const columnType = header.getAttribute('data-type');
                 sortTable(columnKey, columnType);
+            });
+        });
+
+        // Add click event listeners to player rows
+        document.querySelectorAll('.player-row').forEach(row => {
+            row.addEventListener('click', () => {
+                const playerId = row.getAttribute('data-player-id');
+                if (playerId) {
+                    window.location.href = `/players/${playerId}`;
+                }
             });
         });
     }
