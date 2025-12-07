@@ -1,0 +1,82 @@
+.season-detail-page {
+    max-width: 1000px;
+    margin: 2rem auto;
+}
+
+.sd-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: #a5b4fc;
+    text-decoration: none;
+}
+
+.sd-back:hover {
+    text-decoration: underline;
+}
+
+.sd-header {
+    margin-bottom: 1.2rem;
+}
+
+.sd-header h2 {
+    font-size: 1.6rem;
+    margin-bottom: 0.2rem;
+}
+
+.sd-header p {
+    opacity: 0.85;
+}
+
+#sd-loading {
+    margin-top: 1rem;
+    opacity: 0.8;
+}
+
+#sd-error {
+    margin-top: 1rem;
+    color: #fecaca;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.sd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.2rem;
+    margin-top: 1rem;
+}
+
+.sd-card {
+    background: rgba(15, 23, 42, 0.95);
+    padding: 1rem 1.2rem;
+    border-radius: 10px;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+}
+
+.sd-card h3 {
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
+    color: #e5e7eb;
+}
+
+.sd-card p {
+    margin: 0.1rem 0;
+    font-size: 0.85rem;
+    color: #d1d5db;
+}
+
+.sd-card strong {
+    color: #fefce8;
+}
+
+@media (max-width: 768px) {
+    .season-detail-page {
+        margin: 1rem;
+    }
+}
