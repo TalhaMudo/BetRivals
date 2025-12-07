@@ -3,6 +3,20 @@
     margin: 2rem auto;
 }
 
+.hero-section {
+    margin-bottom: 1.5rem;
+}
+
+.hero-section h2 {
+    font-size: 1.8rem;
+    margin-bottom: 0.3rem;
+}
+
+.hero-section p {
+    opacity: 0.8;
+}
+
+/* Filter card */
 .filter-card {
     background: rgba(15, 20, 25, 0.9);
     padding: 1.2rem;
@@ -49,6 +63,7 @@ button.outline {
     color: #2ecc71;
 }
 
+/* Grid cards */
 .seasons-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -82,59 +97,46 @@ button.outline {
     color: #ccc;
 }
 
+/* Table */
 #seasonsTableContainer {
     max-height: 600px;
     overflow-y: auto;
+    margin-top: 2rem;
 }
 
-#seasonsTable {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-#seasonsTable th,
-#seasonsTable td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-#seasonsTable th {
-    background: #0f3f1a;
-    color: white;
-}
-
-#seasonsTable tr:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-/* Scroll kapsayıcı düzgün hizalansın */
-#seasonsWrapper {
-    max-height: 600px;
-    overflow-y: auto;
-    width: 100%;
-}
-
-/* Tablonun hem header hem body eşit genişlik olsun */
 .season-table {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    /* ← EN ÖNEMLİ SATIR */
 }
 
-/* Hücreler sabit hizada dursun */
 .season-table th,
 .season-table td {
     padding: 12px 16px;
     text-align: center;
     white-space: nowrap;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Header sabit görünmeli */
 .season-table thead {
     background: #0a2e1f;
     position: sticky;
     top: 0;
     z-index: 2;
+    color: white;
+}
+
+.season-table tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .seasons-page {
+        margin: 1rem;
+    }
+
+    .row {
+        flex-direction: column;
+    }
 }
