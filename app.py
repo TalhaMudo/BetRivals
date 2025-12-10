@@ -769,18 +769,92 @@ def shot_detail(shot_id):
         
         season_stats = season_stats_results[0] if season_stats_results else None
         
+        # NEW: Get contextual statistics - complex query with 4 joins
+        context_stats_query = """
+            SELECT 
+                -- Player's performance in similar situations
+                COUNT(DISTINCT s.shot_id) as similar_shots_count,
+                SUM(CASE WHEN s.result = 'Goal' THEN 1 ELSE 0 END) as similar_goals,
+                AVG(s.xG) as avg_similar_xg,
+                
+                -- Team performance comparison
+                AVG(CASE WHEN s.h_a = 'h' THEN m.h_xg ELSE m.a_xg END) as team_avg_match_xg,
+                AVG(CASE WHEN s.h_a = 'h' THEN m.h_goals ELSE m.a_goals END) as team_avg_goals,
+                
+                -- Opposition defensive stats
+                AVG(CASE WHEN s.h_a = 'h' THEN m.a_ppda ELSE m.h_ppda END) as opp_avg_ppda,
+                AVG(CASE WHEN s.h_a = 'h' THEN sea.deep_allowed ELSE sea.deep END) as opp_deep_allowed,
+                
+                -- Player season form
+                p.goals as player_season_goals,
+                p.xG as player_season_xg,
+                p.shots as player_season_shots,
+                p.npg as player_non_penalty_goals,
+                p.xGChain as player_xg_chain,
+                
+                -- League context
+                COUNT(DISTINCT CASE WHEN league_shots.result = 'Goal' THEN league_shots.shot_id END) as league_similar_goals,
+                COUNT(DISTINCT league_shots.shot_id) as league_similar_shots,
+                AVG(league_shots.xG) as league_avg_similar_xg
+                
+            FROM shot_data s
+            
+            -- Join 1: Get match information
+            INNER JOIN match_info m ON s.match_id = m.match_id
+            
+            -- Join 2: Get player season stats
+            LEFT JOIN player p ON s.player_id = p.player_id AND s.season = p.year
+            
+            -- Join 3: Get team season defensive stats (opponent)
+            LEFT JOIN season sea ON 
+                CASE 
+                    WHEN s.h_a = 'h' THEN m.a = sea.team_id
+                    ELSE m.h = sea.team_id
+                END
+                AND m.season = sea.year
+                AND m.date = sea.date
+            
+            -- Join 4: Self join to get league-wide similar shots
+            LEFT JOIN shot_data league_shots ON 
+                league_shots.season = s.season
+                AND league_shots.situation = s.situation
+                AND league_shots.shotType = s.shotType
+                AND ABS(league_shots.xG - s.xG) < 0.1
+                AND league_shots.shot_id != s.shot_id
+            
+            WHERE s.shot_id = %s
+                AND s.player_id = %s
+                AND s.situation = (SELECT situation FROM shot_data WHERE shot_id = %s)
+                AND s.shotType = (SELECT shotType FROM shot_data WHERE shot_id = %s)
+                AND s.season = (SELECT season FROM shot_data WHERE shot_id = %s)
+                AND ABS(s.xG - (SELECT xG FROM shot_data WHERE shot_id = %s)) < 0.15
+            
+            GROUP BY 
+                p.goals, p.xG, p.shots, p.npg, p.xGChain
+        """
+        
+        context_stats_results = db.execute_query(
+            context_stats_query,
+            (shot_id, shot['player_id'], shot_id, shot_id, shot_id, shot_id),
+            fetch_all=True
+        )
+        
+        context_stats = context_stats_results[0] if context_stats_results else None
+        
         return render_template('shot_detail.html',
                              shot=shot,
                              player=player,
                              other_shots=other_shots,
-                             season_stats=season_stats)
+                             season_stats=season_stats,
+                             context_stats=context_stats)
         
     except Exception as e:
         logger.exception(f"Error fetching shot {shot_id}: {e}")
         return render_template('error.html',
                              error="Database Error",
                              message=str(e)), 500
-
+    
+    
 @app.route('/api/search/shots/advanced')
 def search_shots_advanced():
     """Advanced API endpoint with complex filtering"""
