@@ -1753,7 +1753,170 @@ def match_page(match_id):
         """
         top_performers = db.execute_query(top_performers_q, (match_id,), fetch_all=True) or []
 
-        return render_template('match_detail.html', match=match, home_recent=home_recent, away_recent=away_recent, h2h_recent=h2h_recent, h2h_stats=h2h_stats, shots=shots, top_performers=top_performers)
+        # season comparison for both teams
+        # subqueries on FROM section for home and away teams
+        ## ("goals conceded" o takimin kac gol yedigi oluyor daha once gormediniz muhtemelen)
+        season_comparison_q = """
+            SELECT 
+                mi.team_h,
+                mi.team_a,
+                mi.season,
+                h_season.games_played AS h_games_played,
+                h_season.goals_scored AS h_goals_scored,
+                h_season.goals_conceded AS h_goals_conceded,
+                h_season.total_xg AS h_total_xg,
+                h_season.total_xga AS h_total_xga,
+                h_season.points AS h_points,
+                h_season.wins AS h_wins,
+                h_season.draws AS h_draws,
+                h_season.losses AS h_losses,
+                a_season.games_played AS a_games_played,
+                a_season.goals_scored AS a_goals_scored,
+                a_season.goals_conceded AS a_goals_conceded,
+                a_season.total_xg AS a_total_xg,
+                a_season.total_xga AS a_total_xga,
+                a_season.points AS a_points,
+                a_season.wins AS a_wins,
+                a_season.draws AS a_draws,
+                a_season.losses AS a_losses,
+                ht.team_id AS h_team_id,
+                at.team_id AS a_team_id,
+                h_scorer.player_name AS h_top_scorer,
+                h_scorer.player_id AS h_top_scorer_id,
+                h_scorer.goals AS h_top_scorer_goals,
+                a_scorer.player_name AS a_top_scorer,
+                a_scorer.player_id AS a_top_scorer_id,
+                a_scorer.goals AS a_top_scorer_goals,
+                h_assist.player_name AS h_top_assister,
+                h_assist.player_id AS h_top_assister_id,
+                h_assist.assists AS h_top_assister_assists,
+                a_assist.player_name AS a_top_assister,
+                a_assist.player_id AS a_top_assister_id,
+                a_assist.assists AS a_top_assister_assists,
+                h_shots.conversion AS h_shot_conversion,
+                a_shots.conversion AS a_shot_conversion
+            FROM match_info mi
+            LEFT JOIN (
+                SELECT 
+                    title,
+                    year,
+                    COUNT(*) AS games_played,
+                    COALESCE(SUM(scored), 0) AS goals_scored,
+                    COALESCE(SUM(missed), 0) AS goals_conceded,
+                    COALESCE(SUM(xG), 0) AS total_xg,
+                    COALESCE(SUM(xGA), 0) AS total_xga,
+                    COALESCE(MAX(pts), 0) AS points,
+                    COALESCE(MAX(wins), 0) AS wins,
+                    COALESCE(MAX(draws), 0) AS draws,
+                    COALESCE(MAX(loses), 0) AS losses
+                FROM season
+                GROUP BY title, year
+            ) h_season ON h_season.title = mi.team_h AND h_season.year = mi.season
+            LEFT JOIN (
+                SELECT 
+                    title,
+                    year,
+                    COUNT(*) AS games_played,
+                    COALESCE(SUM(scored), 0) AS goals_scored,
+                    COALESCE(SUM(missed), 0) AS goals_conceded,
+                    COALESCE(SUM(xG), 0) AS total_xg,
+                    COALESCE(SUM(xGA), 0) AS total_xga,
+                    COALESCE(MAX(pts), 0) AS points,
+                    COALESCE(MAX(wins), 0) AS wins,
+                    COALESCE(MAX(draws), 0) AS draws,
+                    COALESCE(MAX(loses), 0) AS losses
+                FROM season
+                GROUP BY title, year
+            ) a_season ON a_season.title = mi.team_a AND a_season.year = mi.season
+            LEFT JOIN teams ht ON ht.team_name = mi.team_h
+            LEFT JOIN teams at ON at.team_name = mi.team_a
+            LEFT JOIN player h_scorer ON h_scorer.player_id = (
+                SELECT player_id 
+                FROM player 
+                WHERE team_title = mi.team_h AND year = mi.season 
+                ORDER BY goals DESC 
+                LIMIT 1
+            )
+            LEFT JOIN player a_scorer ON a_scorer.player_id = (
+                SELECT player_id 
+                FROM player 
+                WHERE team_title = mi.team_a AND year = mi.season 
+                ORDER BY goals DESC 
+                LIMIT 1
+            )
+            LEFT JOIN player h_assist ON h_assist.player_id = (
+                SELECT player_id 
+                FROM player 
+                WHERE team_title = mi.team_h AND year = mi.season 
+                ORDER BY assists DESC 
+                LIMIT 1
+            )
+            LEFT JOIN player a_assist ON a_assist.player_id = (
+                SELECT player_id 
+                FROM player 
+                WHERE team_title = mi.team_a AND year = mi.season 
+                ORDER BY assists DESC 
+                LIMIT 1
+            )
+            LEFT JOIN (
+                SELECT 
+                    m.team_h,
+                    m.team_a,
+                    m.season,
+                    ROUND(SUM(CASE WHEN sd.result = 'Goal' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS conversion  -- goals / total shots
+                FROM shot_data sd
+                INNER JOIN match_info m ON sd.match_id = m.match_id
+                WHERE sd.h_a = 'h'
+                GROUP BY m.team_h, m.team_a, m.season
+            ) h_shots ON (h_shots.team_h = mi.team_h OR h_shots.team_a = mi.team_h) AND h_shots.season = mi.season
+            LEFT JOIN (
+                SELECT 
+                    m.team_h,
+                    m.team_a,
+                    m.season,
+                    ROUND(SUM(CASE WHEN sd.result = 'Goal' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS conversion
+                FROM shot_data sd
+                INNER JOIN match_info m ON sd.match_id = m.match_id
+                WHERE sd.h_a = 'a'
+                GROUP BY m.team_h, m.team_a, m.season
+            ) a_shots ON (a_shots.team_h = mi.team_a OR a_shots.team_a = mi.team_a) AND a_shots.season = mi.season
+            WHERE mi.match_id = %s
+        """
+        season_comparison_raw = db.execute_query(season_comparison_q, (match_id,), fetch_all=True)
+        season_comparison = season_comparison_raw[0] if season_comparison_raw else {}
+        
+        # calculate derived metrics
+        if season_comparison:
+            # convert decimal types to float for calculations
+            h_goals_scored = float(season_comparison.get('h_goals_scored') or 0)
+            a_goals_scored = float(season_comparison.get('a_goals_scored') or 0)
+            h_goals_conceded = float(season_comparison.get('h_goals_conceded') or 0)
+            a_goals_conceded = float(season_comparison.get('a_goals_conceded') or 0)
+            h_total_xg = float(season_comparison.get('h_total_xg') or 0)
+            a_total_xg = float(season_comparison.get('a_total_xg') or 0)
+            h_games_played = float(season_comparison.get('h_games_played') or 1) or 1
+            a_games_played = float(season_comparison.get('a_games_played') or 1) or 1
+            
+            # goal difference (not between these two teams, but for each team in the season)
+            season_comparison['h_goal_diff'] = int(h_goals_scored - h_goals_conceded)
+            season_comparison['a_goal_diff'] = int(a_goals_scored - a_goals_conceded)
+            
+            # xG performance (actual goals - xG, positive = overperforming)
+            # (takimlarin bitiriciligi gibi dusunebiliriz. bu deger negatifse guzel sut atıyolar ama gol olmuyor demek)
+            h_xg_perf = h_goals_scored - h_total_xg
+            a_xg_perf = a_goals_scored - a_total_xg
+            season_comparison['h_xg_performance'] = round(h_xg_perf, 1)
+            season_comparison['a_xg_performance'] = round(a_xg_perf, 1)
+            
+            # average goals per game
+            season_comparison['h_goals_per_game'] = round(h_goals_scored / h_games_played, 2)
+            season_comparison['a_goals_per_game'] = round(a_goals_scored / a_games_played, 2)
+            
+            # average xG per game
+            season_comparison['h_xg_per_game'] = round(h_total_xg / h_games_played, 2)
+            season_comparison['a_xg_per_game'] = round(a_total_xg / a_games_played, 2)
+
+        return render_template('match_detail.html', match=match, home_recent=home_recent, away_recent=away_recent, h2h_recent=h2h_recent, h2h_stats=h2h_stats, shots=shots, top_performers=top_performers, season_comparison=season_comparison)
     except Exception as e:
         logger.exception(f"Error fetching match {match_id}: %s", e)
         return render_template('error.html', error='Database Error', message=str(e)), 500
@@ -1818,15 +1981,20 @@ def api_get_matches():
 def api_create_match():
     try:
         data = request.get_json() or {}
-        required = ['match_id', 'date', 'team_h', 'team_a']
-        if not all(k in data for k in required):
-            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        required = ['match_id', 'team_h', 'team_a']
+        if not all(k in data and data[k] for k in required):
+            return jsonify({'success': False, 'error': 'Missing required fields (match_id, team_h, team_a)'}), 400
 
-        sql = "INSERT INTO match_info (match_id, date, season, league, team_h, team_a, h_goals, a_goals, h_xg, a_xg) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+        sql = """INSERT INTO match_info 
+                 (match_id, date, season, league, league_id, team_h, team_a, h_goals, a_goals, h_xg, a_xg,
+                  h_shot, a_shot, h_shotOnTarget, a_shotOnTarget, h_deep, a_deep, h_ppda, a_ppda, h_w, h_d, h_l) 
+                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
         params = (
-            data.get('match_id'), data.get('date'), data.get('season'), data.get('league'),
+            data.get('match_id'), data.get('date'), data.get('season'), data.get('league'), data.get('league_id'),
             data.get('team_h'), data.get('team_a'), data.get('h_goals'), data.get('a_goals'),
-            data.get('h_xg'), data.get('a_xg')
+            data.get('h_xg'), data.get('a_xg'), data.get('h_shot'), data.get('a_shot'),
+            data.get('h_shotOnTarget'), data.get('a_shotOnTarget'), data.get('h_deep'), data.get('a_deep'),
+            data.get('h_ppda'), data.get('a_ppda'), data.get('h_w'), data.get('h_d'), data.get('h_l')
         )
 
         db.execute_query(sql, params, fetch_all=False)
@@ -1855,7 +2023,9 @@ def api_get_match(match_id):
 def api_update_match(match_id):
     try:
         data = request.get_json() or {}
-        updatable = ['date','season','league','team_h','team_a','h_goals','a_goals','h_xg','a_xg']
+        updatable = ['date','season','league','league_id','team_h','team_a','h_goals','a_goals','h_xg','a_xg',
+                     'h_shot','a_shot','h_shotOnTarget','a_shotOnTarget','h_deep','a_deep','h_ppda','a_ppda',
+                     'h_w','h_d','h_l']
         fields = []
         params = []
         for f in updatable:
