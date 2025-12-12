@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session
 import os
 import logging
+import requests
 from dotenv import load_dotenv
 from utils import DatabaseConnector
 from functools import wraps
@@ -330,6 +331,128 @@ def api_fut23_all():
         logger.exception("Error fetching fut23 data: %s", e)
         return jsonify({"error": "Database error", "players": []}), 500
 
+# Comparison helpers
+def _ensure_compare_list():
+    if "compare_list" not in session or not isinstance(session.get("compare_list"), list):
+        session["compare_list"] = []
+    # Enforce limit of 4
+    session["compare_list"] = session["compare_list"][:4]
+
+@app.route("/api/players/compare/list", methods=['GET'])
+def api_compare_list():
+    """Return current comparison list (player_ids)"""
+    _ensure_compare_list()
+    return jsonify({"players": session["compare_list"]})
+
+@app.route("/api/players/compare/add/<int:player_id>", methods=['POST'])
+def api_compare_add(player_id):
+    """Add a player to comparison list (max 4)"""
+    _ensure_compare_list()
+    compare = session["compare_list"]
+    if player_id in compare:
+        return jsonify({"players": compare, "message": "Already added"})
+    if len(compare) >= 4:
+        return jsonify({"players": compare, "error": "Limit reached"}), 400
+    compare.append(player_id)
+    session["compare_list"] = compare
+    session.modified = True
+    return jsonify({"players": compare})
+
+@app.route("/api/players/compare/remove/<int:player_id>", methods=['POST'])
+def api_compare_remove(player_id):
+    """Remove a player from comparison list"""
+    _ensure_compare_list()
+    compare = session["compare_list"]
+    compare = [pid for pid in compare if pid != player_id]
+    session["compare_list"] = compare
+    session.modified = True
+    return jsonify({"players": compare})
+
+@app.route("/api/players/compare/data", methods=['GET'])
+def api_compare_data():
+    """Return detailed data for players in comparison list"""
+    _ensure_compare_list()
+    compare = session["compare_list"]
+    if not compare:
+        return jsonify({"players": []})
+
+    placeholders = ", ".join(["%s"] * len(compare))
+    query = f"""
+        SELECT 
+            p.player_id,
+            p.player_name,
+            p.team_title,
+            p.position,
+            p.games,
+            p.goals,
+            p.assists,
+            p.xG,
+            p.shots,
+            p.key_passes,
+            p.time,
+            p.yellow_cards,
+            p.red_cards,
+            f.Rating,
+            f.Pace,
+            f.Shoot,
+            f.Pass,
+            f.Drible,
+            f.Defense,
+            f.Physical,
+            f.Skill,
+            f.Weak_foot
+        FROM player p
+        LEFT JOIN fut23 f ON p.player_id = f.player_id
+        WHERE p.player_id IN ({placeholders})
+    """
+    try:
+        results = db.execute_query(query, params=compare)
+        # preserve order as in session
+        result_map = {r["player_id"]: r for r in results or []}
+        ordered = [result_map[pid] for pid in compare if pid in result_map]
+        return jsonify({"players": ordered})
+    except Exception as e:
+        logger.exception("Error fetching comparison data: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/players/compare")
+def players_compare_page():
+    """Render comparison page"""
+    return render_template("player_compare.html", title="Compare Players")
+
+@app.route("/api/quotes/random", methods=['GET'])
+def api_random_quote():
+    """Fetch a random quote filtered by selected categories from api-ninjas"""
+    api_key = os.getenv("API_NINJAS_KEY")
+    if not api_key:
+        return jsonify({"error": "API key missing"}), 500
+
+    categories = "wisdom,success,inspirational,courage,leadership"
+    url = f"https://api.api-ninjas.com/v2/randomquotes?categories={categories}"
+
+    try:
+        resp = requests.get(
+            url,
+            headers={"X-Api-Key": api_key},
+            timeout=8
+        )
+        if resp.status_code != 200:
+            return jsonify({"error": "Quote service error"}), resp.status_code
+
+        payload = resp.json()
+        if isinstance(payload, list) and payload:
+            item = payload[0]
+            return jsonify({
+                "quote": item.get("quote"),
+                "author": item.get("author"),
+                "work": item.get("work"),
+                "categories": item.get("categories")
+            })
+        return jsonify({"error": "No quote found"}), 502
+    except requests.RequestException as e:
+        logger.exception("Quote fetch failed: %s", e)
+        return jsonify({"error": "Quote fetch failed"}), 500
+
 @app.route("/api/players/analysis", methods=['GET'])
 def api_players_analysis():
     """Get players with most goals but least FIFA ratings (joined player + fut23 tables)"""
@@ -646,18 +769,92 @@ def shot_detail(shot_id):
         
         season_stats = season_stats_results[0] if season_stats_results else None
         
+        # NEW: Get contextual statistics - complex query with 4 joins
+        context_stats_query = """
+            SELECT 
+                -- Player's performance in similar situations
+                COUNT(DISTINCT s.shot_id) as similar_shots_count,
+                SUM(CASE WHEN s.result = 'Goal' THEN 1 ELSE 0 END) as similar_goals,
+                AVG(s.xG) as avg_similar_xg,
+                
+                -- Team performance comparison
+                AVG(CASE WHEN s.h_a = 'h' THEN m.h_xg ELSE m.a_xg END) as team_avg_match_xg,
+                AVG(CASE WHEN s.h_a = 'h' THEN m.h_goals ELSE m.a_goals END) as team_avg_goals,
+                
+                -- Opposition defensive stats
+                AVG(CASE WHEN s.h_a = 'h' THEN m.a_ppda ELSE m.h_ppda END) as opp_avg_ppda,
+                AVG(CASE WHEN s.h_a = 'h' THEN sea.deep_allowed ELSE sea.deep END) as opp_deep_allowed,
+                
+                -- Player season form
+                p.goals as player_season_goals,
+                p.xG as player_season_xg,
+                p.shots as player_season_shots,
+                p.npg as player_non_penalty_goals,
+                p.xGChain as player_xg_chain,
+                
+                -- League context
+                COUNT(DISTINCT CASE WHEN league_shots.result = 'Goal' THEN league_shots.shot_id END) as league_similar_goals,
+                COUNT(DISTINCT league_shots.shot_id) as league_similar_shots,
+                AVG(league_shots.xG) as league_avg_similar_xg
+                
+            FROM shot_data s
+            
+            -- Join 1: Get match information
+            INNER JOIN match_info m ON s.match_id = m.match_id
+            
+            -- Join 2: Get player season stats
+            LEFT JOIN player p ON s.player_id = p.player_id AND s.season = p.year
+            
+            -- Join 3: Get team season defensive stats (opponent)
+            LEFT JOIN season sea ON 
+                CASE 
+                    WHEN s.h_a = 'h' THEN m.a = sea.team_id
+                    ELSE m.h = sea.team_id
+                END
+                AND m.season = sea.year
+                AND m.date = sea.date
+            
+            -- Join 4: Self join to get league-wide similar shots
+            LEFT JOIN shot_data league_shots ON 
+                league_shots.season = s.season
+                AND league_shots.situation = s.situation
+                AND league_shots.shotType = s.shotType
+                AND ABS(league_shots.xG - s.xG) < 0.1
+                AND league_shots.shot_id != s.shot_id
+            
+            WHERE s.shot_id = %s
+                AND s.player_id = %s
+                AND s.situation = (SELECT situation FROM shot_data WHERE shot_id = %s)
+                AND s.shotType = (SELECT shotType FROM shot_data WHERE shot_id = %s)
+                AND s.season = (SELECT season FROM shot_data WHERE shot_id = %s)
+                AND ABS(s.xG - (SELECT xG FROM shot_data WHERE shot_id = %s)) < 0.15
+            
+            GROUP BY 
+                p.goals, p.xG, p.shots, p.npg, p.xGChain
+        """
+        
+        context_stats_results = db.execute_query(
+            context_stats_query,
+            (shot_id, shot['player_id'], shot_id, shot_id, shot_id, shot_id),
+            fetch_all=True
+        )
+        
+        context_stats = context_stats_results[0] if context_stats_results else None
+        
         return render_template('shot_detail.html',
                              shot=shot,
                              player=player,
                              other_shots=other_shots,
-                             season_stats=season_stats)
+                             season_stats=season_stats,
+                             context_stats=context_stats)
         
     except Exception as e:
         logger.exception(f"Error fetching shot {shot_id}: {e}")
         return render_template('error.html',
                              error="Database Error",
                              message=str(e)), 500
-
+    
+    
 @app.route('/api/search/shots/advanced')
 def search_shots_advanced():
     """Advanced API endpoint with complex filtering"""

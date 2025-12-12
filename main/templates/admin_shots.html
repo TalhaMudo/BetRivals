@@ -104,7 +104,8 @@
         gap: 8px;
     }
 
-    .btn-edit, .btn-delete {
+    .btn-edit,
+    .btn-delete {
         padding: 6px 12px;
         border: none;
         border-radius: 6px;
@@ -228,7 +229,8 @@
         margin-top: 25px;
     }
 
-    .btn-submit, .btn-cancel {
+    .btn-submit,
+    .btn-cancel {
         flex: 1;
         padding: 12px;
         border: none;
@@ -258,26 +260,160 @@
         background: rgba(255, 255, 255, 0.15);
     }
 
-    .pagination {
+    .pagination-wrapper {
         display: flex;
-        justify-content: center;
-        gap: 10px;
+        flex-direction: column;
+        gap: 20px;
         margin-top: 30px;
     }
 
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
     .page-btn {
-        padding: 8px 15px;
+        padding: 10px 16px;
         background: rgba(46, 204, 113, 0.1);
         border: 1px solid rgba(46, 204, 113, 0.3);
         color: #2ecc71;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 600;
+        font-size: 0.95em;
+        min-width: 45px;
+        text-align: center;
+    }
+
+    .page-btn:hover:not(.active):not(:disabled) {
+        background: rgba(46, 204, 113, 0.2);
+        border-color: rgba(46, 204, 113, 0.5);
+        transform: translateY(-2px);
+    }
+
+    .page-btn.active {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: #0f1419;
+        border-color: #2ecc71;
+        box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+    }
+
+    .page-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .page-btn.nav-btn {
+        font-weight: 700;
+        padding: 10px 20px;
+    }
+
+    .page-btn.ellipsis {
+        background: transparent;
+        border: none;
+        cursor: default;
+        padding: 10px 8px;
+        color: #888;
+    }
+
+    .page-btn.ellipsis:hover {
+        transform: none;
+    }
+
+    .pagination-info-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .pagination-info {
+        background: rgba(15, 20, 25, 0.95);
+        border: 1px solid rgba(46, 204, 113, 0.2);
+        border-radius: 12px;
+        padding: 15px 25px;
+        color: #b8b8b8;
+        font-size: 0.95em;
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .pagination-info strong {
+        color: #2ecc71;
+        font-weight: 600;
+    }
+
+    .go-to-page {
+        background: rgba(15, 20, 25, 0.95);
+        border: 1px solid rgba(46, 204, 113, 0.2);
+        border-radius: 12px;
+        padding: 15px 25px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .go-to-page label {
+        color: #b8b8b8;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .go-to-page input {
+        width: 80px;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(46, 204, 113, 0.3);
         border-radius: 6px;
+        color: #fff;
+        font-size: 0.95em;
+        text-align: center;
+    }
+
+    .go-to-page input:focus {
+        outline: none;
+        border-color: #2ecc71;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .go-to-page button {
+        padding: 8px 20px;
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: #0f1419;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
         cursor: pointer;
         transition: all 0.3s;
     }
 
-    .page-btn:hover,
-    .page-btn.active {
-        background: rgba(46, 204, 113, 0.3);
+    .go-to-page button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+    }
+
+    .go-to-page button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    @media (max-width: 768px) {
+        .pagination-info-container {
+            flex-direction: column;
+        }
+
+        .pagination-info,
+        .go-to-page {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+        }
     }
 
     .alert {
@@ -312,14 +448,21 @@
 
 <div class="shots-container">
     <div class="shots-header">
+        <a style="text-decoration: none;" href="/admin">
+            <p class="btn-add">Back to Admin</p>
+        </a>
         <h2>⚽ Shots Management</h2>
-        <a style="text-decoration: none;" href="/admin/shots/add"><p class="btn-add" >+ Add Shot</p></a>
+        <a style="text-decoration: none;" href="/admin/shots/add">
+            <p class="btn-add">+ Add Shot</p>
+        </a>
+
     </div>
 
     <div id="alert" class="alert"></div>
 
     <div class="filters-section">
-        <input type="text" class="filter-input" id="filterPlayer" placeholder="Filter by player name..." onkeyup="loadShots()">
+        <input type="text" class="filter-input" id="filterPlayer" placeholder="Filter by player name..."
+            onkeyup="loadShots()">
         <select class="filter-input" id="filterResult" onchange="loadShots()">
             <option value="">All Results</option>
             <option value="Goal">Goal</option>
@@ -355,7 +498,23 @@
         </div>
     </div>
 
+    <div class="pagination-wrapper">
     <div class="pagination" id="paginationContainer"></div>
+    
+    <div class="pagination-info-container">
+        <div class="pagination-info" id="paginationInfo"></div>
+        
+        <div class="go-to-page">
+            <label for="pageInput">Go to page:</label>
+            <input type="number" 
+                   id="pageInput" 
+                   min="1" 
+                   placeholder="Page #"
+                   onkeypress="handleGoToKeyPress(event)">
+            <button onclick="goToInputPage()">Go</button>
+        </div>
+    </div>
+</div>
 </div>
 
 <!-- Create/Edit Modal -->
@@ -484,7 +643,7 @@
                     document.getElementById('season').value = shot.season;
                     document.getElementById('h_goals').value = shot.h_goals || '';
                     document.getElementById('a_goals').value = shot.a_goals || '';
-                    
+
                     document.getElementById('modalTitle').textContent = 'Edit Shot';
                     document.getElementById('submitBtn').textContent = 'Update Shot';
                     document.getElementById('shotModal').classList.add('active');
@@ -499,7 +658,7 @@
 
     function saveShotAction(event) {
         event.preventDefault();
-        
+
         const formData = {
             player: document.getElementById('player').value,
             player_id: parseInt(document.getElementById('player_id').value),
@@ -526,17 +685,17 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                showAlert(data.message, 'success');
-                closeModal();
-                loadShots();
-            } else {
-                showAlert(data.error, 'error');
-            }
-        })
-        .catch(err => showAlert('Error saving shot', 'error'));
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    closeModal();
+                    loadShots();
+                } else {
+                    showAlert(data.error, 'error');
+                }
+            })
+            .catch(err => showAlert('Error saving shot', 'error'));
     }
 
     function deleteShotAction(shotId) {
@@ -559,7 +718,7 @@
         currentPage = page;
         const player = document.getElementById('filterPlayer').value;
         const result = document.getElementById('filterResult').value;
-        
+
         const params = new URLSearchParams({
             page: page,
             limit: 20,
@@ -580,7 +739,7 @@
 
     function renderTable(shots) {
         const tbody = document.getElementById('shotsTableBody');
-        
+
         if (!shots || shots.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" class="no-data">No shots found</td></tr>';
             return;
@@ -607,15 +766,143 @@
     }
 
     function renderPagination(total, limit) {
-        const totalPages = Math.ceil(total / limit);
-        const container = document.getElementById('paginationContainer');
-        
-        let html = '';
+    const totalPages = Math.ceil(total / limit);
+    const container = document.getElementById('paginationContainer');
+    const infoContainer = document.getElementById('paginationInfo');
+    const pageInput = document.getElementById('pageInput');
+    
+    // Update max attribute for input
+    if (pageInput) {
+        pageInput.max = totalPages;
+    }
+    
+    // Calculate range for pagination info
+    const startItem = ((currentPage - 1) * limit) + 1;
+    const endItem = Math.min(currentPage * limit, total);
+    
+    // Update info text
+    infoContainer.innerHTML = `
+        Showing <strong>${startItem.toLocaleString()}</strong> to 
+        <strong>${endItem.toLocaleString()}</strong> of 
+        <strong>${total.toLocaleString()}</strong> shots 
+        (Page <strong>${currentPage}</strong> of <strong>${totalPages.toLocaleString()}</strong>)
+    `;
+    
+    let html = '';
+    
+    // Previous button
+    html += `
+        <button class="page-btn nav-btn" 
+                onclick="loadShots(${currentPage - 1})" 
+                ${currentPage === 1 ? 'disabled' : ''}>
+            ← Prev
+        </button>
+    `;
+    
+    // Smart pagination logic
+    if (totalPages <= 7) {
         for (let i = 1; i <= totalPages; i++) {
-            html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="loadShots(${i})">${i}</button>`;
+            html += createPageButton(i);
+        }
+    } else {
+        html += createPageButton(1);
+        
+        let startPage, endPage;
+        
+        if (currentPage <= 3) {
+            startPage = 2;
+            endPage = 5;
+        } else if (currentPage >= totalPages - 2) {
+            startPage = totalPages - 4;
+            endPage = totalPages - 1;
+        } else {
+            startPage = currentPage - 1;
+            endPage = currentPage + 1;
         }
         
-        container.innerHTML = html;
+        if (startPage > 2) {
+            html += '<button class="page-btn ellipsis" disabled>...</button>';
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            html += createPageButton(i);
+        }
+        
+        if (endPage < totalPages - 1) {
+            html += '<button class="page-btn ellipsis" disabled>...</button>';
+        }
+        
+        html += createPageButton(totalPages);
+    }
+    
+    // Next button
+    html += `
+        <button class="page-btn nav-btn" 
+                onclick="loadShots(${currentPage + 1})" 
+                ${currentPage === totalPages ? 'disabled' : ''}>
+            Next →
+        </button>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function createPageButton(pageNum) {
+    return `
+        <button class="page-btn ${pageNum === currentPage ? 'active' : ''}" 
+                onclick="loadShots(${pageNum})">
+            ${pageNum}
+        </button>
+    `;
+}
+
+function goToInputPage() {
+    const pageInput = document.getElementById('pageInput');
+    const targetPage = parseInt(pageInput.value);
+    const totalPages = Math.ceil(document.getElementById('paginationInfo').dataset.total / 20);
+    
+    if (isNaN(targetPage)) {
+        showAlert('Please enter a valid page number', 'error');
+        return;
+    }
+    
+    if (targetPage < 1) {
+        showAlert('Page number must be at least 1', 'error');
+        pageInput.value = '';
+        return;
+    }
+    
+    // Get total pages from the last API call
+    fetch(`/api/admin/shots?page=1&limit=1`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const maxPages = Math.ceil(data.total / 20);
+                if (targetPage > maxPages) {
+                    showAlert(`Page number cannot exceed ${maxPages}`, 'error');
+                    pageInput.value = '';
+                    return;
+                }
+                loadShots(targetPage);
+                pageInput.value = '';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+}
+
+function handleGoToKeyPress(event) {
+    if (event.key === 'Enter') {
+        goToInputPage();
+    }
+}
+
+    function createPageButton(pageNum) {
+        return `
+        <button class="page-btn ${pageNum === currentPage ? 'active' : ''}" 
+                onclick="loadShots(${pageNum})">
+            ${pageNum}
+        </button>
+    `;
     }
 
     // Load shots on page load
