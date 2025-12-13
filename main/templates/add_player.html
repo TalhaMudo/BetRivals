@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='players.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='add_player.css') }}">
+
+<section class="content-section">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>Add Player</h2>
+            <p>Enter player details and stats, then save to the database.</p>
+        </div>
+        <div class="header-right">
+            <a class="btn-test btn-secondary" href="/players">← Back to Players</a>
+        </div>
+    </div>
+
+    <div id="alertBox" class="form-alert hidden"></div>
+
+    <form id="addPlayerForm" class="player-form-card">
+        <div class="form-section">
+            <h3>Required</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="required">Player Name</label>
+                    <input type="text" id="player_name" name="player_name" class="form-control" required placeholder="e.g., Lionel Messi">
+                </div>
+                <div class="form-group">
+                    <label class="required">Year</label>
+                    <input type="number" id="year" name="year" class="form-control" required placeholder="e.g., 2023" min="1900" max="2100">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Player Info</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Team Title</label>
+                    <input type="text" id="team_title" name="team_title" class="form-control" placeholder="e.g., Barcelona">
+                </div>
+                <div class="form-group">
+                    <label>Position</label>
+                    <input type="text" id="position" name="position" class="form-control" placeholder="e.g., F S / CM / CB">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Stats</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Games</label>
+                    <input type="number" id="games" name="games" class="form-control" min="0" placeholder="e.g., 34">
+                </div>
+                <div class="form-group">
+                    <label>Time (minutes)</label>
+                    <input type="number" id="time" name="time" class="form-control" min="0" placeholder="e.g., 2487">
+                </div>
+                <div class="form-group">
+                    <label>Goals</label>
+                    <input type="number" id="goals" name="goals" class="form-control" min="0" placeholder="e.g., 23">
+                </div>
+                <div class="form-group">
+                    <label>xG</label>
+                    <input type="number" id="xG" name="xG" class="form-control" step="0.0001" min="0" placeholder="e.g., 15.42">
+                </div>
+                <div class="form-group">
+                    <label>Assists</label>
+                    <input type="number" id="assists" name="assists" class="form-control" min="0" placeholder="e.g., 6">
+                </div>
+                <div class="form-group">
+                    <label>xA</label>
+                    <input type="number" id="xA" name="xA" class="form-control" step="0.0001" min="0" placeholder="e.g., 4.05">
+                </div>
+                <div class="form-group">
+                    <label>Shots</label>
+                    <input type="number" id="shots" name="shots" class="form-control" min="0" placeholder="e.g., 78">
+                </div>
+                <div class="form-group">
+                    <label>Key Passes</label>
+                    <input type="number" id="key_passes" name="key_passes" class="form-control" min="0" placeholder="e.g., 33">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Cards</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Yellow Cards</label>
+                    <input type="number" id="yellow_cards" name="yellow_cards" class="form-control" min="0" placeholder="e.g., 3">
+                </div>
+                <div class="form-group">
+                    <label>Red Cards</label>
+                    <input type="number" id="red_cards" name="red_cards" class="form-control" min="0" placeholder="e.g., 0">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Advanced</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>NPG</label>
+                    <input type="number" id="npg" name="npg" class="form-control" min="0" placeholder="e.g., 23">
+                </div>
+                <div class="form-group">
+                    <label>npxG</label>
+                    <input type="number" id="npxG" name="npxG" class="form-control" step="0.0001" min="0" placeholder="e.g., 15.42">
+                </div>
+                <div class="form-group">
+                    <label>xGChain</label>
+                    <input type="number" id="xGChain" name="xGChain" class="form-control" step="0.0001" min="0" placeholder="e.g., 20.51">
+                </div>
+                <div class="form-group">
+                    <label>xGBuildup</label>
+                    <input type="number" id="xGBuildup" name="xGBuildup" class="form-control" step="0.0001" min="0" placeholder="e.g., 3.43">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Optional</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Player ID (optional)</label>
+                    <input type="number" id="player_id" name="player_id" class="form-control" min="1" placeholder="Leave blank to auto-generate">
+                </div>
+                <div class="form-group">
+                    <label>Best Shot ID</label>
+                    <input type="number" id="best_shot_id" name="best_shot_id" class="form-control" min="1" placeholder="Must exist in shots table (optional)">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button id="submitBtn" type="submit" class="btn-test btn-primary">✅ Add Player</button>
+        </div>
+    </form>
+</section>
+
+<script src="{{ url_for('static', filename='add_player.js') }}"></script>
+{% endblock %}
+
+

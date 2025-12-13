@@ -318,6 +318,16 @@ def api_season_delete(seasonentryid):
 def players():
     """Players sayfası"""
     return render_template("players.html", title="Players")
+
+@app.route("/players/add")
+def players_add_page():
+    """Add player form page (public)"""
+    return render_template("add_player.html", title="Add Player")
+
+@app.route("/players/edit")
+def players_edit_page():
+    """Edit player form page (public)"""
+    return render_template("edit_player.html", title="Edit Players")
 #--------------TALHA-START-----------------------------
 
 @app.route("/api/players/fut23", methods=['GET'])
@@ -330,6 +340,50 @@ def api_fut23_all():
     except Exception as e:
         logger.exception("Error fetching fut23 data: %s", e)
         return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/api/players/top/assists", methods=['GET'])
+def api_top_assists():
+    """Get top 3 players by assists"""
+    try:
+        query = """
+            SELECT 
+                player_id, 
+                player_name, 
+                assists, 
+                team_title, 
+                position
+            FROM player 
+            WHERE assists IS NOT NULL 
+            ORDER BY assists DESC 
+            LIMIT 3
+        """
+        results = db.execute_query(query)
+        return jsonify({"players": results or []})
+    except Exception as e:
+        logger.exception("Error fetching top assists: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/api/players/top/goals", methods=['GET'])
+def api_top_goals():
+    """Get top 1 player by goals"""
+    try:
+        query = """
+            SELECT 
+                player_id, 
+                player_name, 
+                goals, 
+                team_title, 
+                position
+            FROM player 
+            WHERE goals IS NOT NULL 
+            ORDER BY goals DESC 
+            LIMIT 1
+        """
+        results = db.execute_query(query)
+        return jsonify({"player": results[0] if results else None})
+    except Exception as e:
+        logger.exception("Error fetching top goals: %s", e)
+        return jsonify({"error": "Database error", "player": None}), 500
 
 # Comparison helpers
 def _ensure_compare_list():
@@ -502,38 +556,63 @@ def api_players_search():
         search_query = request.args.get('q', '').strip()
         if not search_query:
             return jsonify({"players": [], "count": 0})
+
+        # Optional filters
+        year = request.args.get('year', '').strip()
+        team = request.args.get('team', '').strip()
+        position = request.args.get('position', '').strip()
         
         # Use LIKE for partial matching
         search_pattern = f"%{search_query}%"
-        query = """
-        SELECT DISTINCT
-            p.player_id,
-            p.player_name,
-            p.goals,
-            p.assists,
-            p.games,
-            p.xG,
-            p.position,
-            p.team_title,
-            p.year,
-            f.Rating AS fifa_rating,
-            f.Pace,
-            f.Shoot,
-            f.Pass,
-            f.Drible,
-            f.Defense,
-            f.Physical,
-            f.Country,
-            f.League
-        FROM player p
-        LEFT JOIN fut23 f ON p.player_id = f.player_id
-        WHERE p.player_name LIKE %s 
-           OR p.team_title LIKE %s 
-           OR p.position LIKE %s
-        ORDER BY p.player_name
-        LIMIT 50
+
+        where = ["(p.player_name LIKE %s OR p.team_title LIKE %s OR p.position LIKE %s)"]
+        params = [search_pattern, search_pattern, search_pattern]
+
+        if year:
+            try:
+                year_i = int(year)
+                where.append("p.year = %s")
+                params.append(year_i)
+            except Exception:
+                return jsonify({"error": "year must be a number", "players": []}), 400
+
+        if team:
+            where.append("p.team_title LIKE %s")
+            params.append(f"%{team}%")
+
+        if position:
+            where.append("p.position LIKE %s")
+            params.append(f"%{position}%")
+
+        query = f"""
+            SELECT DISTINCT
+                p.season_player_id,
+                p.player_id,
+                p.player_name,
+                p.goals,
+                p.assists,
+                p.games,
+                p.xG,
+                p.position,
+                p.team_title,
+                p.year,
+                f.Rating AS fifa_rating,
+                f.Pace,
+                f.Shoot,
+                f.Pass,
+                f.Drible,
+                f.Defense,
+                f.Physical,
+                f.Country,
+                f.League
+            FROM player p
+            LEFT JOIN fut23 f ON p.player_id = f.player_id
+            WHERE {" AND ".join(where)}
+            ORDER BY p.player_name
+            LIMIT 50
         """
-        results = db.execute_query(query, params=[search_pattern, search_pattern, search_pattern])
+
+        results = db.execute_query(query, params=params)
         return jsonify({
             "players": results or [], 
             "count": len(results) if results else 0
@@ -541,6 +620,279 @@ def api_players_search():
     except Exception as e:
         logger.exception("Error searching players: %s", e)
         return jsonify({"error": "Database error", "players": []}), 500
+
+
+@app.route("/api/players/season/<int:season_player_id>", methods=["GET"])
+def api_player_by_season_id(season_player_id):
+    """Fetch a single player row by season_player_id (primary key)."""
+    try:
+        query = """
+            SELECT
+                season_player_id, player_id, player_name, games, time,
+                goals, xG, assists, xA, shots, key_passes,
+                yellow_cards, red_cards, position, team_title,
+                npg, npxG, xGChain, xGBuildup, year, best_shot_id
+            FROM player
+            WHERE season_player_id = %s
+            LIMIT 1
+        """
+        rows = db.execute_query(query, [season_player_id])
+        if not rows:
+            return jsonify({"success": False, "error": "Player season row not found"}), 404
+        return jsonify({"success": True, "player": rows[0]})
+    except Exception as e:
+        logger.exception("Error fetching player season row: %s", e)
+        return jsonify({"success": False, "error": "Database error"}), 500
+
+
+@app.route("/api/players/season/<int:season_player_id>/update", methods=["POST"])
+def api_player_season_update(season_player_id):
+    """Update a player row (by season_player_id)."""
+    data = request.get_json(silent=True) or {}
+
+    def _to_int(v):
+        if v in (None, ""):
+            return None
+        try:
+            return int(v)
+        except Exception:
+            return None
+
+    def _to_float(v):
+        if v in (None, ""):
+            return None
+        try:
+            return float(v)
+        except Exception:
+            return None
+
+    # Updatable fields (exclude season_player_id primary key)
+    player_name = (data.get("player_name") or "").strip()
+    year_i = _to_int(data.get("year"))
+    if not player_name or year_i is None:
+        return jsonify({"success": False, "error": "player_name and year are required"}), 400
+
+    update = {
+        "player_name": player_name,
+        "year": year_i,
+        "team_title": (data.get("team_title") or "").strip() or None,
+        "position": (data.get("position") or "").strip() or None,
+        "games": _to_int(data.get("games")),
+        "time": _to_int(data.get("time")),
+        "goals": _to_int(data.get("goals")),
+        "xG": _to_float(data.get("xG")),
+        "assists": _to_int(data.get("assists")),
+        "xA": _to_float(data.get("xA")),
+        "shots": _to_int(data.get("shots")),
+        "key_passes": _to_int(data.get("key_passes")),
+        "yellow_cards": _to_int(data.get("yellow_cards")),
+        "red_cards": _to_int(data.get("red_cards")),
+        "npg": _to_int(data.get("npg")),
+        "npxG": _to_float(data.get("npxG")),
+        "xGChain": _to_float(data.get("xGChain")),
+        "xGBuildup": _to_float(data.get("xGBuildup")),
+        "best_shot_id": _to_int(data.get("best_shot_id")),
+    }
+
+    try:
+        # Fetch existing row (need player_id for uniqueness checks)
+        existing_rows = db.execute_query(
+            "SELECT season_player_id, player_id, year FROM player WHERE season_player_id=%s LIMIT 1",
+            [season_player_id],
+        )
+        if not existing_rows:
+            return jsonify({"success": False, "error": "Player season row not found"}), 404
+
+        existing = existing_rows[0]
+        player_id_i = existing.get("player_id")
+
+        # Validate best_shot_id FK if provided
+        if update["best_shot_id"] is not None:
+            shot_exists = db.execute_query(
+                "SELECT shot_id FROM shot_data WHERE shot_id=%s LIMIT 1",
+                [update["best_shot_id"]],
+            )
+            if not shot_exists:
+                return jsonify({"success": False, "error": "best_shot_id does not exist"}), 400
+
+        # Prevent duplicates: same player_id + year for a different season_player_id
+        if player_id_i is not None:
+            dup = db.execute_query(
+                "SELECT season_player_id FROM player WHERE player_id=%s AND year=%s AND season_player_id<>%s LIMIT 1",
+                [player_id_i, update["year"], season_player_id],
+            )
+            if dup:
+                return jsonify({"success": False, "error": "Another row already exists for this player_id and year"}), 409
+
+        set_parts = []
+        params = []
+        for k, v in update.items():
+            set_parts.append(f"{k}=%s")
+            params.append(v)
+        params.append(season_player_id)
+
+        sql = f"UPDATE player SET {', '.join(set_parts)} WHERE season_player_id=%s"
+        db.execute_query(sql, params, fetch_all=False)
+        return jsonify({"success": True, "message": "Player updated successfully"})
+    except Exception as e:
+        logger.exception("Error updating player season row: %s", e)
+        return jsonify({"success": False, "error": "Database error"}), 500
+
+
+@app.route("/api/players", methods=["POST"])
+def api_player_create():
+    """
+    Create a player row in `player` table.
+    Required: player_name, year
+    Optional: any other `player` columns
+    """
+    data = request.get_json(silent=True) or {}
+
+    # Required fields
+    player_name = (data.get("player_name") or "").strip()
+    player_id = data.get("player_id")
+    year = data.get("year")
+
+    if not player_name or year in (None, ""):
+        return jsonify({"success": False, "error": "player_name and year are required"}), 400
+
+    # Normalize numeric types (best effort)
+    def _to_int(v):
+        if v in (None, ""):
+            return None
+        try:
+            return int(v)
+        except Exception:
+            return None
+
+    def _to_float(v):
+        if v in (None, ""):
+            return None
+        try:
+            return float(v)
+        except Exception:
+            return None
+
+    year_i = _to_int(year)
+    if year_i is None:
+        return jsonify({"success": False, "error": "year must be a number"}), 400
+
+    player_id_i = _to_int(player_id)
+    if player_id not in (None, "") and player_id_i is None:
+        return jsonify({"success": False, "error": "player_id must be a number"}), 400
+
+    # Optional fields
+    season_player_id = _to_int(data.get("season_player_id"))
+    best_shot_id = _to_int(data.get("best_shot_id"))
+
+    row = {
+        "season_player_id": season_player_id,  # may be None -> auto-generate
+        "player_id": player_id_i,
+        "player_name": player_name,
+        "games": _to_int(data.get("games")),
+        "time": _to_int(data.get("time")),
+        "goals": _to_int(data.get("goals")),
+        "xG": _to_float(data.get("xG")),
+        "assists": _to_int(data.get("assists")),
+        "xA": _to_float(data.get("xA")),
+        "shots": _to_int(data.get("shots")),
+        "key_passes": _to_int(data.get("key_passes")),
+        "yellow_cards": _to_int(data.get("yellow_cards")),
+        "red_cards": _to_int(data.get("red_cards")),
+        "position": (data.get("position") or "").strip() or None,
+        "team_title": (data.get("team_title") or "").strip() or None,
+        "npg": _to_int(data.get("npg")),
+        "npxG": _to_float(data.get("npxG")),
+        "xGChain": _to_float(data.get("xGChain")),
+        "xGBuildup": _to_float(data.get("xGBuildup")),
+        "year": year_i,
+        "best_shot_id": best_shot_id,
+    }
+
+    try:
+        # Duplicate protection:
+        # - If player_id is provided: enforce uniqueness of (player_id, year)
+        # - If player_id is missing: prevent duplicates of (player_name, year [, team_title])
+        if player_id_i is not None:
+            exists = db.execute_query(
+                "SELECT season_player_id FROM player WHERE player_id=%s AND year=%s LIMIT 1",
+                [player_id_i, year_i],
+            )
+            if exists:
+                return jsonify({"success": False, "error": "Player already exists for this year (same player_id)"}), 409
+        else:
+            if row.get("team_title"):
+                exists = db.execute_query(
+                    "SELECT season_player_id FROM player WHERE player_name=%s AND year=%s AND team_title=%s LIMIT 1",
+                    [player_name, year_i, row.get("team_title")],
+                )
+            else:
+                exists = db.execute_query(
+                    "SELECT season_player_id FROM player WHERE player_name=%s AND year=%s LIMIT 1",
+                    [player_name, year_i],
+                )
+            if exists:
+                return jsonify({"success": False, "error": "Player already exists for this year (same name)"}), 409
+
+        # Validate best_shot_id FK if provided
+        if best_shot_id is not None:
+            shot_exists = db.execute_query(
+                "SELECT shot_id FROM shot_data WHERE shot_id=%s LIMIT 1",
+                [best_shot_id],
+            )
+            if not shot_exists:
+                return jsonify({"success": False, "error": "best_shot_id does not exist"}), 400
+
+        # Auto-generate player_id if missing
+        if player_id_i is None:
+            r = db.execute_query(
+                """
+                SELECT
+                    GREATEST(
+                        (SELECT COALESCE(MAX(player_id), 0) FROM player),
+                        (SELECT COALESCE(MAX(player_id), 0) FROM fut23)
+                    ) + 1 AS next_player_id
+                """
+            )
+            player_id_i = int((r or [{}])[0].get("next_player_id") or 1)
+            row["player_id"] = player_id_i
+
+        # Auto-generate season_player_id if missing
+        if row["season_player_id"] is None:
+            r = db.execute_query("SELECT COALESCE(MAX(season_player_id), 0) + 1 AS next_id FROM player")
+            row["season_player_id"] = int((r or [{}])[0].get("next_id") or 1)
+
+        sql = """
+            INSERT INTO player (
+                season_player_id, player_id, player_name, games, time,
+                goals, xG, assists, xA, shots, key_passes,
+                yellow_cards, red_cards, position, team_title,
+                npg, npxG, xGChain, xGBuildup, year, best_shot_id
+            ) VALUES (
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s,
+                %s, %s, %s, %s, %s, %s
+            )
+        """
+
+        params = (
+            row["season_player_id"], row["player_id"], row["player_name"], row["games"], row["time"],
+            row["goals"], row["xG"], row["assists"], row["xA"], row["shots"], row["key_passes"],
+            row["yellow_cards"], row["red_cards"], row["position"], row["team_title"],
+            row["npg"], row["npxG"], row["xGChain"], row["xGBuildup"], row["year"], row["best_shot_id"]
+        )
+
+        db.execute_query(sql, params, fetch_all=False)
+        return jsonify({
+            "success": True,
+            "message": "Player added successfully",
+            "season_player_id": row["season_player_id"],
+            "player_id": row["player_id"],
+        }), 201
+    except Exception as e:
+        logger.exception("Error creating player: %s", e)
+        return jsonify({"success": False, "error": "Database error"}), 500
 
 @app.route("/api/players/<int:player_id>", methods=['GET'])
 def api_player_detail(player_id):
