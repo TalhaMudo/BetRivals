@@ -29,6 +29,23 @@ def about():
     """Hakkında sayfası"""
     return render_template("about.html", title="About Us")
 
+# --- Authentication Middleware --- #
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            # Check if it's an API request
+            if request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+                return jsonify({
+                    "success": False,
+                    "message": "Authentication required",
+                    "error": "unauthorized"
+                }), 401
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return wrapper
+
+
 #--------------BILGE-START------------------------------
 
 # ========= BILGE: Teams & Seasons pages =========
@@ -1230,22 +1247,148 @@ def player_stats_api(player_id):
         }), 500
 
 #2sg - - - - - - - - - - - - - - - - - - below is for admin page : 
+# ========== ADMIN TEAMS CRUD ==========
+@app.route("/admin/teams", methods=["GET"])
+@login_required
+def admin_teams_page():
+    """Admin: list teams"""
+    try:
+        sql = "SELECT team_id, team_name FROM teams ORDER BY team_name ASC"
+        teams = db.execute_query(sql, fetch_all=True)
+    except Exception as e:
+        logger.exception("Error loading teams: %s", e)
+        teams = []
+    return render_template("admin_teams.html", username=session.get("username"), teams=teams)
 
-# --- Authentication Middleware --- #
-def login_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if "user_id" not in session:
-            # Check if it's an API request
-            if request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
-                return jsonify({
-                    "success": False,
-                    "message": "Authentication required",
-                    "error": "unauthorized"
-                }), 401
-            return redirect("/login")
-        return f(*args, **kwargs)
-    return wrapper
+
+@app.route("/api/admin/teams", methods=["POST"])
+@login_required
+def admin_team_add():
+    """Admin: add a new team"""
+    data = request.get_json(silent=True) or {}
+    name = (data.get("team_name") or "").strip()
+    if not name:
+        return jsonify({"success": False, "error": "team_name is required"}), 400
+    try:
+        db.execute_query("INSERT INTO teams (team_name) VALUES (%s)", (name,), fetch_all=False)
+        return jsonify({"success": True, "message": "Team added successfully"})
+    except Exception as e:
+        logger.exception("Error adding team: %s", e)
+        return jsonify({"success": False, "error": "Database error"}), 500
+
+
+@app.route("/api/admin/teams/<int:team_id>", methods=["PUT"])
+@login_required
+def admin_team_update(team_id):
+    """Admin: update team name"""
+    data = request.get_json(silent=True) or {}
+    name = (data.get("team_name") or "").strip()
+    if not name:
+        return jsonify({"success": False, "error": "team_name required"}), 400
+    try:
+        db.execute_query("UPDATE teams SET team_name=%s WHERE team_id=%s", (name, team_id), fetch_all=False)
+        return jsonify({"success": True, "message": "Team updated"})
+    except Exception as e:
+        logger.exception("Error updating team: %s", e)
+        return jsonify({"success": False, "error": "Database error"}), 500
+
+
+@app.route("/api/admin/teams/<int:team_id>", methods=["DELETE"])
+@login_required
+def admin_team_delete(team_id):
+    """Admin: delete a team"""
+    try:
+        db.execute_query("DELETE FROM teams WHERE team_id=%s", (team_id,), fetch_all=False)
+        return jsonify({"success": True, "message": "Team deleted"})
+    except Exception as e:
+        logger.exception("Error deleting team: %s", e)
+        return jsonify({"success": False, "error": "Cannot delete (FK in use?)"}), 400
+# ========== ADMIN SEASONS CRUD ==========
+@app.route("/admin/seasons", methods=["GET"])
+@login_required
+def admin_seasons_page():
+    """Admin: list all seasons"""
+    try:
+        sql = """
+            SELECT s.seasonentryid, s.year, s.title, t.team_name
+            FROM season s
+            LEFT JOIN teams t ON s.team_id = t.team_id
+            ORDER BY s.year DESC
+        """
+        seasons = db.execute_query(sql, fetch_all=True)
+        teams = db.execute_query("SELECT team_id, team_name FROM teams ORDER BY team_name ASC", fetch_all=True)
+    except Exception as e:
+        logger.exception("Error loading seasons: %s", e)
+        seasons, teams = [], []
+    return render_template("admin_seasons.html",
+                           username=session.get("username"),
+                           seasons=seasons,
+                           teams=teams)
+
+
+@app.route("/api/admin/seasons", methods=["POST"])
+@login_required
+def admin_season_add():
+    """Admin: create new season"""
+    data = request.get_json(silent=True) or {}
+    team_id = data.get("team_id")
+    title = data.get("title")
+    year = data.get("year")
+    if not (team_id and year):
+        return jsonify({"success": False, "error": "team_id and year required"}), 400
+    try:
+        sql = "INSERT INTO season (team_id, title, year) VALUES (%s,%s,%s)"
+        db.execute_query(sql, (team_id, title, year), fetch_all=False)
+        return jsonify({"success": True, "message": "Season added successfully"})
+    except Exception as e:
+        logger.exception("Error adding season: %s", e)
+        return jsonify({"success": False, "error": "Database error"}), 500
+
+
+@app.route("/api/admin/seasons/<int:seasonentryid>", methods=["PUT"])
+@login_required
+def admin_season_update(seasonentryid):
+    """Admin: update season"""
+    data = request.get_json(silent=True) or {}
+    title = data.get("title")
+    year = data.get("year")
+    team_id = data.get("team_id")
+    fields, params = [], []
+
+    if title:
+        fields.append("title=%s")
+        params.append(title)
+    if year:
+        fields.append("year=%s")
+        params.append(year)
+    if team_id:
+        fields.append("team_id=%s")
+        params.append(team_id)
+
+    if not fields:
+        return jsonify({"success": False, "error": "No fields to update"}), 400
+    params.append(seasonentryid)
+
+    try:
+        db.execute_query(f"UPDATE season SET {', '.join(fields)} WHERE seasonentryid=%s",
+                         tuple(params), fetch_all=False)
+        return jsonify({"success": True, "message": "Season updated"})
+    except Exception as e:
+        logger.exception("Error updating season: %s", e)
+        return jsonify({"success": False, "error": "Database error"}), 500
+
+
+@app.route("/api/admin/seasons/<int:seasonentryid>", methods=["DELETE"])
+@login_required
+def admin_season_delete(seasonentryid):
+    """Admin: delete season"""
+    try:
+        db.execute_query("DELETE FROM season WHERE seasonentryid=%s", (seasonentryid,), fetch_all=False)
+        return jsonify({"success": True, "message": "Season deleted"})
+    except Exception as e:
+        logger.exception("Error deleting season: %s", e)
+        return jsonify({"success": False, "error": "Cannot delete"}), 400
+
 
 # --- Authentication Routes --- #
 @app.route("/register", methods=["GET", "POST"])

@@ -89,7 +89,7 @@
         backdrop-filter: blur(10px);
         border-radius: 20px;
         padding: 40px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
         border: 1px solid rgba(46, 204, 113, 0.3);
         margin-bottom: 30px;
     }
@@ -223,10 +223,11 @@
 
     <div class="nav-tabs">
         <a href="/admin" class="nav-tab active" onclick="switchTab(event, 'overview')">📊 Overview</a>
-        <a href="/admin/shots" class="nav-tab" >⚽ Shots</a>
+        <a href="/admin/shots" class="nav-tab">⚽ Shots</a>
         <a href="/admin/matches" class="nav-tab">⚽ Matches</a>
         <a href="/admin/players" class="nav-tab" onclick="switchTab(event, 'players')">👥 Players</a>
         <a href="/admin/teams" class="nav-tab" onclick="switchTab(event, 'teams')">🏆 Teams</a>
+        <a href="/admin/seasons" class="nav-tab" onclick="switchTab(event, 'seasons')">📅 Seasons</a>
         <a href="/admin/settings" class="nav-tab" onclick="switchTab(event, 'settings')">⚙️ Settings</a>
     </div>
 
@@ -270,7 +271,8 @@
             <div class="empty-state-icon">⚽</div>
             <h4>Shots Module</h4>
             <p>View and manage shot analytics data</p>
-            <p style="margin-top: 20px; font-size: 0.9em;">This section will display shot data, filtering options, and management tools.</p>
+            <p style="margin-top: 20px; font-size: 0.9em;">This section will display shot data, filtering options, and
+                management tools.</p>
         </div>
     </div>
 
@@ -281,7 +283,8 @@
             <div class="empty-state-icon">👥</div>
             <h4>Players Module</h4>
             <p>Manage player profiles and statistics</p>
-            <p style="margin-top: 20px; font-size: 0.9em;">This section will display player data and management tools.</p>
+            <p style="margin-top: 20px; font-size: 0.9em;">This section will display player data and management tools.
+            </p>
         </div>
     </div>
 
@@ -292,9 +295,24 @@
             <div class="empty-state-icon">🏆</div>
             <h4>Teams Module</h4>
             <p>Manage team information and statistics</p>
-            <p style="margin-top: 20px; font-size: 0.9em;">This section will display team data and management tools.</p>
+            <a href="/admin/teams" class="action-btn" style="margin-top:20px; display:inline-block;">➡️ Open Teams CRUD
+                Panel</a>
         </div>
     </div>
+
+    <!-- Seasons Tab -->
+    <div id="seasons" class="content-card" style="display: none;">
+        <h3>Season Management</h3>
+        <div class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <h4>Seasons Module</h4>
+            <p>Manage competition seasons and related teams</p>
+            <a href="/admin/seasons" class="action-btn" style="margin-top:20px; display:inline-block;">➡️ Open Seasons
+                CRUD Panel</a>
+        </div>
+    </div>
+
+
 
     <!-- Settings Tab -->
     <div id="settings" class="content-card" style="display: none;">
@@ -303,7 +321,8 @@
             <div class="empty-state-icon">⚙️</div>
             <h4>Settings Module</h4>
             <p>Manage application settings and preferences</p>
-            <p style="margin-top: 20px; font-size: 0.9em;">This section will display settings and configuration options.</p>
+            <p style="margin-top: 20px; font-size: 0.9em;">This section will display settings and configuration options.
+            </p>
         </div>
     </div>
 </div>
@@ -311,19 +330,37 @@
 <script>
     function switchTab(event, tabName) {
         event.preventDefault();
-        
+
         // Hide all tabs
         const tabs = document.querySelectorAll('[id="overview"], [id="shots"], [id="players"], [id="teams"], [id="settings"]');
         tabs.forEach(tab => tab.style.display = 'none');
-        
+
         // Remove active class from all nav tabs
         document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-        
+
         // Show selected tab
         document.getElementById(tabName).style.display = 'block';
-        
+
         // Add active class to clicked nav tab
         event.target.classList.add('active');
     }
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const current = window.location.pathname;
+
+        if (current.includes("/admin/teams")) {
+            switchTab(
+                { preventDefault: () => { }, target: document.querySelector('[href="/admin/teams"]') },
+                "teams"
+            );
+        } else if (current.includes("/admin/seasons")) {
+            switchTab(
+                { preventDefault: () => { }, target: document.querySelector('[href="/admin/seasons"]') },
+                "seasons"
+            );
+        }
+    });
+</script>
+
 {% endblock %}
