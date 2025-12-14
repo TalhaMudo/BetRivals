@@ -2,17 +2,21 @@
 
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='players.css') }}">
-<section class="content-section player-detail-section">
-    <div id="player-detail-container">
-        <div class="loading">Loading player details...</div>
+
+<section class="content-section compare-page">
+    <div class="compare-page-header">
+        <h2>Compare Players</h2>
+        <p>Side-by-side comparison of up to 4 players</p>
+    </div>
+    <div id="compare-container">
+        <div class="loading">Loading comparison...</div>
     </div>
 </section>
 
 <script src="{{ url_for('static', filename='players.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const playerId = {{ player_id }};
-        loadPlayerDetail(playerId);
+        loadComparisonPage();
     });
 </script>
 {% endblock %}

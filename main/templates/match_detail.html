@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='matches.css') }}">
+
+<div class="matches-container">
+
+    {% macro fmt_date(val) -%}
+        {%- if not val -%}
+            
+        {%- elif val is string -%}
+            {%- set d = val[:10] -%}
+            {%- set parts = d.split('-') -%}
+            {{ parts[2] }}.{{ parts[1] }}.{{ parts[0] }}
+        {%- else -%}
+            {{ val.strftime('%d.%m.%Y') }}
+        {%- endif -%}
+    {%- endmacro %}
+
+    {# Short month-year formatter for recent lists: mm.yyyy #}
+    {% macro fmt_month_year(val) -%}
+        {%- if not val -%}
+            
+        {%- elif val is string -%}
+            {%- set d = val[:10] -%}
+            {%- set parts = d.split('-') -%}
+            {{ parts[1] }}.{{ parts[0] }}
+        {%- else -%}
+            {{ val.strftime('%m.%Y') }}
+        {%- endif -%}
+    {%- endmacro %}
+
+    {# xG values and widths are precomputed in app.py #}
+
+    <div class="match-detail-grid">
+        <div class="match-card">
+            <div class="match-top">
+                <div class="team-block team-home">
+                    <img class="team-logo" data-team="{{ match.team_h }}" alt="{{ match.team_h }}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" />
+                    <div class="team-name">{{ match.team_h }}</div>
+                </div>
+
+                <div class="score-block">
+                    <div class="big-score">{{ match.h_goals if match.h_goals is not none else '-' }}<span class="score-sep">–</span>{{ match.a_goals if match.a_goals is not none else '-' }}</div>
+                    <div class="score-sub">{{ match.season }} — {{ fmt_date(match.date) }}</div>
+                </div>
+
+                <div class="team-block team-away">
+                    <div class="team-name">{{ match.team_a }}</div>
+                    <img class="team-logo" data-team="{{ match.team_a }}" alt="{{ match.team_a }}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" />
+                </div>
+            </div>
+
+            <div class="xg-section">
+                <div class="xg-label">Expected Goals (xG)</div>
+                <div class="xg-bar">
+                    <div class="xg-home" style="width: {{ match.h_xg_width }};">{{ match.h_xg_computed }}</div>
+                    <div class="xg-away" style="width: {{ match.a_xg_width }};">{{ match.a_xg_computed }}</div>
+                </div>
+            </div>
+
+            <hr />
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <span class="label">League</span>
+                    <span class="val">{{ match.league or 'N/A' }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="label">Final</span>
+                    <span class="val">{{ 'Yes' if match.isResult else 'No' }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="label">Home Shots</span>
+                    <span class="val">{{ match.h_shot or '—' }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="label">Away Shots</span>
+                    <span class="val">{{ match.a_shot or '—' }}</span>
+                </div>
+                <div class="meta-item forecast-item">
+                    <span class="label">Forecast (W/D/L)</span>
+                    <span class="val forecast-val">{{ (match.forecast_w or '—') }} / {{ (match.forecast_d or '—') }} / {{ (match.forecast_l or '—') }}</span>
+                </div>
+            </div>
+
+        </div>
+
+        {# H2H card below main match card #}
+        <div class="h2h-card">
+            <div class="h2h-head">
+                <h4>Head-to-Head</h4>
+                <div class="h2h-teams">{{ match.team_h }} vs {{ match.team_a }}</div>
+            </div>
+            <div class="h2h-stats">
+                <div class="h2h-bar">
+                    <div class="h2h-seg home" style="width: {{ h2h_stats.home_width }};">{{ h2h_stats.home_pct }}%</div>
+                    <div class="h2h-seg draw" style="width: {{ h2h_stats.draw_width }};">{{ h2h_stats.draw_pct }}%</div>
+                    <div class="h2h-seg away" style="width: {{ h2h_stats.away_width }};">{{ h2h_stats.away_pct }}%</div>
+                </div>
+                <div class="h2h-legend">
+                    <div class="legend-item"><span class="legend-color home"></span><span class="legend-label">{{ match.team_h }} Wins</span></div>
+                    <div class="legend-item"><span class="legend-color draw"></span><span class="legend-label">Draws</span></div>
+                    <div class="legend-item"><span class="legend-color away"></span><span class="legend-label">{{ match.team_a }} Wins</span></div>
+                </div>
+            </div>
+            <div class="h2h-list">
+                <ul class="recent-list">
+                    {% if h2h_recent %}
+                        {% for m in h2h_recent %}
+                            <li>
+                                <a href="/match/{{ m.match_id }}">
+                                    <span class="rm-date">{{ fmt_month_year(m.date) }}</span>
+                                    <span class="rm-home">{{ m.team_h }}</span>
+                                    <span class="rm-score">{{ m.h_goals if m.h_goals is not none else '-' }}:{{ m.a_goals if m.a_goals is not none else '-' }}</span>
+                                    <span class="rm-away">{{ m.team_a }}</span>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li>No head-to-head matches found</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        {# Recent matches cards side-by-side below H2H #}
+        <div class="recent-cards-row">
+            <div class="team-card">
+                <div class="team-card-head"><h4>{{ match.team_h }}</h4></div>
+                <div class="team-card-body">
+                    <p class="recent-title">Recent Matches</p>
+                    <ul class="recent-list">
+                        {% for m in home_recent %}
+                        <li>
+                            <a href="/match/{{ m.match_id }}">
+                                <span class="rm-date">{{ fmt_month_year(m.date) }}</span>
+                                <span class="rm-home">{{ m.team_h }}</span>
+                                <span class="rm-score">{{ m.h_goals if m.h_goals is not none else '-' }}:{{ m.a_goals if m.a_goals is not none else '-' }}</span>
+                                <span class="rm-away">{{ m.team_a }}</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="no-matches">No recent matches</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="team-card">
+                <div class="team-card-head"><h4>{{ match.team_a }}</h4></div>
+                <div class="team-card-body">
+                    <p class="recent-title">Recent Matches</p>
+                    <ul class="recent-list">
+                        {% for m in away_recent %}
+                        <li>
+                            <a href="/match/{{ m.match_id }}">
+                                <span class="rm-date">{{ fmt_month_year(m.date) }}</span>
+                                <span class="rm-home">{{ m.team_h }}</span>
+                                <span class="rm-score">{{ m.h_goals if m.h_goals is not none else '-' }}:{{ m.a_goals if m.a_goals is not none else '-' }}</span>
+                                <span class="rm-away">{{ m.team_a }}</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="no-matches">No recent matches</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+    </div>
+
+        {% if season_comparison %}
+        <div class="season-comparison-card">
+            <div class="comparison-header">
+                <h3>📊 Season {{ season_comparison.season or match.season }} Comparison</h3>
+                <span class="comparison-subtitle">Full season statistics for both teams</span>
+            </div>
+            
+            <div class="comparison-teams">
+                <div class="comparison-team home">
+                    {% if season_comparison.h_team_id %}
+                    <a href="/seasons?team_id={{ season_comparison.h_team_id }}" class="team-badge-link">
+                        <div class="team-badge home">{{ match.team_h }}</div>
+                    </a>
+                    {% else %}
+                    <div class="team-badge home">{{ match.team_h }}</div>
+                    {% endif %}
+                </div>
+                <div class="vs-divider">VS</div>
+                <div class="comparison-team away">
+                    {% if season_comparison.a_team_id %}
+                    <a href="/seasons?team_id={{ season_comparison.a_team_id }}" class="team-badge-link">
+                        <div class="team-badge away">{{ match.team_a }}</div>
+                    </a>
+                    {% else %}
+                    <div class="team-badge away">{{ match.team_a }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="comparison-stats">
+                <div class="stat-row highlight">
+                    <div class="stat-value home">
+                        <span class="big-stat">{{ season_comparison.h_points or 0 }}</span>
+                        <span class="stat-record">{{ season_comparison.h_wins or 0 }}W {{ season_comparison.h_draws or 0 }}D {{ season_comparison.h_losses or 0 }}L</span>
+                    </div>
+                    <div class="stat-label">Points</div>
+                    <div class="stat-value away">
+                        <span class="big-stat">{{ season_comparison.a_points or 0 }}</span>
+                        <span class="stat-record">{{ season_comparison.a_wins or 0 }}W {{ season_comparison.a_draws or 0 }}D {{ season_comparison.a_losses or 0 }}L</span>
+                    </div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-value home">{{ season_comparison.h_goals_scored or 0 }}</div>
+                    <div class="stat-label">Goals Scored</div>
+                    <div class="stat-value away">{{ season_comparison.a_goals_scored or 0 }}</div>
+                </div>
+                <div class="stat-bar-row">
+                    {% set h_gs = (season_comparison.h_goals_scored or 0)|abs %}
+                    {% set a_gs = (season_comparison.a_goals_scored or 0)|abs %}
+                    {% set total_gs = h_gs + a_gs if h_gs + a_gs > 0 else 1 %}
+                    <div class="stat-bar home" data-target-width="{{ (h_gs / total_gs * 100)|round(1) }}%" style="width: 0%;"></div>
+                    <div class="stat-bar away" data-target-width="{{ (a_gs / total_gs * 100)|round(1) }}%" style="width: 0%;"></div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-value home">{{ season_comparison.h_goals_conceded or 0 }}</div>
+                    <div class="stat-label">Goals Conceded</div>
+                    <div class="stat-value away">{{ season_comparison.a_goals_conceded or 0 }}</div>
+                </div>
+                <div class="stat-bar-row inverted">
+                    {% set h_gc = (season_comparison.h_goals_conceded or 0)|abs %}
+                    {% set a_gc = (season_comparison.a_goals_conceded or 0)|abs %}
+                    {% set total_gc = h_gc + a_gc if h_gc + a_gc > 0 else 1 %}
+                    <div class="stat-bar home" data-target-width="{{ (h_gc / total_gc * 100)|round(1) }}%" style="width: 0%;"></div>
+                    <div class="stat-bar away" data-target-width="{{ (a_gc / total_gc * 100)|round(1) }}%" style="width: 0%;"></div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-value home {% if season_comparison.h_goal_diff > 0 %}positive{% elif season_comparison.h_goal_diff < 0 %}negative{% endif %}">
+                        {{ '+' if season_comparison.h_goal_diff > 0 else '' }}{{ season_comparison.h_goal_diff }}
+                    </div>
+                    <div class="stat-label">Goal Difference</div>
+                    <div class="stat-value away {% if season_comparison.a_goal_diff > 0 %}positive{% elif season_comparison.a_goal_diff < 0 %}negative{% endif %}">
+                        {{ '+' if season_comparison.a_goal_diff > 0 else '' }}{{ season_comparison.a_goal_diff }}
+                    </div>
+                </div>
+                <div class="stat-bar-row">
+                    {% set h_gd = season_comparison.h_goal_diff|int or 0 %}
+                    {% set a_gd = season_comparison.a_goal_diff|int or 0 %}
+                    {# Normalize: shift all values to positive range #}
+                    {% set min_val = [h_gd, a_gd]|min %}
+                    {% set h_gd_norm = h_gd - min_val + 1 %}
+                    {% set a_gd_norm = a_gd - min_val + 1 %}
+                    {% set total_gd = h_gd_norm + a_gd_norm if h_gd_norm + a_gd_norm > 0 else 1 %}
+                    <div class="stat-bar home" data-target-width="{{ (h_gd_norm / total_gd * 100)|round(1) }}%" style="width: 0%;"></div>
+                    <div class="stat-bar away" data-target-width="{{ (a_gd_norm / total_gd * 100)|round(1) }}%" style="width: 0%;"></div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-value home">{{ '%.1f'|format(season_comparison.h_total_xg|float or 0) }}</div>
+                    <div class="stat-label">Total xG</div>
+                    <div class="stat-value away">{{ '%.1f'|format(season_comparison.a_total_xg|float or 0) }}</div>
+                </div>
+                <div class="stat-bar-row">
+                    {% set h_xg = (season_comparison.h_total_xg|float or 0)|abs %}
+                    {% set a_xg = (season_comparison.a_total_xg|float or 0)|abs %}
+                    {% set total_xg = h_xg + a_xg if h_xg + a_xg > 0 else 1 %}
+                    <div class="stat-bar home" data-target-width="{{ (h_xg / total_xg * 100)|round(1) }}%" style="width: 0%;"></div>
+                    <div class="stat-bar away" data-target-width="{{ (a_xg / total_xg * 100)|round(1) }}%" style="width: 0%;"></div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-value home {% if season_comparison.h_xg_performance > 0 %}positive{% elif season_comparison.h_xg_performance < 0 %}negative{% endif %}">
+                        {{ '+' if season_comparison.h_xg_performance > 0 else '' }}{{ season_comparison.h_xg_performance }}
+                    </div>
+                    <div class="stat-label">xG Performance</div>
+                    <div class="stat-value away {% if season_comparison.a_xg_performance > 0 %}positive{% elif season_comparison.a_xg_performance < 0 %}negative{% endif %}">
+                        {{ '+' if season_comparison.a_xg_performance > 0 else '' }}{{ season_comparison.a_xg_performance }}
+                    </div>
+                </div>
+                <div class="stat-bar-row">
+                    {% set h_xgp = season_comparison.h_xg_performance|float or 0 %}
+                    {% set a_xgp = season_comparison.a_xg_performance|float or 0 %}
+                    {# Normalize: shift all values to positive range #}
+                    {% set min_val = [h_xgp, a_xgp]|min %}
+                    {% set h_xgp_norm = h_xgp - min_val + 1 %}
+                    {% set a_xgp_norm = a_xgp - min_val + 1 %}
+                    {% set total_xgp = h_xgp_norm + a_xgp_norm if h_xgp_norm + a_xgp_norm > 0 else 1 %}
+                    <div class="stat-bar home" data-target-width="{{ (h_xgp_norm / total_xgp * 100)|round(1) }}%" style="width: 0%;"></div>
+                    <div class="stat-bar away" data-target-width="{{ (a_xgp_norm / total_xgp * 100)|round(1) }}%" style="width: 0%;"></div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-value home">{{ season_comparison.h_shot_conversion|float or 0 }}%</div>
+                    <div class="stat-label">Shot Conversion</div>
+                    <div class="stat-value away">{{ season_comparison.a_shot_conversion|float or 0 }}%</div>
+                </div>
+                <div class="stat-bar-row">
+                    {% set h_conv = (season_comparison.h_shot_conversion|float or 0)|abs %}
+                    {% set a_conv = (season_comparison.a_shot_conversion|float or 0)|abs %}
+                    {% set total_conv = h_conv + a_conv if h_conv + a_conv > 0 else 1 %}
+                    <div class="stat-bar home" data-target-width="{{ (h_conv / total_conv * 100)|round(1) }}%" style="width: 0%;"></div>
+                    <div class="stat-bar away" data-target-width="{{ (a_conv / total_conv * 100)|round(1) }}%" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <div class="key-players-section">
+                <h4>🌟 Season Key Players</h4>
+                <div class="key-players-grid">
+                    <div class="key-player home">
+                        <div class="player-role">Top Scorer</div>
+                        {% if season_comparison.h_top_scorer_id %}
+                        <a href="/players/{{ season_comparison.h_top_scorer_id }}" class="player-name-link">{{ season_comparison.h_top_scorer or '—' }}</a>
+                        {% else %}
+                        <div class="player-name">{{ season_comparison.h_top_scorer or '—' }}</div>
+                        {% endif %}
+                        <div class="player-stat">{{ season_comparison.h_top_scorer_goals or 0 }} goals</div>
+                    </div>
+                    <div class="key-player away">
+                        <div class="player-role">Top Scorer</div>
+                        {% if season_comparison.a_top_scorer_id %}
+                        <a href="/players/{{ season_comparison.a_top_scorer_id }}" class="player-name-link">{{ season_comparison.a_top_scorer or '—' }}</a>
+                        {% else %}
+                        <div class="player-name">{{ season_comparison.a_top_scorer or '—' }}</div>
+                        {% endif %}
+                        <div class="player-stat">{{ season_comparison.a_top_scorer_goals or 0 }} goals</div>
+                    </div>
+                    <div class="key-player home">
+                        <div class="player-role">Top Assister</div>
+                        {% if season_comparison.h_top_assister_id %}
+                        <a href="/players/{{ season_comparison.h_top_assister_id }}" class="player-name-link">{{ season_comparison.h_top_assister or '—' }}</a>
+                        {% else %}
+                        <div class="player-name">{{ season_comparison.h_top_assister or '—' }}</div>
+                        {% endif %}
+                        <div class="player-stat">{{ season_comparison.h_top_assister_assists or 0 }} assists</div>
+                    </div>
+                    <div class="key-player away">
+                        <div class="player-role">Top Assister</div>
+                        {% if season_comparison.a_top_assister_id %}
+                        <a href="/players/{{ season_comparison.a_top_assister_id }}" class="player-name-link">{{ season_comparison.a_top_assister or '—' }}</a>
+                        {% else %}
+                        <div class="player-name">{{ season_comparison.a_top_assister or '—' }}</div>
+                        {% endif %}
+                        <div class="player-stat">{{ season_comparison.a_top_assister_assists or 0 }} assists</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    <div class="match-card" style="margin-top:18px;">
+        <div class="shots-head">
+            <h3>⭐ Top Performers in This Match</h3>
+            <div class="shots-stats">Players with highest expected goals (xG)</div>
+        </div>
+        <div class="table-wrapper shots-table-wrap">
+            <table class="results-table shots-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Position</th>
+                        <th>Team</th>
+                        <th>Shots</th>
+                        <th>Total xG</th>
+                        <th>Goals</th>
+                        <th>Avg xG/Shot</th>
+                        <th>Season Stats</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if top_performers %}
+                        {% for perf in top_performers %}
+                        <tr class="result-row" onclick="window.location='/players/{{ perf.player_id }}'">
+                            <td class="col-player">
+                                <a href="/players/{{ perf.player_id }}" onclick="event.stopPropagation();">
+                                    {{ perf.player_name or 'Unknown' }}
+                                </a>
+                            </td>
+                            <td class="col-position">{{ perf.position or '—' }}</td>
+                            <td class="col-team">{{ perf.team or '—' }}</td>
+                            <td class="col-shots" style="text-align:center; font-weight:700;">{{ perf.shots_taken }}</td>
+                            <td class="col-xg">{{ '%.2f' % (perf.total_xg or 0) }}</td>
+                            <td class="col-goals" style="text-align:center; font-weight:700; color:#2ecc71;">{{ perf.goals_scored }}</td>
+                            <td class="col-avg-xg" style="font-family:monospace;">{{ '%.3f' % (perf.avg_xg_per_shot or 0) }}</td>
+                            <td class="col-season-stats" style="font-size:0.9em; color:#b8b8b8;">
+                                {% if perf.season_goals is not none and perf.season_assists is not none %}
+                                    {{ perf.season_goals }}G / {{ perf.season_assists }}A
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="8" style="color:#888; text-align:center;">No player performance data available</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="match-card shots-card" style="margin-top:18px;">
+        <div class="shots-head">
+            <h3>Highlighted Shots In This Match</h3>
+            <div class="shots-stats">Total: <strong>{{ shots|length }}</strong></div>
+        </div>
+        <div class="table-wrapper shots-table-wrap">
+            <table class="results-table shots-table">
+                <thead>
+                    <tr><th>Min</th><th>Player</th><th>Result</th><th>xG</th><th>Team</th></tr>
+                </thead>
+                <tbody>
+                    {% if shots %}
+                        {% for s in shots %}
+                        <tr class="result-row" onclick="window.location='/shot/{{ s.shot_id }}'">
+                            <td class="col-min">{{ s.minute or '' }}</td>
+                            <td class="col-player"><a href="/players/{{ s.player_id }}" onclick="event.stopPropagation();">{{ s.player_name or s.player }}</a></td>
+                            <td class="col-result">{{ s.result or '' }}</td>
+                            <td class="col-xg">{{ '%.2f' % (s.xG or 0) }}</td>
+                            <td class="col-team">{{ s.h_team or s.a_team or '' }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="5" style="color:#888; text-align:center;">No shots recorded for this match</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='match_detail.js') }}"></script>
+
+{% endblock %}

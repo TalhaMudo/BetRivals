@@ -16,16 +16,32 @@
             </div>
         </div>
     </div>
-    
-    <div class="buttons-container">
-        <button id="btn-analysis" class="btn-test btn-primary">🔍 Show Top Goal Scorers (Low FIFA Rating)</button>
-        <button id="btn-test-fut23" class="btn-test btn-secondary">Load All FUT23 Players</button>
+
+    <!-- Quote section -->
+    <div class="quote-section">
+        <div class="quote-text" id="quote-text">Loading quote...</div>
+        <div class="quote-author" id="quote-author"></div>
     </div>
-    
+
+    <!-- Masonry content grid placeholders -->
+    <div class="content-grid masonry">
+        <div class="content-box tall">Player of the Day (placeholder)</div>
+        <div class="content-box">Most Shots (placeholder)</div>
+        <div class="content-box wide">Information for Today (placeholder)</div>
+        <div class="content-box">Top Assists (placeholder)</div>
+        <div class="content-box">Defensive Leader (placeholder)</div>
+        <div class="content-box tall">Trending Player (placeholder)</div>
+    </div>
+
     <div id="search-results" class="search-results-container"></div>
+
+    <div class="buttons-container bottom-buttons">
+        <button id="btn-analysis" class="btn-test btn-primary">👥 Show All Players</button>
+    </div>
     
     <div id="results"></div>
 </section>
 
 <script src="{{ url_for('static', filename='players.js') }}"></script>
 {% endblock %}
+

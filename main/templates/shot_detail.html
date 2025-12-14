@@ -295,6 +295,7 @@
         align-items: center;
         transition: transform 0.2s, background 0.2s;
         border: 1px solid rgba(46, 204, 113, 0.2);
+        cursor: pointer;
     }
 
     .shot-item:hover {
@@ -330,6 +331,17 @@
         height: 100%;
         background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
         transition: width 0.3s;
+    }
+
+    /* Make player card clickable */
+    .card.clickable {
+        cursor: pointer;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .card.clickable:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(46, 204, 113, 0.4);
     }
 
     @media (max-width: 968px) {
@@ -418,7 +430,7 @@
                 <h4 style="color: #2ecc71; margin-bottom: 15px; text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);">Other Shots in This Match</h4>
                 <div class="shot-list">
                     {% for other in other_shots %}
-                    <div class="shot-item">
+                    <div class="shot-item" onclick="window.location.href='/shot/{{ other.shot_id }}'">
                         <div class="shot-item-details">
                             <div><span class="minute">{{ other.minute }}'</span> - {{ other.shotType }}</div>
                             <div class="situation">{{ other.situation }}</div>
@@ -438,7 +450,7 @@
 
         <div>
             {% if player %}
-            <div class="card">
+            <div class="card clickable" onclick="window.location.href='/players/{{ player.player_id }}'">
                 <h3>👤 Player Profile</h3>
                 
                 <div class="player-info">
@@ -522,7 +534,93 @@
                     </div>
                 </div>
             </div>
+            
             {% endif %}
+            {% if context_stats %}
+<div class="card" style="margin-top: 30px;">
+    <h3>🎯 Shot Context & Comparison</h3>
+    
+    <!-- Similar Situations Performance -->
+    <div style="margin-bottom: 25px;">
+        <h4 style="color: #2ecc71; margin-bottom: 15px; font-size: 1.2em; text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);">Similar Situations</h4>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Similar Shots</div>
+                <div class="stat-value" style="font-size: 1.5em;">{{ context_stats.similar_shots_count or 0 }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Goals from Similar</div>
+                <div class="stat-value" style="font-size: 1.5em;">{{ context_stats.similar_goals or 0 }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Conversion Rate</div>
+                <div class="stat-value" style="font-size: 1.5em;">
+                    {{ "%.1f"|format((context_stats.similar_goals / context_stats.similar_shots_count * 100) if context_stats.similar_shots_count and context_stats.similar_shots_count > 0 else 0) }}%
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Avg xG (Similar)</div>
+                <div class="stat-value" style="font-size: 1.5em;">{{ "%.3f"|format(context_stats.avg_similar_xg or 0) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Performance -->
+    <div style="margin-bottom: 25px;">
+        <h4 style="color: #2ecc71; margin-bottom: 15px; font-size: 1.2em; text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);">Team Performance</h4>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Avg Match xG</div>
+                <div class="info-value">{{ "%.2f"|format(context_stats.team_avg_match_xg or 0) }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Avg Goals per Match</div>
+                <div class="info-value">{{ "%.2f"|format(context_stats.team_avg_goals or 0) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Opposition Defense -->
+    <div style="margin-bottom: 25px;">
+        <h4 style="color: #2ecc71; margin-bottom: 15px; font-size: 1.2em; text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);">Opposition Defense</h4>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Avg PPDA</div>
+                <div class="info-value">{{ "%.2f"|format(context_stats.opp_avg_ppda or 0) }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Deep Allowed</div>
+                <div class="info-value">{{ "%.2f"|format(context_stats.opp_deep_allowed or 0) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- League-Wide Comparison -->
+    <div>
+        <h4 style="color: #2ecc71; margin-bottom: 15px; font-size: 1.2em; text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);">League-Wide Comparison</h4>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">League Similar Shots</div>
+                <div class="stat-value" style="font-size: 1.5em;">{{ context_stats.league_similar_shots or 0 }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">League Goals</div>
+                <div class="stat-value" style="font-size: 1.5em;">{{ context_stats.league_similar_goals or 0 }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">League Conversion</div>
+                <div class="stat-value" style="font-size: 1.5em;">
+                    {{ "%.1f"|format((context_stats.league_similar_goals / context_stats.league_similar_shots * 100) if context_stats.league_similar_shots and context_stats.league_similar_shots > 0 else 0) }}%
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">League Avg xG</div>
+                <div class="stat-value" style="font-size: 1.5em;">{{ "%.3f"|format(context_stats.league_avg_similar_xg or 0) }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
         </div>
     </div>
 </div>

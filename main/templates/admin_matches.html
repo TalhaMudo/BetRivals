@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='admin_matches.css') }}">
+
+<div class="matches-admin-container">
+    <div class="admin-header">
+        <h2>⚽ Matches Management</h2>
+        <button class="btn-add" onclick="openCreateModal()">+ Add Match</button>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <div class="filters-section">
+        <input type="text" id="filterTeam" class="filter-input" placeholder="Filter by team..." onkeyup="loadMatches()">
+        <select id="filterSeason" class="filter-input" onchange="loadMatches()">
+            <option value="">Any Season</option>
+        </select>
+        <button class="btn-add" onclick="loadMatches()">🔄 Refresh</button>
+    </div>
+
+    <div class="matches-table" id="matchesTableWrap">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Season</th>
+                        <th>Date</th>
+                        <th>Home</th>
+                        <th>Score</th>
+                        <th>Away</th>
+                        <th>League</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="matchesTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="paginationContainer" class="pagination"></div>
+</div>
+
+<!-- Create / Edit Modal -->
+<div id="matchModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Add Match</h3>
+            <button class="close-modal" onclick="closeModal()">×</button>
+        </div>
+        <form id="matchForm" onsubmit="saveMatch(event)">
+                <div class="form-grid">
+                    <div class="form-group"><label>Match ID</label><input id="field_match_id" name="match_id" type="number" placeholder="Unique match id" /></div>
+                    <div class="form-group"><label>Date</label><input id="field_date" name="date" type="datetime-local" /></div>
+                    <div class="form-group"><label>Season</label>
+                        <select id="field_season" name="season"><option value="">-- select season --</option></select>
+                    </div>
+                    <div class="form-group"><label>League</label><input id="field_league" name="league" type="text" placeholder="League name"/></div>
+                    <div class="form-group"><label>League ID</label><input id="field_league_id" name="league_id" type="number" placeholder="League ID"/></div>
+                    <div class="form-group"><label>Home Team</label><input id="field_team_h" name="team_h" type="text" placeholder="Home team"/></div>
+                    <div class="form-group"><label>Away Team</label><input id="field_team_a" name="team_a" type="text" placeholder="Away team"/></div>
+                    <div class="form-group"><label>Home Goals</label><input id="field_h_goals" name="h_goals" type="number" /></div>
+                    <div class="form-group"><label>Away Goals</label><input id="field_a_goals" name="a_goals" type="number" /></div>
+                    <div class="form-group"><label>Home xG</label><input id="field_h_xg" name="h_xg" type="number" step="0.01" /></div>
+                    <div class="form-group"><label>Away xG</label><input id="field_a_xg" name="a_xg" type="number" step="0.01" /></div>
+                    <div class="form-group"><label>Home Shots</label><input id="field_h_shot" name="h_shot" type="number" /></div>
+                    <div class="form-group"><label>Away Shots</label><input id="field_a_shot" name="a_shot" type="number" /></div>
+                    <div class="form-group"><label>Home Shots on Target</label><input id="field_h_shotOnTarget" name="h_shotOnTarget" type="number" /></div>
+                    <div class="form-group"><label>Away Shots on Target</label><input id="field_a_shotOnTarget" name="a_shotOnTarget" type="number" /></div>
+                    <div class="form-group"><label>Home Deep</label><input id="field_h_deep" name="h_deep" type="number" /></div>
+                    <div class="form-group"><label>Away Deep</label><input id="field_a_deep" name="a_deep" type="number" /></div>
+                    <div class="form-group"><label>Home PPDA</label><input id="field_h_ppda" name="h_ppda" type="number" step="0.01" /></div>
+                    <div class="form-group"><label>Away PPDA</label><input id="field_a_ppda" name="a_ppda" type="number" step="0.01" /></div>
+                    <div class="form-group"><label>Forecast Win %</label><input id="field_h_w" name="h_w" type="number" step="0.01" placeholder="0.00 - 1.00" /></div>
+                    <div class="form-group"><label>Forecast Draw %</label><input id="field_h_d" name="h_d" type="number" step="0.01" placeholder="0.00 - 1.00" /></div>
+                    <div class="form-group"><label>Forecast Lose %</label><input id="field_h_l" name="h_l" type="number" step="0.01" placeholder="0.00 - 1.00" /></div>
+                </div>
+
+            <div class="form-buttons">
+                <button type="button" id="addShotsBtn" class="btn-shots" onclick="addShotsToMatch()" style="display:none;">🎯 Add Shots to Match</button>
+                <button id="submitBtn" class="btn-submit">Add Match</button>
+                <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='admin_matches.js') }}"></script>
+
+{% endblock %}
