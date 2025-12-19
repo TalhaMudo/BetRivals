@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='admin_players.css') }}">
+
+<div class="players-admin-container">
+    <div class="admin-header">
+        <h2>👥 Players Management</h2>
+        <a href="/players/add" class="btn-add">+ Add Player</a>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <div class="filters-section">
+        <input type="text" id="filterName" class="filter-input" placeholder="Filter by player name..." onkeyup="loadPlayers()">
+        <input type="text" id="filterTeam" class="filter-input" placeholder="Filter by team..." onkeyup="loadPlayers()">
+        <select id="filterYear" class="filter-input" onchange="loadPlayers()">
+            <option value="">Any Year</option>
+        </select>
+        <button class="btn-add" onclick="loadPlayers()">🔄 Refresh</button>
+    </div>
+
+    <div class="players-table" id="playersTableWrap">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Player Name</th>
+                        <th>Team</th>
+                        <th>Position</th>
+                        <th>Year</th>
+                        <th>Goals</th>
+                        <th>Assists</th>
+                        <th>Games</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="playersTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="paginationContainer" class="pagination"></div>
+</div>
+
+<script src="{{ url_for('static', filename='admin_players.js') }}"></script>
+
+{% endblock %}
+

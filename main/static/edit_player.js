@@ -129,6 +129,14 @@ document.addEventListener('DOMContentLoaded', () => {
         debounceTimer = setTimeout(performSearch, 250);
     });
 
+    // Check for season_player_id in URL query parameter (from admin page)
+    const urlParams = new URLSearchParams(window.location.search);
+    const seasonPlayerIdFromUrl = urlParams.get('season_player_id');
+    if (seasonPlayerIdFromUrl) {
+        // Automatically load the player if season_player_id is in URL
+        loadPlayerSeason(seasonPlayerIdFromUrl);
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         clearAlert();

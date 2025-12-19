@@ -124,15 +124,76 @@
     margin: 2rem 0;
 }
 
+.content-grid.players-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.25rem;
+    margin: 2rem 0;
+    align-items: stretch;
+}
+
+.content-box-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.content-grid.players-grid .content-box {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.content-box.big {
+    min-height: 450px;
+}
+
+.top-goals-box .top-goals-photo .player-photo-placeholder {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 4px solid rgba(46, 204, 113, 0.5);
+    font-size: 2rem;
+    box-shadow: 0 6px 20px rgba(46, 204, 113, 0.3);
+}
+
+.top-goals-box .top-goals-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.top-goals-box .top-goals-count {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.3rem;
+}
+
+.top-goals-box .top-goals-team {
+    font-size: 1rem;
+}
+
 @media (max-width: 1100px) {
     .content-grid.masonry {
         column-count: 2;
+    }
+    .content-grid.players-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .content-box-column {
+        grid-column: span 2;
     }
 }
 
 @media (max-width: 768px) {
     .content-grid.masonry {
         column-count: 1;
+    }
+    .content-grid.players-grid {
+        grid-template-columns: 1fr;
+    }
+    .content-box-column {
+        grid-column: span 1;
     }
 }
 

@@ -313,6 +313,21 @@ def api_season_delete(seasonentryid):
 
 #--------------BILGE-END-------------------------------
 
+# --- TALHA: Authentication Middleware --- #
+def talha_login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            # Check if it's an API request
+            if request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+                return jsonify({
+                    "success": False,
+                    "message": "Authentication required",
+                    "error": "unauthorized"
+                }), 401
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return wrapper
 
 @app.route("/players")
 def players():
@@ -320,13 +335,15 @@ def players():
     return render_template("players.html", title="Players")
 
 @app.route("/players/add")
+@talha_login_required
 def players_add_page():
-    """Add player form page (public)"""
+    """Add player form page (requires login)"""
     return render_template("add_player.html", title="Add Player")
 
 @app.route("/players/edit")
+@talha_login_required
 def players_edit_page():
-    """Edit player form page (public)"""
+    """Edit player form page (requires login)"""
     return render_template("edit_player.html", title="Edit Players")
 #--------------TALHA-START-----------------------------
 
@@ -646,6 +663,7 @@ def api_player_by_season_id(season_player_id):
 
 
 @app.route("/api/players/season/<int:season_player_id>/update", methods=["POST"])
+@talha_login_required
 def api_player_season_update(season_player_id):
     """Update a player row (by season_player_id)."""
     data = request.get_json(silent=True) or {}
@@ -740,6 +758,7 @@ def api_player_season_update(season_player_id):
 
 
 @app.route("/api/players", methods=["POST"])
+@talha_login_required
 def api_player_create():
     """
     Create a player row in `player` table.
@@ -1546,10 +1565,95 @@ def admin_shots():
 @app.route("/admin/players")
 @login_required
 def admin_players():
-    # Fetch players data
-    sql = "SELECT * FROM players ORDER BY name ASC"
-    players = db.execute_query(sql)
-    return render_template("admin_players.html", players=players, username=session.get("username"))
+    """Admin players management page"""
+    return render_template("admin_players.html", username=session.get("username"))
+
+@app.route("/api/admin/players", methods=['GET'])
+@login_required
+def api_admin_players_list():
+    """List players with pagination and filtering for admin"""
+    try:
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 50))
+        name = request.args.get('name', '').strip()
+        team = request.args.get('team', '').strip()
+        year = request.args.get('year', '').strip()
+
+        offset = (page - 1) * limit
+
+        count_sql = "SELECT COUNT(*) as total FROM player WHERE 1=1"
+        base_sql = """
+            SELECT 
+                season_player_id, player_id, player_name, team_title, position, year,
+                goals, assists, games, time, xG, shots, key_passes,
+                yellow_cards, red_cards, npg, npxG, xGChain, xGBuildup
+            FROM player WHERE 1=1
+        """
+        params = []
+        count_params = []
+
+        if name:
+            base_sql += " AND player_name LIKE %s"
+            count_sql += " AND player_name LIKE %s"
+            name_pattern = f"%{name}%"
+            params.append(name_pattern)
+            count_params.append(name_pattern)
+
+        if team:
+            base_sql += " AND team_title LIKE %s"
+            count_sql += " AND team_title LIKE %s"
+            team_pattern = f"%{team}%"
+            params.append(team_pattern)
+            count_params.append(team_pattern)
+
+        if year:
+            base_sql += " AND year = %s"
+            count_sql += " AND year = %s"
+            params.append(year)
+            count_params.append(year)
+
+        count_result = db.execute_query(count_sql, tuple(count_params), fetch_all=True)
+        total = count_result[0]['total'] if count_result else 0
+
+        base_sql += " ORDER BY year DESC, player_name ASC LIMIT %s OFFSET %s"
+        params.extend([limit, offset])
+
+        players = db.execute_query(base_sql, tuple(params), fetch_all=True)
+
+        return jsonify({
+            'success': True,
+            'players': players,
+            'total': total,
+            'page': page,
+            'limit': limit
+        })
+    except Exception as e:
+        logger.exception(f"Error fetching admin players: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route("/api/admin/players/season/<int:season_player_id>", methods=['DELETE'])
+@login_required
+def api_admin_players_delete(season_player_id):
+    """Delete a player row by season_player_id"""
+    try:
+        # Check if player exists
+        check_sql = "SELECT season_player_id FROM player WHERE season_player_id = %s"
+        result = db.execute_query(check_sql, (season_player_id,), fetch_all=True)
+        
+        if not result:
+            return jsonify({'success': False, 'error': 'Player not found'}), 404
+        
+        # Delete the player
+        delete_sql = "DELETE FROM player WHERE season_player_id = %s"
+        db.execute_query(delete_sql, (season_player_id,), fetch_all=False)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Player deleted successfully'
+        })
+    except Exception as e:
+        logger.exception(f"Error deleting player {season_player_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route("/admin/teams")
 @login_required

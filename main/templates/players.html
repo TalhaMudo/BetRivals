@@ -42,24 +42,24 @@
         <div class="quote-author" id="quote-author"></div>
     </div>
 
-    <!-- Masonry content grid placeholders -->
-    <div class="content-grid masonry">
-        <div class="content-box tall">Player of the Day (placeholder)</div>
-        <div class="content-box" id="top-goals-box">Top Goals (placeholder)</div>
-        <div class="content-box wide">Information for Today (placeholder)</div>
+    <!-- Content grid -->
+    <div class="content-grid players-grid">
+        <div class="content-box big top-goals-box" id="top-goals-box">Top Goals (placeholder)</div>
         <div class="content-box" id="top-assists-box">Top Assists (placeholder)</div>
-        <a class="content-box edit-player-box" id="edit-player-box" href="/players/edit" aria-label="Edit players">
-            <div class="edit-player-inner">
-                <div class="edit-player-icon">✎</div>
-                <div class="edit-player-text">Edit Players</div>
-            </div>
-        </a>
-        <a class="content-box tall add-player-box" id="add-player-box" href="/players/add" aria-label="Add your player">
-            <div class="add-player-inner">
-                <div class="add-player-plus">+</div>
-                <div class="add-player-text">Add Your Player</div>
-            </div>
-        </a>
+        <div class="content-box-column">
+            <a class="content-box add-player-box" id="add-player-box" href="/players/add" aria-label="Add your player">
+                <div class="add-player-inner">
+                    <div class="add-player-plus">+</div>
+                    <div class="add-player-text">Add Your Player</div>
+                </div>
+            </a>
+            <a class="content-box edit-player-box" id="edit-player-box" href="/players/edit" aria-label="Edit players">
+                <div class="edit-player-inner">
+                    <div class="edit-player-icon">✎</div>
+                    <div class="edit-player-text">Edit Players</div>
+                </div>
+            </a>
+        </div>
     </div>
     
     <div id="search-results" class="search-results-container"></div>
