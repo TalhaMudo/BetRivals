@@ -73,7 +73,7 @@ TABLES = {
             player_assisted VARCHAR(255),
             lastAction VARCHAR(64),
             FOREIGN KEY (match_id) REFERENCES match_info(match_id)
-                ON UPDATE CASCADE ON DELETE CASCADE
+                ON UPDATE CASCADE ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
 
