@@ -31,7 +31,7 @@ TABLES = {
     "teams": """
         CREATE TABLE IF NOT EXISTS teams (
             team_id BIGINT PRIMARY KEY,
-            team_name VARCHAR(255)
+            team_name VARCHAR(255),
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
 
@@ -72,7 +72,7 @@ TABLES = {
             player_assisted VARCHAR(255),
             lastAction VARCHAR(64),
             FOREIGN KEY (match_id) REFERENCES match_info(match_id)
-                ON UPDATE CASCADE ON DELETE SET NULL
+                ON UPDATE CASCADE ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
 
