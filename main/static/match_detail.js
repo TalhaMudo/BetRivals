@@ -45,5 +45,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return null;
     }
-});
 
+    const comparisonCard = document.querySelector('.season-comparison-card');
+    if (comparisonCard) {
+        const statBars = comparisonCard.querySelectorAll('.stat-bar[data-target-width]');
+
+        // intersection observer for animation on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    statBars.forEach((bar, index) => {
+                        setTimeout(() => {
+                            bar.style.transition = 'width 0.6s ease-out';
+                            bar.style.width = bar.dataset.targetWidth;
+                        }, index * 80);
+                    });
+                    observer.disconnect();
+                }
+            });
+        }, { threshold: 0.2 });
+
+        observer.observe(comparisonCard);
+
+        // add counter animation to big stats
+        const bigStats = comparisonCard.querySelectorAll('.big-stat');
+        bigStats.forEach(stat => {
+            const targetValue = parseInt(stat.textContent) || 0;
+            if (targetValue > 0) {
+                stat.textContent = '0';
+                animateCounter(stat, 0, targetValue, 1000);
+            }
+        });
+    }
+
+    // Counter animation helper
+    function animateCounter(element, start, end, duration) {
+        const range = end - start;
+        const startTime = performance.now();
+        
+        function updateCounter(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeProgress = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+            const currentValue = Math.floor(start + (range * easeProgress));
+            element.textContent = currentValue;
+            
+            if (progress < 1) {
+                requestAnimationFrame(updateCounter);
+            } else {
+                element.textContent = end;
+            }
+        }
+        
+        requestAnimationFrame(updateCounter);
+    }
+});

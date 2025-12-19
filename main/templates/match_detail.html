@@ -4,10 +4,6 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='matches.css') }}">
 
 <div class="matches-container">
-    <div class="hero">
-        <h2>Match Detail</h2>
-        <p>Match breakdown and team summaries</p>
-    </div>
 
     {% macro fmt_date(val) -%}
         {%- if not val -%}
@@ -172,6 +168,187 @@
             </div>
 
     </div>
+
+        {% if season_comparison %}
+        <div class="season-comparison-card">
+            <div class="comparison-header">
+                <h3>📊 Season {{ season_comparison.season or match.season }} Comparison</h3>
+                <span class="comparison-subtitle">Full season statistics for both teams</span>
+            </div>
+            
+            <div class="comparison-teams">
+                <div class="comparison-team home">
+                    {% if season_comparison.h_team_id %}
+                    <a href="/seasons?team_id={{ season_comparison.h_team_id }}" class="team-badge-link">
+                        <div class="team-badge home">{{ match.team_h }}</div>
+                    </a>
+                    {% else %}
+                    <div class="team-badge home">{{ match.team_h }}</div>
+                    {% endif %}
+                </div>
+                <div class="vs-divider">VS</div>
+                <div class="comparison-team away">
+                    {% if season_comparison.a_team_id %}
+                    <a href="/seasons?team_id={{ season_comparison.a_team_id }}" class="team-badge-link">
+                        <div class="team-badge away">{{ match.team_a }}</div>
+                    </a>
+                    {% else %}
+                    <div class="team-badge away">{{ match.team_a }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="comparison-stats">
+                <div class="stat-row highlight">
+                    <div class="stat-value home">
+                        <span class="big-stat">{{ season_comparison.h_points or 0 }}</span>
+                        <span class="stat-record">{{ season_comparison.h_wins or 0 }}W {{ season_comparison.h_draws or 0 }}D {{ season_comparison.h_losses or 0 }}L</span>
+                    </div>
+                    <div class="stat-label">Points</div>
+                    <div class="stat-value away">
+                        <span class="big-stat">{{ season_comparison.a_points or 0 }}</span>
+                        <span class="stat-record">{{ season_comparison.a_wins or 0 }}W {{ season_comparison.a_draws or 0 }}D {{ season_comparison.a_losses or 0 }}L</span>
+                    </div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-value home">{{ season_comparison.h_goals_scored or 0 }}</div>
+                    <div class="stat-label">Goals Scored</div>
+                    <div class="stat-value away">{{ season_comparison.a_goals_scored or 0 }}</div>
+                </div>
+                <div class="stat-bar-row">
+                    {% set h_gs = (season_comparison.h_goals_scored or 0)|abs %}
+                    {% set a_gs = (season_comparison.a_goals_scored or 0)|abs %}
+                    {% set total_gs = h_gs + a_gs if h_gs + a_gs > 0 else 1 %}
+                    <div class="stat-bar home" data-target-width="{{ (h_gs / total_gs * 100)|round(1) }}%" style="width: 0%;"></div>
+                    <div class="stat-bar away" data-target-width="{{ (a_gs / total_gs * 100)|round(1) }}%" style="width: 0%;"></div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-value home">{{ season_comparison.h_goals_conceded or 0 }}</div>
+                    <div class="stat-label">Goals Conceded</div>
+                    <div class="stat-value away">{{ season_comparison.a_goals_conceded or 0 }}</div>
+                </div>
+                <div class="stat-bar-row inverted">
+                    {% set h_gc = (season_comparison.h_goals_conceded or 0)|abs %}
+                    {% set a_gc = (season_comparison.a_goals_conceded or 0)|abs %}
+                    {% set total_gc = h_gc + a_gc if h_gc + a_gc > 0 else 1 %}
+                    <div class="stat-bar home" data-target-width="{{ (h_gc / total_gc * 100)|round(1) }}%" style="width: 0%;"></div>
+                    <div class="stat-bar away" data-target-width="{{ (a_gc / total_gc * 100)|round(1) }}%" style="width: 0%;"></div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-value home {% if season_comparison.h_goal_diff > 0 %}positive{% elif season_comparison.h_goal_diff < 0 %}negative{% endif %}">
+                        {{ '+' if season_comparison.h_goal_diff > 0 else '' }}{{ season_comparison.h_goal_diff }}
+                    </div>
+                    <div class="stat-label">Goal Difference</div>
+                    <div class="stat-value away {% if season_comparison.a_goal_diff > 0 %}positive{% elif season_comparison.a_goal_diff < 0 %}negative{% endif %}">
+                        {{ '+' if season_comparison.a_goal_diff > 0 else '' }}{{ season_comparison.a_goal_diff }}
+                    </div>
+                </div>
+                <div class="stat-bar-row">
+                    {% set h_gd = season_comparison.h_goal_diff|int or 0 %}
+                    {% set a_gd = season_comparison.a_goal_diff|int or 0 %}
+                    {# Normalize: shift all values to positive range #}
+                    {% set min_val = [h_gd, a_gd]|min %}
+                    {% set h_gd_norm = h_gd - min_val + 1 %}
+                    {% set a_gd_norm = a_gd - min_val + 1 %}
+                    {% set total_gd = h_gd_norm + a_gd_norm if h_gd_norm + a_gd_norm > 0 else 1 %}
+                    <div class="stat-bar home" data-target-width="{{ (h_gd_norm / total_gd * 100)|round(1) }}%" style="width: 0%;"></div>
+                    <div class="stat-bar away" data-target-width="{{ (a_gd_norm / total_gd * 100)|round(1) }}%" style="width: 0%;"></div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-value home">{{ '%.1f'|format(season_comparison.h_total_xg|float or 0) }}</div>
+                    <div class="stat-label">Total xG</div>
+                    <div class="stat-value away">{{ '%.1f'|format(season_comparison.a_total_xg|float or 0) }}</div>
+                </div>
+                <div class="stat-bar-row">
+                    {% set h_xg = (season_comparison.h_total_xg|float or 0)|abs %}
+                    {% set a_xg = (season_comparison.a_total_xg|float or 0)|abs %}
+                    {% set total_xg = h_xg + a_xg if h_xg + a_xg > 0 else 1 %}
+                    <div class="stat-bar home" data-target-width="{{ (h_xg / total_xg * 100)|round(1) }}%" style="width: 0%;"></div>
+                    <div class="stat-bar away" data-target-width="{{ (a_xg / total_xg * 100)|round(1) }}%" style="width: 0%;"></div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-value home {% if season_comparison.h_xg_performance > 0 %}positive{% elif season_comparison.h_xg_performance < 0 %}negative{% endif %}">
+                        {{ '+' if season_comparison.h_xg_performance > 0 else '' }}{{ season_comparison.h_xg_performance }}
+                    </div>
+                    <div class="stat-label">xG Performance</div>
+                    <div class="stat-value away {% if season_comparison.a_xg_performance > 0 %}positive{% elif season_comparison.a_xg_performance < 0 %}negative{% endif %}">
+                        {{ '+' if season_comparison.a_xg_performance > 0 else '' }}{{ season_comparison.a_xg_performance }}
+                    </div>
+                </div>
+                <div class="stat-bar-row">
+                    {% set h_xgp = season_comparison.h_xg_performance|float or 0 %}
+                    {% set a_xgp = season_comparison.a_xg_performance|float or 0 %}
+                    {# Normalize: shift all values to positive range #}
+                    {% set min_val = [h_xgp, a_xgp]|min %}
+                    {% set h_xgp_norm = h_xgp - min_val + 1 %}
+                    {% set a_xgp_norm = a_xgp - min_val + 1 %}
+                    {% set total_xgp = h_xgp_norm + a_xgp_norm if h_xgp_norm + a_xgp_norm > 0 else 1 %}
+                    <div class="stat-bar home" data-target-width="{{ (h_xgp_norm / total_xgp * 100)|round(1) }}%" style="width: 0%;"></div>
+                    <div class="stat-bar away" data-target-width="{{ (a_xgp_norm / total_xgp * 100)|round(1) }}%" style="width: 0%;"></div>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat-value home">{{ season_comparison.h_shot_conversion|float or 0 }}%</div>
+                    <div class="stat-label">Shot Conversion</div>
+                    <div class="stat-value away">{{ season_comparison.a_shot_conversion|float or 0 }}%</div>
+                </div>
+                <div class="stat-bar-row">
+                    {% set h_conv = (season_comparison.h_shot_conversion|float or 0)|abs %}
+                    {% set a_conv = (season_comparison.a_shot_conversion|float or 0)|abs %}
+                    {% set total_conv = h_conv + a_conv if h_conv + a_conv > 0 else 1 %}
+                    <div class="stat-bar home" data-target-width="{{ (h_conv / total_conv * 100)|round(1) }}%" style="width: 0%;"></div>
+                    <div class="stat-bar away" data-target-width="{{ (a_conv / total_conv * 100)|round(1) }}%" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <div class="key-players-section">
+                <h4>🌟 Season Key Players</h4>
+                <div class="key-players-grid">
+                    <div class="key-player home">
+                        <div class="player-role">Top Scorer</div>
+                        {% if season_comparison.h_top_scorer_id %}
+                        <a href="/players/{{ season_comparison.h_top_scorer_id }}" class="player-name-link">{{ season_comparison.h_top_scorer or '—' }}</a>
+                        {% else %}
+                        <div class="player-name">{{ season_comparison.h_top_scorer or '—' }}</div>
+                        {% endif %}
+                        <div class="player-stat">{{ season_comparison.h_top_scorer_goals or 0 }} goals</div>
+                    </div>
+                    <div class="key-player away">
+                        <div class="player-role">Top Scorer</div>
+                        {% if season_comparison.a_top_scorer_id %}
+                        <a href="/players/{{ season_comparison.a_top_scorer_id }}" class="player-name-link">{{ season_comparison.a_top_scorer or '—' }}</a>
+                        {% else %}
+                        <div class="player-name">{{ season_comparison.a_top_scorer or '—' }}</div>
+                        {% endif %}
+                        <div class="player-stat">{{ season_comparison.a_top_scorer_goals or 0 }} goals</div>
+                    </div>
+                    <div class="key-player home">
+                        <div class="player-role">Top Assister</div>
+                        {% if season_comparison.h_top_assister_id %}
+                        <a href="/players/{{ season_comparison.h_top_assister_id }}" class="player-name-link">{{ season_comparison.h_top_assister or '—' }}</a>
+                        {% else %}
+                        <div class="player-name">{{ season_comparison.h_top_assister or '—' }}</div>
+                        {% endif %}
+                        <div class="player-stat">{{ season_comparison.h_top_assister_assists or 0 }} assists</div>
+                    </div>
+                    <div class="key-player away">
+                        <div class="player-role">Top Assister</div>
+                        {% if season_comparison.a_top_assister_id %}
+                        <a href="/players/{{ season_comparison.a_top_assister_id }}" class="player-name-link">{{ season_comparison.a_top_assister or '—' }}</a>
+                        {% else %}
+                        <div class="player-name">{{ season_comparison.a_top_assister or '—' }}</div>
+                        {% endif %}
+                        <div class="player-stat">{{ season_comparison.a_top_assister_assists or 0 }} assists</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
     <div class="match-card" style="margin-top:18px;">
         <div class="shots-head">

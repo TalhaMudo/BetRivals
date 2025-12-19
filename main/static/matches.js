@@ -107,6 +107,93 @@ function populateTeamSelects(matches) {
         home.insertAdjacentHTML('beforeend', o);
         away.insertAdjacentHTML('beforeend', o);
     });
+    
+    window.allTeams = arr;
+    setupTeamAutocomplete();
+}
+
+// custom autocomplete for team search
+function setupTeamAutocomplete() {
+    const input = document.getElementById('q');
+    const list = document.getElementById('teamAutocomplete');
+    if (!input || !list) return;
+    
+    let selectedIndex = -1;
+    
+    input.addEventListener('input', function() {
+        const val = this.value.trim().toLowerCase();
+        list.innerHTML = '';
+        selectedIndex = -1;
+        
+        if (val.length < 2) {
+            list.style.display = 'none';
+            return;
+        }
+        
+        const matches = window.allTeams.filter(t => 
+            t.toLowerCase().includes(val)
+        ).slice(0, 8);
+        
+        if (matches.length === 0) {
+            list.style.display = 'none';
+            return;
+        }
+        
+        matches.forEach((team, idx) => {
+            const li = document.createElement('li');
+            li.textContent = team;
+            li.dataset.index = idx;
+            li.addEventListener('click', () => selectTeam(team));
+            li.addEventListener('mouseenter', () => {
+                selectedIndex = idx;
+                updateSelection();
+            });
+            list.appendChild(li);
+        });
+        
+        list.style.display = 'block';
+    });
+    
+    input.addEventListener('keydown', function(e) {
+        const items = list.querySelectorAll('li');
+        if (items.length === 0) return;
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+            updateSelection();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = Math.max(selectedIndex - 1, 0);
+            updateSelection();
+        } else if (e.key === 'Enter' && selectedIndex >= 0) {
+            e.preventDefault();
+            selectTeam(items[selectedIndex].textContent);
+        } else if (e.key === 'Escape') {
+            list.style.display = 'none';
+        }
+    });
+    
+    function updateSelection() {
+        const items = list.querySelectorAll('li');
+        items.forEach((item, idx) => {
+            item.classList.toggle('selected', idx === selectedIndex);
+        });
+    }
+    
+    function selectTeam(team) {
+        input.value = team;
+        list.style.display = 'none';
+        // Auto-search when team is selected
+        doSearch();
+    }
+    
+    // hide list when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.autocomplete-wrapper')) {
+            list.style.display = 'none';
+        }
+    });
 }
 
 function populateSeasons(matches) {
