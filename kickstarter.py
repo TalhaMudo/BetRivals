@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import time
 load_dotenv()
 # ---------------- CONFIG ---------------- #
 DB_NAME = "betrivals"
@@ -31,7 +32,7 @@ TABLES = {
     "teams": """
         CREATE TABLE IF NOT EXISTS teams (
             team_id BIGINT PRIMARY KEY,
-            team_name VARCHAR(255),
+            team_name VARCHAR(255)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
 
@@ -355,11 +356,11 @@ MYSQL_PORT=
 
 # # # # # 
           
-If you want to continue, press ENTER or stop via CTRL^C
+Process will continue in 10 seconds, stop with CTRL+C if wanted.
           
          
 """)
-    input("->")
+    time.sleep(10)
     print("🚀 Initializing database from CSVs ...")
     create_database()
     create_tables()

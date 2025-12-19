@@ -1,0 +1,60 @@
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: betrivals_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootroot
+      MYSQL_DATABASE: betrivals
+      MYSQL_USER: betrivals_user
+      MYSQL_PASSWORD: betrivals_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./csv_files:/csv_files
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootroot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - betrivals_network
+
+  flask_app:
+    build: .
+    container_name: betrivals_flask
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootroot
+      MYSQL_DB: betrivals
+      MYSQL_PORT: 3306
+      FLASK_ENV: production
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./csv_files:/app/csv_files
+      - ./.env:/app/.env
+    networks:
+      - betrivals_network
+    command: >
+      sh -c "
+        echo 'Waiting for MySQL to be ready...' &&
+        sleep 10 &&
+        python kickstarter.py &&
+        python app.py
+      "
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  betrivals_network:
+    driver: bridge
