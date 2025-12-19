@@ -5,12 +5,49 @@ document.addEventListener('DOMContentLoaded', function () {
     const resultsDiv = document.getElementById('results');
     const searchInput = document.getElementById('player-search');
     const searchBtn = document.getElementById('search-btn');
+    const filterBtn = document.getElementById('filter-btn');
+    const filterPanel = document.getElementById('filter-panel');
+    const filterApply = document.getElementById('filter-apply');
+    const filterClear = document.getElementById('filter-clear');
+    const filterYear = document.getElementById('filter-year');
+    const filterTeam = document.getElementById('filter-team');
+    const filterPosition = document.getElementById('filter-position');
     const searchResultsDiv = document.getElementById('search-results');
     const quoteTextEl = document.getElementById('quote-text');
     const quoteAuthorEl = document.getElementById('quote-author');
 
     // Load quote on page load
     loadQuote(quoteTextEl, quoteAuthorEl);
+
+    // Load top assists on page load
+    loadTopAssists();
+
+    // Load top goals on page load
+    loadTopGoals();
+
+    // Add Player box (if present)
+    const addBox = document.getElementById('add-player-box');
+    if (addBox) {
+        addBox.addEventListener('click', (e) => {
+            // If it's an anchor, let normal navigation happen
+            // but keep this for consistency if markup changes later.
+            if (addBox.tagName !== 'A') {
+                e.preventDefault();
+                window.location.href = '/players/add';
+            }
+        });
+    }
+
+    // Edit Player box (if present)
+    const editBox = document.getElementById('edit-player-box');
+    if (editBox) {
+        editBox.addEventListener('click', (e) => {
+            if (editBox.tagName !== 'A') {
+                e.preventDefault();
+                window.location.href = '/players/edit';
+            }
+        });
+    }
 
     // Init comparison floating button (every page)
     initComparisonButton();
@@ -59,7 +96,16 @@ document.addEventListener('DOMContentLoaded', function () {
             searchResultsDiv.innerHTML = '<div class="loading">Searching players...</div>';
 
             try {
-                const response = await fetch(`/api/players/search?q=${encodeURIComponent(query)}`);
+                const params = new URLSearchParams();
+                params.set('q', query);
+                const yearVal = filterYear ? filterYear.value.trim() : '';
+                const teamVal = filterTeam ? filterTeam.value.trim() : '';
+                const posVal = filterPosition ? filterPosition.value.trim() : '';
+                if (yearVal) params.set('year', yearVal);
+                if (teamVal) params.set('team', teamVal);
+                if (posVal) params.set('position', posVal);
+
+                const response = await fetch(`/api/players/search?${params.toString()}`);
                 const data = await response.json();
 
                 if (!response.ok) {
@@ -86,6 +132,45 @@ document.addEventListener('DOMContentLoaded', function () {
                 performSearch();
             }
         });
+
+        // Filter panel toggle + actions
+        const toggleFilter = (show) => {
+            if (!filterPanel) return;
+            filterPanel.classList.toggle('hidden', !show);
+        };
+
+        if (filterBtn && filterPanel) {
+            filterBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const isHidden = filterPanel.classList.contains('hidden');
+                toggleFilter(isHidden);
+            });
+
+            // Close when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!filterPanel || !filterBtn) return;
+                const target = e.target;
+                if (filterPanel.contains(target) || filterBtn.contains(target)) return;
+                toggleFilter(false);
+            });
+        }
+
+        if (filterApply) {
+            filterApply.addEventListener('click', () => {
+                toggleFilter(false);
+                performSearch();
+            });
+        }
+
+        if (filterClear) {
+            filterClear.addEventListener('click', () => {
+                if (filterYear) filterYear.value = '';
+                if (filterTeam) filterTeam.value = '';
+                if (filterPosition) filterPosition.value = '';
+                toggleFilter(false);
+                performSearch();
+            });
+        }
     }
 });
 
@@ -217,6 +302,134 @@ async function loadQuote(quoteTextEl, quoteAuthorEl) {
         console.error('Quote fetch error:', err);
         quoteTextEl.textContent = 'Could not load quote right now.';
         quoteAuthorEl.textContent = '';
+    }
+}
+
+// --- Top Assists ---
+async function loadTopAssists() {
+    const box = document.getElementById('top-assists-box');
+    if (!box) return;
+
+    try {
+        const response = await fetch('/api/players/top/assists');
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+            throw new Error(data.error || 'Failed to fetch top assists');
+        }
+
+        const players = data.players || [];
+        if (players.length === 0) {
+            box.innerHTML = '<h3>Top Assists</h3><div class="empty">No data available</div>';
+            return;
+        }
+
+        let html = '<h3>Top Assists</h3><div class="top-assists-list">';
+        players.forEach((player, index) => {
+            html += `
+                <div class="top-assist-item" onclick="window.location.href='/players/${player.player_id}'" style="cursor: pointer;">
+                    <div class="top-assist-rank">#${index + 1}</div>
+                    <div class="top-assist-photo">
+                        <div class="player-photo-placeholder" data-player-name="${player.player_name || ''}">
+                            <span>📷</span>
+                            <small>Loading...</small>
+                        </div>
+                    </div>
+                    <div class="top-assist-info">
+                        <div class="top-assist-name">${player.player_name || 'Unknown'}</div>
+                        <div class="top-assist-stats">
+                            <span class="assists-count">${player.assists || 0} assists</span>
+                            ${player.team_title ? `<span class="team-name">${player.team_title}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        box.innerHTML = html;
+
+        // Load player photos
+        loadTopAssistsPhotos();
+    } catch (err) {
+        console.error('Top assists fetch error:', err);
+        box.innerHTML = '<h3>Top Assists</h3><div class="empty">Could not load data</div>';
+    }
+}
+
+async function loadTopAssistsPhotos() {
+    const placeholders = document.querySelectorAll('#top-assists-box .player-photo-placeholder');
+    if (!placeholders || placeholders.length === 0) return;
+
+    for (const placeholder of placeholders) {
+        const playerName = placeholder.getAttribute('data-player-name');
+        if (!playerName) continue;
+
+        try {
+            const imageUrl = await fetchUnsplashPlayerImageUrl(playerName);
+            if (!imageUrl) continue;
+
+            placeholder.style.backgroundImage = `url('${imageUrl}')`;
+            placeholder.style.backgroundSize = 'cover';
+            placeholder.style.backgroundPosition = 'center';
+            placeholder.style.border = 'none';
+            placeholder.innerHTML = '';
+        } catch (error) {
+            console.error('Error loading photo for top assists:', error);
+        }
+    }
+}
+
+// --- Top Goals ---
+async function loadTopGoals() {
+    const box = document.getElementById('top-goals-box');
+    if (!box) return;
+
+    try {
+        const response = await fetch('/api/players/top/goals');
+        const data = await response.json();
+
+        if (!response.ok || data.error || !data.player) {
+            throw new Error(data.error || 'Failed to fetch top goals');
+        }
+
+        const player = data.player;
+        const html = `
+            <h3>Top Goals</h3>
+            <div class="top-goals-player" onclick="window.location.href='/players/${player.player_id}'" style="cursor: pointer;">
+                <div class="top-goals-photo">
+                    <div class="player-photo-placeholder" data-player-name="${player.player_name || ''}">
+                        <span>📷</span>
+                        <small>Loading...</small>
+                    </div>
+                </div>
+                <div class="top-goals-info">
+                    <div class="top-goals-name">${player.player_name || 'Unknown'}</div>
+                    <div class="top-goals-count">${player.goals || 0} goals</div>
+                    ${player.team_title ? `<div class="top-goals-team">${player.team_title}</div>` : ''}
+                </div>
+            </div>
+        `;
+        box.innerHTML = html;
+
+        // Load player photo
+        const placeholder = box.querySelector('.player-photo-placeholder');
+        if (placeholder && player.player_name) {
+            try {
+                const imageUrl = await fetchUnsplashPlayerImageUrl(player.player_name);
+                if (imageUrl) {
+                    placeholder.style.backgroundImage = `url('${imageUrl}')`;
+                    placeholder.style.backgroundSize = 'cover';
+                    placeholder.style.backgroundPosition = 'center';
+                    placeholder.style.border = 'none';
+                    placeholder.innerHTML = '';
+                }
+            } catch (error) {
+                console.error('Error loading photo for top goals:', error);
+            }
+        }
+    } catch (err) {
+        console.error('Top goals fetch error:', err);
+        box.innerHTML = '<h3>Top Goals</h3><div class="empty">Could not load data</div>';
     }
 }
 

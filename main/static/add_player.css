@@ -1,0 +1,132 @@
+.player-form-card {
+  background: rgba(15, 20, 25, 0.9);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.35);
+}
+
+.form-section {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(46, 204, 113, 0.15);
+}
+
+.form-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.form-section h3 {
+  margin: 0 0 0.85rem 0;
+  color: #2ecc71;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group label {
+  color: #b8b8b8;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.form-group label.required::after {
+  content: " *";
+  color: #e74c3c;
+}
+
+.form-control {
+  padding: 0.8rem 1rem;
+  background: rgba(15, 20, 25, 0.9);
+  border: 2px solid rgba(46, 204, 113, 0.25);
+  border-radius: 10px;
+  color: #e8e8e8;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: rgba(46, 204, 113, 0.75);
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.15);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.form-alert {
+  margin: 1rem 0;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(46, 204, 113, 0.25);
+  background: rgba(46, 204, 113, 0.08);
+  color: #e8e8e8;
+  font-weight: 700;
+}
+
+.form-alert.error {
+  border-color: rgba(231, 76, 60, 0.35);
+  background: rgba(231, 76, 60, 0.08);
+}
+
+.form-alert.hidden {
+  display: none;
+}
+
+/* Edit page results */
+.edit-results {
+  margin-top: 0.75rem;
+}
+
+.edit-results-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+}
+
+.edit-result-item {
+  width: 100%;
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(46, 204, 113, 0.25);
+  background: rgba(15, 20, 25, 0.9);
+  color: #e8e8e8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-result-item:hover {
+  border-color: rgba(46, 204, 113, 0.55);
+  background: rgba(46, 204, 113, 0.07);
+  transform: translateY(-1px);
+}
+
+.edit-result-title {
+  font-weight: 800;
+}
+
+.edit-result-sub {
+  margin-top: 0.25rem;
+  color: #9aa0a6;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+

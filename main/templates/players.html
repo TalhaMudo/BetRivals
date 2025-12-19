@@ -12,27 +12,56 @@
         <div class="header-right">
             <div class="search-container">
                 <input type="text" id="player-search" class="search-input" placeholder="Search players by name, team, or position..." />
-                <button id="search-btn" class="search-btn">🔍</button>
+                <button id="search-btn" class="search-btn" title="Search">🔍</button>
+                <button id="filter-btn" class="filter-btn" type="button" title="Filter">⚙️</button>
+            </div>
+            <div id="filter-panel" class="filter-panel hidden">
+                <div class="filter-row">
+                    <label for="filter-year">Year</label>
+                    <input id="filter-year" class="filter-input" type="number" min="1900" max="2100" placeholder="e.g., 2023">
+                </div>
+                <div class="filter-row">
+                    <label for="filter-team">Team</label>
+                    <input id="filter-team" class="filter-input" type="text" placeholder="e.g., Barcelona">
+                </div>
+                <div class="filter-row">
+                    <label for="filter-position">Position</label>
+                    <input id="filter-position" class="filter-input" type="text" placeholder="e.g., CM / F S / CB">
+                </div>
+                <div class="filter-actions">
+                    <button id="filter-clear" type="button" class="filter-action secondary">Clear</button>
+                    <button id="filter-apply" type="button" class="filter-action primary">Apply</button>
+                </div>
             </div>
         </div>
     </div>
-
+    
     <!-- Quote section -->
     <div class="quote-section">
         <div class="quote-text" id="quote-text">Loading quote...</div>
         <div class="quote-author" id="quote-author"></div>
     </div>
 
-    <!-- Masonry content grid placeholders -->
-    <div class="content-grid masonry">
-        <div class="content-box tall">Player of the Day (placeholder)</div>
-        <div class="content-box">Most Shots (placeholder)</div>
-        <div class="content-box wide">Information for Today (placeholder)</div>
-        <div class="content-box">Top Assists (placeholder)</div>
-        <div class="content-box">Defensive Leader (placeholder)</div>
-        <div class="content-box tall">Trending Player (placeholder)</div>
+    <!-- Content grid -->
+    <div class="content-grid players-grid">
+        <div class="content-box big top-goals-box" id="top-goals-box">Top Goals (placeholder)</div>
+        <div class="content-box" id="top-assists-box">Top Assists (placeholder)</div>
+        <div class="content-box-column">
+            <a class="content-box add-player-box" id="add-player-box" href="/players/add" aria-label="Add your player">
+                <div class="add-player-inner">
+                    <div class="add-player-plus">+</div>
+                    <div class="add-player-text">Add Your Player</div>
+                </div>
+            </a>
+            <a class="content-box edit-player-box" id="edit-player-box" href="/players/edit" aria-label="Edit players">
+                <div class="edit-player-inner">
+                    <div class="edit-player-icon">✎</div>
+                    <div class="edit-player-text">Edit Players</div>
+                </div>
+            </a>
+        </div>
     </div>
-
+    
     <div id="search-results" class="search-results-container"></div>
 
     <div class="buttons-container bottom-buttons">
