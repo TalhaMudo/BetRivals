@@ -1003,6 +1003,152 @@ def player_detail(player_id):
     """Individual player detail page"""
     return render_template("player_detail.html", title="Player Details", player_id=player_id)
 
+# ========= COMPLEX QUERIES  =========
+
+@app.route("/api/players/complex/goals-per-match", methods=['GET'])
+def api_players_complex_goals_per_match():
+    """
+    COMPLEX QUERY 1: Complex Join of 4+ tables with GROUP BY and HAVING
+    
+    This query demonstrates:
+    - Complex Join: Joins 4 tables (player, fut23, match_data, match_info)
+    - GROUP BY: Groups by player_name and Rating
+    - HAVING: Filters groups with goals_per_match > 0.5
+    - Aggregate functions: SUM and COUNT with DISTINCT
+    
+    Returns players with their FIFA ratings and calculated goals per match,
+    filtered to only show players with more than 0.5 goals per match.
+    """
+    try:
+        query = """
+            SELECT 
+                p.player_name,
+                f.Rating,
+                SUM(p.goals) / COUNT(DISTINCT mi.match_id) AS goals_per_match
+            FROM player p
+            JOIN fut23 f ON p.player_id = f.player_id
+            JOIN match_data md ON md.h_id = f.team_id OR md.a_id = f.team_id
+            JOIN match_info mi ON mi.match_id = md.match_id
+            GROUP BY p.player_name, f.Rating
+            HAVING goals_per_match > 0.5
+            ORDER BY goals_per_match DESC
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [],
+            "count": len(results) if results else 0,
+            "description": "Players with goals per match > 0.5 (Complex Join of 4+ tables, GROUP BY, HAVING)"
+        })
+    except Exception as e:
+        logger.exception("Error fetching goals per match: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/api/players/complex/above-average-goals", methods=['GET'])
+def api_players_complex_above_average_goals():
+    """
+    COMPLEX QUERY 2: Nested Query (Correlated Subquery)
+    
+    This query demonstrates:
+    - Nested Query: Uses a correlated subquery in the WHERE clause
+    - Subquery calculates AVG(goals) for each year
+    - Main query filters players whose goals exceed the year's average
+    
+    Returns players who scored more goals than the average for their year.
+    """
+    try:
+        query = """
+            SELECT 
+                p.player_name,
+                p.goals,
+                p.year
+            FROM player p
+            WHERE p.goals > (
+                SELECT AVG(goals)
+                FROM player
+                WHERE year = p.year
+            )
+            ORDER BY p.goals DESC
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [],
+            "count": len(results) if results else 0,
+            "description": "Players with goals above year average (Nested Query)"
+        })
+    except Exception as e:
+        logger.exception("Error fetching above average goals: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/api/players/complex/low-games-best-rating", methods=['GET'])
+def api_players_complex_low_games_best_rating():
+    """
+    COMPLEX QUERY 3: LEFT JOIN (Outer Join) with GROUP BY and HAVING
+    
+    This query demonstrates:
+    - LEFT JOIN: Outer join between fut23 and player tables
+    - GROUP BY: Groups by player name and rating
+    - HAVING: Filters groups with total_games < 5
+    - Aggregate functions: SUM and COALESCE
+    
+    Returns players who have played less than 5 games, ordered by best FIFA rating.
+    """
+    try:
+        query = """
+            SELECT 
+                f.Name AS player_name,
+                f.Rating,
+                COALESCE(SUM(p.games), 0) AS total_games
+            FROM fut23 f
+            LEFT JOIN player p ON f.player_id = p.player_id
+            GROUP BY f.Name, f.Rating
+            HAVING total_games < 5
+            ORDER BY f.Rating DESC
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [],
+            "count": len(results) if results else 0,
+            "description": "Players with less than 5 games and best FIFA rating (Outer Join with GROUP BY and HAVING)"
+        })
+    except Exception as e:
+        logger.exception("Error fetching players with less than 5 games and best FIFA rating: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/api/players/complex/top-goals-with-rating", methods=['GET'])
+def api_players_complex_top_goals_with_rating():
+    """
+    COMPLEX QUERY 4: JOIN with GROUP BY
+    
+    This query demonstrates:
+    - JOIN: Inner join between player and fut23 tables
+    - GROUP BY: Groups by player_name and Rating
+    - Aggregate functions: SUM to calculate total goals
+    - ORDER BY and LIMIT: Orders by total goals descending, limits to top 10
+    
+    Returns the top 10 players by total goals who have FIFA ratings.
+    """
+    try:
+        query = """
+            SELECT 
+                p.player_name,
+                SUM(p.goals) AS total_goals,
+                f.Rating
+            FROM player p
+            JOIN fut23 f ON p.player_id = f.player_id
+            GROUP BY p.player_name, f.Rating
+            ORDER BY total_goals DESC
+            LIMIT 10
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [],
+            "count": len(results) if results else 0,
+            "description": "Top 10 players by goals with FIFA ratings (JOIN with GROUP BY)"
+        })
+    except Exception as e:
+        logger.exception("Error fetching top goals with rating: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
 #--------------TALHA-END-------------------------------
 
 
