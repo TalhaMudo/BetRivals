@@ -6,7 +6,7 @@
 <div class="seasons-page">
 
   <div class="hero-section">
-    <h2>📅 Seasons</h2>
+    <h2>Seasons</h2>
     <p>Filter and explore seasonal performance across teams, home/away stats, and results.</p>
   </div>
 
@@ -45,15 +45,91 @@
     </div>
   </div>
 
-  <!-- ============================== -->
-  <!-- CARD GRID (Normal Mode)        -->
-  <!-- ============================== -->
+  <!-- Season Insights (Accordion) -->
+  <div class="acc" id="seasonInsights">
+    <button class="acc-head" id="toggleInsights" type="button" aria-expanded="false" aria-controls="insightsPanel">
+      <div class="acc-head-left">
+        <span class="acc-icon" aria-hidden="true"></span>
+
+        <div class="acc-titles">
+          <div class="acc-title">Season Insights</div>
+          <div class="acc-sub">Top teams by points (tie-break: xG difference) for the selected year.</div>
+        </div>
+
+        <span class="acc-pill" id="insightsYearPill">Year: —</span>
+      </div>
+
+      <span class="acc-chevron" aria-hidden="true">▾</span>
+    </button>
+
+    <div class="acc-panel" id="insightsPanel" hidden>
+      <div class="acc-toolbar">
+        <button id="btnRefreshInsights" class="acc-btn" type="button">Refresh</button>
+        <span id="insightsStatus" class="acc-status">Click refresh to load insights.</span>
+      </div>
+
+      <!-- IMPORTANT: wrapper + fixed layout + colgroup prevents column shifting -->
+      <div class="acc-table-wrap">
+        <table class="acc-table">
+          <colgroup>
+            <col style="width:56px" />
+            <col style="width:auto" />
+            <col style="width:90px" />
+            <col style="width:90px" />
+            <col style="width:90px" />
+            <col style="width:110px" />
+            <col style="width:90px" />
+          </colgroup>
+
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th>Team</th>
+              <th class="col-num">Pts</th>
+              <th class="col-num">xG</th>
+              <th class="col-num">xGA</th>
+              <th class="col-num">xG Diff</th>
+              <th class="col-actions">Details</th>
+            </tr>
+          </thead>
+
+          <tbody id="insightsBody">
+            <tr>
+              <td colspan="7" class="acc-empty">Expand the panel and press refresh.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  &nbsp;
+
+
+  <!-- CARD GRID (Normal Mode) -->
   <div id="seasonsGrid" class="seasons-grid"></div>
 
-  <!-- ============================== -->
-  <!-- TABLE VIEW (View All Mode)     -->
-  <!-- ============================== -->
-  <div id="seasonsTableContainer" style="display:none; max-height: 600px; overflow-y: auto; margin-top:2rem;">
+  <!-- TABLE VIEW (View All Mode) -->
+  <div id="seasonsTableContainer" style="display:none;">
+
+    <!-- Pagination bar -->
+    <div class="table-pager" id="seasonsTablePager">
+      <div class="pager-left">
+        <button id="tblPrev" class="outline">← Prev</button>
+        <button id="tblNext" class="outline">Next →</button>
+        <span id="tblPageInfo" class="pager-info">Page 1 / 1</span>
+      </div>
+
+      <div class="pager-right">
+        <label class="pager-label" for="tblPerPage">Rows:</label>
+        <select id="tblPerPage">
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="200" selected>200</option>
+        </select>
+      </div>
+    </div>
+
     <table class="season-table">
       <thead>
         <tr>
@@ -62,7 +138,7 @@
           <th>Result</th>
           <th>xG</th>
           <th>xGA</th>
-          <th>PPDA</th>
+          <th>PPDA Att</th>
           <th>Details</th>
         </tr>
       </thead>
@@ -70,7 +146,9 @@
     </table>
   </div>
 
+
 </div>
+
 
 {% endblock %}
 

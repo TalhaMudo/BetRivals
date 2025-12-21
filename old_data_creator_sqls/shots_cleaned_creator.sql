@@ -1,4 +1,3 @@
--- CORRECTED: shot_data table - removed 'season' (derive from match_id)
 CREATE TABLE shot_data (
     shot_id BIGINT PRIMARY KEY,
     minute INT,
@@ -9,7 +8,7 @@ CREATE TABLE shot_data (
     h_a CHAR(1),
     player_id BIGINT,
     situation VARCHAR(64),
-    -- season INT, -- REMOVED: can be derived from match_id -> season
+    season INT,
     shotType VARCHAR(64),
     match_id BIGINT,
     player_assisted BIGINT,
@@ -21,12 +20,12 @@ CREATE TABLE shot_data (
         ON DELETE SET NULL,
     CONSTRAINT fk_shot_player
         FOREIGN KEY (player_id)
-        REFERENCES players(player_id)
+        REFERENCES fut23(player_id)
         ON UPDATE CASCADE
         ON DELETE SET NULL,
     CONSTRAINT fk_shot_assist_player
         FOREIGN KEY (player_assisted)
-        REFERENCES players(player_id)
+        REFERENCES fut23(player_id)
         ON UPDATE CASCADE
         ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
