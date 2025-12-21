@@ -68,6 +68,30 @@
         <button id="btn-analysis" class="btn-test btn-primary">👥 Show All Players</button>
     </div>
     
+    <!-- Complex Queries Grid -->
+    <div class="content-grid complex-queries-grid">
+        <div class="content-box query-box" id="query-1-box">
+            <h3>Complex Join (4+ Tables)</h3>
+            <p>Goals per match with GROUP BY & HAVING</p>
+            <button class="btn-test btn-secondary query-btn" data-endpoint="/api/players/complex/goals-per-match">Execute Query</button>
+        </div>
+        <div class="content-box query-box" id="query-2-box">
+            <h3>Nested Query</h3>
+            <p>Players above average goals for their year</p>
+            <button class="btn-test btn-secondary query-btn" data-endpoint="/api/players/complex/above-average-goals">Execute Query</button>
+        </div>
+        <div class="content-box query-box" id="query-3-box">
+            <h3>Outer Join with GROUP BY</h3>
+            <p>Players with less than 5 games and best FIFA rating</p>
+            <button class="btn-test btn-secondary query-btn" data-endpoint="/api/players/complex/low-games-best-rating">Execute Query</button>
+        </div>
+        <div class="content-box query-box" id="query-4-box">
+            <h3>JOIN with GROUP BY</h3>
+            <p>Top 10 players by goals with ratings</p>
+            <button class="btn-test btn-secondary query-btn" data-endpoint="/api/players/complex/top-goals-with-rating">Execute Query</button>
+        </div>
+    </div>
+    
     <div id="results"></div>
 </section>
 

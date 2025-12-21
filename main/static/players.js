@@ -172,6 +172,44 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     }
+
+    // Complex Query Buttons
+    const queryButtons = document.querySelectorAll('.query-btn');
+    queryButtons.forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const endpoint = this.getAttribute('data-endpoint');
+            const originalText = this.textContent;
+            
+            // Disable all query buttons
+            queryButtons.forEach(b => b.disabled = true);
+            this.textContent = 'Loading...';
+            resultsDiv.innerHTML = '<div class="loading">Executing query</div>';
+
+            try {
+                const response = await fetch(endpoint);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to execute query');
+                }
+
+                // Use displayAnalysisResults for complex queries
+                displayAnalysisResults(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultsDiv.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            } finally {
+                // Re-enable all query buttons
+                queryButtons.forEach(b => b.disabled = false);
+                this.textContent = originalText;
+            }
+        });
+    });
 });
 
 // --- Comparison helpers ---
