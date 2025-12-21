@@ -513,6 +513,9 @@ def api_teams_summary():
 
 #--------------BILGE-END-------------------------------
 
+
+#--------------TALHA-START-----------------------------
+
 # --- TALHA: Authentication Middleware --- #
 def talha_login_required(f):
     @wraps(f)
@@ -545,8 +548,7 @@ def players_add_page():
 def players_edit_page():
     """Edit player form page (requires login)"""
     return render_template("edit_player.html", title="Edit Players")
-#--------------TALHA-START-----------------------------
-
+    
 @app.route("/api/players/fut23", methods=['GET'])
 def api_fut23_all():
     """Get all rows from fut23 table"""

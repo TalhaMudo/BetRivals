@@ -1,5 +1,5 @@
 -- Table 1: Player master data (attributes that don't change across seasons)
-CREATE TABLE player (
+CREATE TABLE players (
     player_id BIGINT PRIMARY KEY,
     Name VARCHAR(255),
     Country VARCHAR(128),
@@ -49,7 +49,7 @@ CREATE TABLE fut23 (
         FOREIGN KEY (player_id)
         REFERENCES players(player_id)
         ON UPDATE CASCADE
-        ON DELETE CASCADE,
+        ON DELETE RESTRICT,
     CONSTRAINT fk_player_seasons_team
         FOREIGN KEY (team_id)
         REFERENCES teams(team_id)
