@@ -2633,8 +2633,8 @@ def match_page(match_id):
                 COALESCE(p.player_name, s.player) AS player_name,
                 p.position,
                 CASE 
-                    WHEN s.h_a = 'h' THEN mi.team_h
-                    WHEN s.h_a = 'a' THEN mi.team_a
+                    WHEN s.h_a = 'h' THEN COALESCE(th.team_name, mi.team_h)
+                    WHEN s.h_a = 'a' THEN COALESCE(ta.team_name, mi.team_a)
                     ELSE COALESCE(s.h_team, s.a_team)
                 END AS team,
                 COUNT(s.shot_id) AS shots_taken,
@@ -2643,12 +2643,17 @@ def match_page(match_id):
                 AVG(s.xG) AS avg_xg_per_shot,
                 p.goals AS season_goals,
                 p.assists AS season_assists,
-                p.year AS season_year
+                p.year AS season_year,
+                (SELECT ROUND(SUM(CASE WHEN sd2.result = 'Goal' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1)
+                 FROM shot_data sd2 
+                 WHERE sd2.player_id = p.player_id AND sd2.season = mi.season) AS season_conversion_rate
             FROM match_info mi
-            INNER JOIN shot_data s ON mi.match_id = s.match_id
+            INNER JOIN shot_data s ON mi.match_id = s.match_id -- inner join to filter only shots in this match
             LEFT JOIN player p ON s.player_id = p.player_id AND p.year = mi.season
+            LEFT JOIN teams th ON mi.h = th.team_id
+            LEFT JOIN teams ta ON mi.a = ta.team_id
             WHERE mi.match_id = %s
-            GROUP BY p.player_id, p.player_name, s.player, p.position, s.h_a, mi.team_h, mi.team_a, s.h_team, s.a_team, p.goals, p.assists, p.year
+            GROUP BY p.player_id, p.player_name, s.player, p.position, s.h_a, mi.team_h, mi.team_a, s.h_team, s.a_team, p.goals, p.assists, p.year, th.team_name, ta.team_name
             HAVING shots_taken > 0
             ORDER BY total_xg DESC, shots_taken DESC
             LIMIT 10
@@ -2660,128 +2665,73 @@ def match_page(match_id):
         ## ("goals conceded" o takimin kac gol yedigi oluyor daha once gormediniz muhtemelen)
         season_comparison_q = """
             SELECT 
-                mi.team_h,
-                mi.team_a,
-                mi.season,
-                h_season.games_played AS h_games_played,
-                h_season.goals_scored AS h_goals_scored,
-                h_season.goals_conceded AS h_goals_conceded,
-                h_season.total_xg AS h_total_xg,
-                h_season.total_xga AS h_total_xga,
-                h_season.points AS h_points,
-                h_season.wins AS h_wins,
-                h_season.draws AS h_draws,
-                h_season.losses AS h_losses,
-                a_season.games_played AS a_games_played,
-                a_season.goals_scored AS a_goals_scored,
-                a_season.goals_conceded AS a_goals_conceded,
-                a_season.total_xg AS a_total_xg,
-                a_season.total_xga AS a_total_xga,
-                a_season.points AS a_points,
-                a_season.wins AS a_wins,
-                a_season.draws AS a_draws,
-                a_season.losses AS a_losses,
-                ht.team_id AS h_team_id,
-                at.team_id AS a_team_id,
-                h_scorer.player_name AS h_top_scorer,
-                h_scorer.player_id AS h_top_scorer_id,
-                h_scorer.goals AS h_top_scorer_goals,
-                a_scorer.player_name AS a_top_scorer,
-                a_scorer.player_id AS a_top_scorer_id,
-                a_scorer.goals AS a_top_scorer_goals,
-                h_assist.player_name AS h_top_assister,
-                h_assist.player_id AS h_top_assister_id,
-                h_assist.assists AS h_top_assister_assists,
-                a_assist.player_name AS a_top_assister,
-                a_assist.player_id AS a_top_assister_id,
-                a_assist.assists AS a_top_assister_assists,
-                h_shots.conversion AS h_shot_conversion,
-                a_shots.conversion AS a_shot_conversion
+                mi.team_h, mi.team_a, mi.season, mi.h as h_team_id, mi.a as a_team_id,
+
+                -- home and away team season stats
+                home.games_played AS h_games_played, home.goals_scored AS h_goals_scored,
+                home.goals_conceded AS h_goals_conceded, home.total_xg AS h_total_xg,
+                home.total_xga AS h_total_xga, home.points AS h_points,
+                home.wins AS h_wins, home.draws AS h_draws, home.losses AS h_losses,
+
+                away.games_played AS a_games_played, away.goals_scored AS a_goals_scored,
+                away.goals_conceded AS a_goals_conceded, away.total_xg AS a_total_xg,
+                away.total_xga AS a_total_xga, away.points AS a_points,
+                away.wins AS a_wins, away.draws AS a_draws, away.losses AS a_losses,
+
+                -- top scorers and assisters for both teams
+                h_scorer.player_name AS h_top_scorer, h_scorer.player_id AS h_top_scorer_id,
+                h_scorer.goals AS h_top_scorer_goals, a_scorer.player_name AS a_top_scorer,
+                a_scorer.player_id AS a_top_scorer_id, a_scorer.goals AS a_top_scorer_goals,
+                h_assist.player_name AS h_top_assister, h_assist.player_id AS h_top_assister_id,
+                h_assist.assists AS h_top_assister_assists, a_assist.player_name AS a_top_assister,
+                a_assist.player_id AS a_top_assister_id, a_assist.assists AS a_top_assister_assists,
+                
+                -- shot conversion rates for home and away teams -- this means goals/shots 
+                h_shots.conversion AS h_shot_conversion, a_shots.conversion AS a_shot_conversion
+
             FROM match_info mi
+
+            -- home team season stat subqueries
             LEFT JOIN (
-                SELECT 
-                    title,
-                    year,
-                    COUNT(*) AS games_played,
-                    COALESCE(SUM(scored), 0) AS goals_scored,
-                    COALESCE(SUM(missed), 0) AS goals_conceded,
-                    COALESCE(SUM(xG), 0) AS total_xg,
-                    COALESCE(SUM(xGA), 0) AS total_xga,
-                    COALESCE(MAX(pts), 0) AS points,
-                    COALESCE(MAX(wins), 0) AS wins,
-                    COALESCE(MAX(draws), 0) AS draws,
-                    COALESCE(MAX(loses), 0) AS losses
-                FROM season
-                GROUP BY title, year
-            ) h_season ON h_season.title = mi.team_h AND h_season.year = mi.season
+                SELECT title, year, COUNT(*) AS games_played, SUM(scored) AS goals_scored,
+                    SUM(missed) AS goals_conceded, SUM(xG) AS total_xg, SUM(xGA) AS total_xga,
+                    MAX(pts) AS points, MAX(wins) AS wins, MAX(draws) AS draws, MAX(loses) AS losses
+                FROM season GROUP BY title, year
+            ) home ON home.title = mi.team_h AND home.year = mi.season
             LEFT JOIN (
-                SELECT 
-                    title,
-                    year,
-                    COUNT(*) AS games_played,
-                    COALESCE(SUM(scored), 0) AS goals_scored,
-                    COALESCE(SUM(missed), 0) AS goals_conceded,
-                    COALESCE(SUM(xG), 0) AS total_xg,
-                    COALESCE(SUM(xGA), 0) AS total_xga,
-                    COALESCE(MAX(pts), 0) AS points,
-                    COALESCE(MAX(wins), 0) AS wins,
-                    COALESCE(MAX(draws), 0) AS draws,
-                    COALESCE(MAX(loses), 0) AS losses
-                FROM season
-                GROUP BY title, year
-            ) a_season ON a_season.title = mi.team_a AND a_season.year = mi.season
-            LEFT JOIN teams ht ON ht.team_name = mi.team_h
-            LEFT JOIN teams at ON at.team_name = mi.team_a
+                SELECT title, year, COUNT(*) AS games_played, SUM(scored) AS goals_scored,
+                    SUM(missed) AS goals_conceded, SUM(xG) AS total_xg, SUM(xGA) AS total_xga,
+                    MAX(pts) AS points, MAX(wins) AS wins, MAX(draws) AS draws, MAX(loses) AS losses
+                FROM season GROUP BY title, year
+            ) away ON away.title = mi.team_a AND away.year = mi.season
+            
             LEFT JOIN player h_scorer ON h_scorer.player_id = (
-                SELECT player_id 
-                FROM player 
-                WHERE team_title = mi.team_h AND year = mi.season 
-                ORDER BY goals DESC 
-                LIMIT 1
+                SELECT player_id FROM player WHERE team_title = mi.team_h AND year = mi.season ORDER BY goals DESC LIMIT 1
             )
             LEFT JOIN player a_scorer ON a_scorer.player_id = (
-                SELECT player_id 
-                FROM player 
-                WHERE team_title = mi.team_a AND year = mi.season 
-                ORDER BY goals DESC 
-                LIMIT 1
+                SELECT player_id FROM player WHERE team_title = mi.team_a AND year = mi.season ORDER BY goals DESC LIMIT 1
             )
             LEFT JOIN player h_assist ON h_assist.player_id = (
-                SELECT player_id 
-                FROM player 
-                WHERE team_title = mi.team_h AND year = mi.season 
-                ORDER BY assists DESC 
-                LIMIT 1
+                SELECT player_id FROM player WHERE team_title = mi.team_h AND year = mi.season ORDER BY assists DESC LIMIT 1
             )
             LEFT JOIN player a_assist ON a_assist.player_id = (
-                SELECT player_id 
-                FROM player 
-                WHERE team_title = mi.team_a AND year = mi.season 
-                ORDER BY assists DESC 
-                LIMIT 1
+                SELECT player_id FROM player WHERE team_title = mi.team_a AND year = mi.season ORDER BY assists DESC LIMIT 1
             )
+            
+            -- shot conversion rates for home and away teams
             LEFT JOIN (
-                SELECT 
-                    m.team_h,
-                    m.team_a,
-                    m.season,
-                    ROUND(SUM(CASE WHEN sd.result = 'Goal' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS conversion  -- goals / total shots
-                FROM shot_data sd
-                INNER JOIN match_info m ON sd.match_id = m.match_id
-                WHERE sd.h_a = 'h'
-                GROUP BY m.team_h, m.team_a, m.season
+                SELECT m.team_h, m.team_a, m.season,
+                    ROUND(SUM(CASE WHEN sd.result = 'Goal' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS conversion
+                FROM shot_data sd JOIN match_info m ON sd.match_id = m.match_id
+                WHERE sd.h_a = 'h' GROUP BY m.team_h, m.team_a, m.season
             ) h_shots ON (h_shots.team_h = mi.team_h OR h_shots.team_a = mi.team_h) AND h_shots.season = mi.season
             LEFT JOIN (
-                SELECT 
-                    m.team_h,
-                    m.team_a,
-                    m.season,
+                SELECT m.team_h, m.team_a, m.season,
                     ROUND(SUM(CASE WHEN sd.result = 'Goal' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS conversion
-                FROM shot_data sd
-                INNER JOIN match_info m ON sd.match_id = m.match_id
-                WHERE sd.h_a = 'a'
-                GROUP BY m.team_h, m.team_a, m.season
+                FROM shot_data sd JOIN match_info m ON sd.match_id = m.match_id
+                WHERE sd.h_a = 'a' GROUP BY m.team_h, m.team_a, m.season
             ) a_shots ON (a_shots.team_h = mi.team_a OR a_shots.team_a = mi.team_a) AND a_shots.season = mi.season
+            
             WHERE mi.match_id = %s
         """
         season_comparison_raw = db.execute_query(season_comparison_q, (match_id,), fetch_all=True)

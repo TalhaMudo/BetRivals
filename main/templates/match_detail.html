@@ -36,7 +36,7 @@
         <div class="match-card">
             <div class="match-top">
                 <div class="team-block team-home">
-                    <img class="team-logo" data-team="{{ match.team_h }}" alt="{{ match.team_h }}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" />
+                    <img class="team-logo" data-team="{{ match.team_h }}" alt="{{ match.team_h }}" src="/static/images/logo_placeholder.png" />
                     <div class="team-name">{{ match.team_h }}</div>
                 </div>
 
@@ -47,7 +47,7 @@
 
                 <div class="team-block team-away">
                     <div class="team-name">{{ match.team_a }}</div>
-                    <img class="team-logo" data-team="{{ match.team_a }}" alt="{{ match.team_a }}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" />
+                    <img class="team-logo" data-team="{{ match.team_a }}" alt="{{ match.team_a }}" src="/static/images/logo_placeholder.png" />
                 </div>
             </div>
 
@@ -367,6 +367,7 @@
                         <th>Goals</th>
                         <th>Avg xG/Shot</th>
                         <th>Season Stats</th>
+                        <th>Season Conv%</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -386,7 +387,14 @@
                             <td class="col-avg-xg" style="font-family:monospace;">{{ '%.3f' % (perf.avg_xg_per_shot or 0) }}</td>
                             <td class="col-season-stats" style="font-size:0.9em; color:#b8b8b8;">
                                 {% if perf.season_goals is not none and perf.season_assists is not none %}
-                                    {{ perf.season_goals }}G / {{ perf.season_assists }}A
+                                {{ perf.season_goals }}G / {{ perf.season_assists }}A
+                                {% else %}
+                                —
+                                {% endif %}
+                            </td>
+                            <td style="text-align:center; font-weight:600; color:#f39c12;">
+                                {% if perf.season_conversion_rate is not none %}
+                                    {{ '%.1f' % perf.season_conversion_rate }}%
                                 {% else %}
                                     —
                                 {% endif %}
@@ -394,7 +402,7 @@
                         </tr>
                         {% endfor %}
                     {% else %}
-                        <tr><td colspan="8" style="color:#888; text-align:center;">No player performance data available</td></tr>
+                        <tr><td colspan="9" style="color:#888; text-align:center;">No player performance data available</td></tr>
                     {% endif %}
                 </tbody>
             </table>
