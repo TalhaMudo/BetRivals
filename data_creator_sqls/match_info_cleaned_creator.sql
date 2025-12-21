@@ -1,33 +1,40 @@
-CREATE TABLE match_info ( 
-    match_id INT,
-    fid INT,
-    h INT, -- home team id
-    a INT, -- away team id
+CREATE TABLE match_info (
+    match_id BIGINT PRIMARY KEY,
+    fid BIGINT,
+    h BIGINT,
+    a BIGINT,
     date DATETIME,
-    league_id INT,
-    season INT,
+    season BIGINT,
     h_goals INT,
     a_goals INT,
-    team_h VARCHAR(30), -- team name
-    team_a VARCHAR(30),
-    h_xg FLOAT,
-    a_xg FLOAT,
-    h_w FLOAT,
-    h_d FLOAT,
-    h_l FLOAT,
-    league VARCHAR(10),
+    h_xg DOUBLE,
+    a_xg DOUBLE,
+    h_w DOUBLE,
+    h_d DOUBLE,
+    h_l DOUBLE,
+    -- league VARCHAR(128), -- REMOVED: can be derived from h or a team
     h_shot INT,
     a_shot INT,
     h_shotOnTarget INT,
     a_shotOnTarget INT,
     h_deep INT,
     a_deep INT,
-    a_ppda FLOAT,
-    h_ppda FLOAT
-    FOREIGN KEY (h) REFERENCES teams(team_id),
-        ON UPDATE CASCADE ON DELETE SET NULL,
-    FOREIGN KEY (a) REFERENCES teams(team_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
-    FOREIGN KEY (match_id) REFERENCES match_data(match_id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-)
+    a_ppda DOUBLE,
+    h_ppda DOUBLE,
+    CONSTRAINT uq_match_home_away_date UNIQUE (h, a, date),
+    CONSTRAINT fk_match_home_team
+        FOREIGN KEY (h)
+        REFERENCES teams(team_id)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+    CONSTRAINT fk_match_away_team
+        FOREIGN KEY (a)
+        REFERENCES teams(team_id)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+    CONSTRAINT fk_match_season
+        FOREIGN KEY (season)
+        REFERENCES season(seasonentryid)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
