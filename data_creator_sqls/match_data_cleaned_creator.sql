@@ -1,5 +1,5 @@
 CREATE TABLE match_data ( 
-    match_id INT,
+    match_id INT PRIMARY KEY,
     isResult BOOLEAN,
     datetime DATETIME,
     h_id INT, -- home team id
@@ -15,6 +15,8 @@ CREATE TABLE match_data (
     forecast_w FLOAT,
     forecast_d FLOAT,
     forecast_l FLOAT,
-    FOREIGN KEY (h_id) REFERENCES teams(team_id),
+    FOREIGN KEY (h_id) REFERENCES teams(team_id)
+        ON UPDATE CASCADE ON DELETE SET NULL,
     FOREIGN KEY (a_id) REFERENCES teams(team_id)
+        ON UPDATE CASCADE ON DELETE SET NULL
 );

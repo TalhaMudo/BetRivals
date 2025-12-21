@@ -25,6 +25,9 @@ CREATE TABLE match_info (
     a_ppda FLOAT,
     h_ppda FLOAT
     FOREIGN KEY (h) REFERENCES teams(team_id),
+        ON UPDATE CASCADE ON DELETE SET NULL,
     FOREIGN KEY (a) REFERENCES teams(team_id)
+        ON UPDATE CASCADE ON DELETE SET NULL,
     FOREIGN KEY (match_id) REFERENCES match_data(match_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 )
