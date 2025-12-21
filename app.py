@@ -29,6 +29,23 @@ def about():
     """Hakkında sayfası"""
     return render_template("about.html", title="About Us")
 
+# --- Authentication Middleware --- #
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            # Check if it's an API request
+            if request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+                return jsonify({
+                    "success": False,
+                    "message": "Authentication required",
+                    "error": "unauthorized"
+                }), 401
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return wrapper
+
+
 #--------------BILGE-START------------------------------
 
 # ========= BILGE: Teams & Seasons pages =========
@@ -148,6 +165,7 @@ def api_team_delete(team_id):
 
 
 
+
 # ========= BILGE: Seasons API =========
 
 @app.route("/api/seasons", methods=["GET"])
@@ -243,6 +261,30 @@ def api_seasons_list():
     except Exception as e:
         logger.exception("Error listing seasons: %s", e)
         return jsonify({"error": "Database error", "items": []}), 500
+    
+
+@app.route("/api/seasons/years", methods=["GET"])
+def api_seasons_years():
+    """
+    Returns distinct season years for dropdown.
+    """
+    try:
+        rows = db.execute_query(
+            """
+            SELECT DISTINCT year
+            FROM season
+            WHERE year IS NOT NULL
+            ORDER BY year DESC
+            """,
+            fetch_all=True
+        ) or []
+
+        years = [r["year"] for r in rows if r.get("year") is not None]
+        return jsonify({"success": True, "years": years})
+
+    except Exception as e:
+        logger.exception("Error fetching season years: %s", e)
+        return jsonify({"success": False, "years": []}), 500
 
 
 @app.route("/api/seasons", methods=["POST"])
@@ -271,6 +313,69 @@ def api_season_create():
         logger.exception("Error creating season: %s", e)
         return jsonify({"error": "Database error"}), 500
 
+# Yeni Eklenen Seasons Detay Rotası (Season Detay Sayfası)
+@app.route("/seasons/<int:seasonentryid>")
+def season_detail(seasonentryid):
+    """Bireysel sezon girişi detay sayfası"""
+    return render_template(
+        "season_detail.html",
+        title="Season Details",
+        seasonentryid=seasonentryid
+    )
+
+
+# Yeni Eklenen Seasons Detay API'si
+@app.route("/api/seasons/<int:seasonentryid>", methods=["GET"])
+def api_season_detail(seasonentryid):
+    """
+    GET /api/seasons/<int:seasonentryid>
+    Tek bir sezon girişinin detaylarını döndürür.
+    """
+    try:
+        sql = f"""
+            SELECT
+                s.seasonentryid AS seasonentryid,
+                s.team_id AS team_id,
+                t.team_name AS team_name,
+                s.title AS title,
+                s.year AS year,
+                s.h_a AS h_a,
+                s.xG AS xG,
+                s.xGA AS xGA,
+                s.npxG AS npxG,
+                s.npxGA AS npxGA,
+                s.deep AS deep,
+                s.deep_allowed AS deep_allowed,
+                s.scored AS scored,
+                s.missed AS missed,
+                s.xpts AS xpts,
+                s.result AS result,
+                s.date AS date,
+                s.wins AS wins,
+                s.draws AS draws,
+                s.loses AS loses,
+                s.pts AS pts,
+                s.npxGD AS npxGD,
+                s.ppda_att AS ppda_att,
+                s.ppda_def AS ppda_def,
+                s.ppda_allowed_att AS ppda_allowed_att,
+                s.ppda_allowed_def AS ppda_allowed_def
+            FROM season s
+            LEFT JOIN teams t ON t.team_id = s.team_id
+            WHERE s.seasonentryid = %s
+            LIMIT 1
+        """
+
+        rows = db.execute_query(sql, [seasonentryid])
+
+        if not rows:
+            return jsonify({"error": "Season entry not found"}), 404
+
+        return jsonify(rows[0])
+
+    except Exception as e:
+        logger.exception("Error fetching season detail: %s", e)
+        return jsonify({"error": "Database error"}), 500
 
 @app.route("/api/seasons/<int:seasonentryid>/update", methods=["POST"])
 def api_season_update(seasonentryid):
@@ -310,6 +415,101 @@ def api_season_delete(seasonentryid):
     except Exception as e:
         logger.exception("Error deleting season: %s", e)
         return jsonify({"error": "Cannot delete season"}), 400
+    
+
+    
+# ============================================
+# USER INSIGHTS (PUBLIC) - TOP 2 COMPLEX QUERIES
+# ============================================
+
+@app.route("/api/seasons/top", methods=["GET"])
+def api_seasons_top():
+    """
+    Returns top season entries for a given year (JOIN + ORDER BY).
+    Used in user seasons page as "Season Insights".
+    GET /api/seasons/top?year=2023&limit=10
+    """
+    year = request.args.get("year")
+    limit = int(request.args.get("limit", 10))
+    limit = min(max(limit, 1), 50)
+
+    try:
+        # If year is not provided, default to latest year in season table
+        if not year:
+            y = db.execute_query("SELECT MAX(year) AS y FROM season", fetch_all=True)
+            year = y[0]["y"] if y and y[0].get("y") is not None else 2023
+
+        sql = """
+            SELECT
+                s.seasonentryid AS seasonentryid,
+                s.year          AS year,
+                t.team_id       AS team_id,
+                t.team_name     AS team_name,
+                s.title         AS title,
+                s.pts           AS pts,
+                s.xG            AS xG,
+                s.xGA           AS xGA,
+                (s.xG - s.xGA)  AS xg_diff
+            FROM season s
+            INNER JOIN teams t ON s.team_id = t.team_id
+            WHERE s.year = %s
+            ORDER BY s.pts DESC, (s.xG - s.xGA) DESC, t.team_name ASC
+            LIMIT %s
+        """
+        rows = db.execute_query(sql, params=[year, limit]) or []
+
+        return jsonify({
+            "success": True,
+            "year": int(year),
+            "limit": limit,
+            "items": rows
+        })
+    except Exception as e:
+        logger.exception("Error in /api/seasons/top: %s", e)
+        return jsonify({"success": False, "error": "Database error", "items": []}), 500
+
+
+@app.route("/api/teams/summary", methods=["GET"])
+def api_teams_summary():
+    """
+    Returns team summary (GROUP BY + HAVING + ORDER BY).
+    Used in user teams page as "Team Summary".
+    GET /api/teams/summary?min_seasons=3&limit=20
+    """
+    min_seasons = int(request.args.get("min_seasons", 3))
+    limit = int(request.args.get("limit", 20))
+    min_seasons = max(min_seasons, 1)
+    limit = min(max(limit, 1), 50)
+
+    try:
+        sql = """
+            SELECT
+                t.team_id                           AS team_id,
+                t.team_name                         AS team_name,
+                COUNT(s.seasonentryid)              AS total_seasons,
+                ROUND(AVG(s.xG), 2)                 AS avg_xG,
+                ROUND(AVG(s.xGA), 2)                AS avg_xGA,
+                ROUND(AVG(s.xG - s.xGA), 2)         AS avg_xg_diff,
+                COALESCE(SUM(s.pts), 0)             AS total_points,
+                ROUND(AVG(s.pts), 2)                AS avg_points
+            FROM teams t
+            LEFT JOIN season s ON t.team_id = s.team_id
+            GROUP BY t.team_id, t.team_name
+            HAVING total_seasons >= %s
+            ORDER BY total_points DESC, avg_xg_diff DESC, t.team_name ASC
+            LIMIT %s
+        """
+        rows = db.execute_query(sql, params=[min_seasons, limit]) or []
+
+        return jsonify({
+            "success": True,
+            "min_seasons": min_seasons,
+            "limit": limit,
+            "items": rows
+        })
+    except Exception as e:
+        logger.exception("Error in /api/teams/summary: %s", e)
+        return jsonify({"success": False, "error": "Database error", "items": []}), 500
 
 #--------------BILGE-END-------------------------------
 
@@ -1683,23 +1883,277 @@ def player_stats_api(player_id):
             'error': str(e)
         }), 500
 
-#2sg - - - - - - - - - - - - - - - - - - below is for admin page : 
+# - - - - - - - - - - - - - - - - - - below is for admin page : 
+# ==============================
+# ADMIN TEAMS CRUD 
+# ==============================
 
-# --- Authentication Middleware --- #
-def login_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if "user_id" not in session:
-            # Check if it's an API request
-            if request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
-                return jsonify({
-                    "success": False,
-                    "message": "Authentication required",
-                    "error": "unauthorized"
-                }), 401
-            return redirect("/login")
-        return f(*args, **kwargs)
-    return wrapper
+@app.route("/admin/teams", methods=["GET"])
+@login_required
+def admin_teams_page():
+    # Shots gibi: sayfa render, veriyi JS çeker
+    return render_template("admin_teams.html", username=session.get("username"))
+
+
+@app.route("/api/admin/teams", methods=["GET", "POST"])
+@login_required
+def admin_teams_list_or_add():
+    if request.method == "GET":
+        # Pagination + search
+        try:
+            page = max(int(request.args.get("page", 1)), 1)
+            limit = min(max(int(request.args.get("limit", 20)), 1), 200)
+            q = (request.args.get("q", "") or "").strip()
+            offset = (page - 1) * limit
+
+            where = "WHERE 1=1"
+            params = []
+            if q:
+                where += " AND team_name LIKE %s"
+                params.append(f"%{q}%")
+
+            total_row = db.execute_query(
+                f"SELECT COUNT(*) AS total FROM teams {where}",
+                tuple(params),
+                fetch_all=True
+            )
+            total = total_row[0]["total"] if total_row else 0
+
+            teams = db.execute_query(
+                f"""
+                SELECT team_id, team_name
+                FROM teams
+                {where}
+                ORDER BY team_name ASC
+                LIMIT %s OFFSET %s
+                """,
+                tuple(params + [limit, offset]),
+                fetch_all=True
+            ) or []
+
+            return jsonify({"success": True, "teams": teams, "total": total, "page": page, "limit": limit})
+        except Exception as e:
+            logger.exception("Error listing teams: %s", e)
+            return jsonify({"success": False, "error": "Database error"}), 500
+
+    # POST: add
+    data = request.get_json(silent=True) or {}
+    name = (data.get("team_name") or "").strip()
+    if not name:
+        return jsonify({"success": False, "error": "team_name is required"}), 400
+    try:
+        db.execute_query("INSERT INTO teams (team_name) VALUES (%s)", (name,), fetch_all=False)
+        return jsonify({"success": True, "message": "Team added successfully"})
+    except Exception as e:
+        logger.exception("Error adding team: %s", e)
+        return jsonify({"success": False, "error": "Database error"}), 500
+
+
+@app.route("/api/admin/teams/options", methods=["GET"])
+@login_required
+def admin_teams_options():
+    # Seasons modal dropdown için
+    try:
+        teams = db.execute_query(
+            "SELECT team_id, team_name FROM teams ORDER BY team_name ASC",
+            fetch_all=True
+        ) or []
+        return jsonify({"success": True, "teams": teams})
+    except Exception as e:
+        logger.exception("Error loading team options: %s", e)
+        return jsonify({"success": False, "teams": []}), 500
+
+
+@app.route("/api/admin/teams/<int:team_id>", methods=["GET", "PUT", "DELETE"])
+@login_required
+def admin_team_get_update_delete(team_id):
+    if request.method == "GET":
+        try:
+            rows = db.execute_query(
+                "SELECT team_id, team_name FROM teams WHERE team_id=%s LIMIT 1",
+                (team_id,),
+                fetch_all=True
+            )
+            if not rows:
+                return jsonify({"success": False, "error": "Team not found"}), 404
+            return jsonify({"success": True, "team": rows[0]})
+        except Exception as e:
+            logger.exception("Error getting team: %s", e)
+            return jsonify({"success": False, "error": "Database error"}), 500
+
+    if request.method == "PUT":
+        data = request.get_json(silent=True) or {}
+        name = (data.get("team_name") or "").strip()
+        if not name:
+            return jsonify({"success": False, "error": "team_name required"}), 400
+        try:
+            db.execute_query(
+                "UPDATE teams SET team_name=%s WHERE team_id=%s",
+                (name, team_id),
+                fetch_all=False
+            )
+            return jsonify({"success": True, "message": "Team updated"})
+        except Exception as e:
+            logger.exception("Error updating team: %s", e)
+            return jsonify({"success": False, "error": "Database error"}), 500
+
+    # DELETE
+    try:
+        db.execute_query("DELETE FROM teams WHERE team_id=%s", (team_id,), fetch_all=False)
+        return jsonify({"success": True, "message": "Team deleted"})
+    except Exception as e:
+        logger.exception("Error deleting team: %s", e)
+        return jsonify({"success": False, "error": "Cannot delete (FK in use?)"}), 400
+
+
+# ==============================
+# ADMIN SEASONS CRUD 
+# ==============================
+
+@app.route("/admin/seasons", methods=["GET"])
+@login_required
+def admin_seasons_page():
+    # Shots gibi: sayfa render, veriyi JS çeker
+    return render_template("admin_seasons.html", username=session.get("username"))
+
+
+@app.route("/api/admin/seasons", methods=["GET", "POST"])
+@login_required
+def admin_seasons_list_or_add():
+    if request.method == "GET":
+        try:
+            page = max(int(request.args.get("page", 1)), 1)
+            limit = min(max(int(request.args.get("limit", 20)), 1), 200)
+            offset = (page - 1) * limit
+
+            team_id = (request.args.get("team_id") or "").strip()
+            year = (request.args.get("year") or "").strip()
+            title = (request.args.get("title") or "").strip()
+
+            where = "WHERE 1=1"
+            params = []
+
+            if team_id:
+                where += " AND s.team_id = %s"
+                params.append(team_id)
+            if year:
+                where += " AND s.year = %s"
+                params.append(year)
+            if title:
+                where += " AND s.title LIKE %s"
+                params.append(f"%{title}%")
+
+            total_row = db.execute_query(
+                f"SELECT COUNT(*) AS total FROM season s {where}",
+                tuple(params),
+                fetch_all=True
+            )
+            total = total_row[0]["total"] if total_row else 0
+
+            seasons = db.execute_query(
+                f"""
+                SELECT s.seasonentryid, s.team_id, t.team_name, s.title, s.year
+                FROM season s
+                LEFT JOIN teams t ON s.team_id = t.team_id
+                {where}
+                ORDER BY s.year DESC, t.team_name ASC
+                LIMIT %s OFFSET %s
+                """,
+                tuple(params + [limit, offset]),
+                fetch_all=True
+            ) or []
+
+            return jsonify({"success": True, "seasons": seasons, "total": total, "page": page, "limit": limit})
+        except Exception as e:
+            logger.exception("Error listing seasons: %s", e)
+            return jsonify({"success": False, "error": "Database error"}), 500
+
+    # POST: add season
+    data = request.get_json(silent=True) or {}
+    team_id = data.get("team_id")
+    title = data.get("title")
+    year = data.get("year")
+
+    if not (team_id and year):
+        return jsonify({"success": False, "error": "team_id and year required"}), 400
+
+    try:
+        db.execute_query(
+            "INSERT INTO season (team_id, title, year) VALUES (%s,%s,%s)",
+            (team_id, title, year),
+            fetch_all=False
+        )
+        return jsonify({"success": True, "message": "Season added successfully"})
+    except Exception as e:
+        logger.exception("Error adding season: %s", e)
+        return jsonify({"success": False, "error": "Database error"}), 500
+
+
+@app.route("/api/admin/seasons/<int:seasonentryid>", methods=["GET", "PUT", "DELETE"])
+@login_required
+def admin_season_get_update_delete(seasonentryid):
+    if request.method == "GET":
+        try:
+            rows = db.execute_query(
+                """
+                SELECT s.seasonentryid, s.team_id, t.team_name, s.title, s.year
+                FROM season s
+                LEFT JOIN teams t ON s.team_id = t.team_id
+                WHERE s.seasonentryid=%s
+                LIMIT 1
+                """,
+                (seasonentryid,),
+                fetch_all=True
+            )
+            if not rows:
+                return jsonify({"success": False, "error": "Season not found"}), 404
+            return jsonify({"success": True, "season": rows[0]})
+        except Exception as e:
+            logger.exception("Error getting season: %s", e)
+            return jsonify({"success": False, "error": "Database error"}), 500
+
+    if request.method == "PUT":
+        data = request.get_json(silent=True) or {}
+        title = data.get("title")
+        year = data.get("year")
+        team_id = data.get("team_id")
+
+        fields, params = [], []
+        # burada bilinçli: title boş string gelirse update etme; istersen boş da set edebiliriz
+        if title is not None and str(title).strip() != "":
+            fields.append("title=%s")
+            params.append(title)
+        if year:
+            fields.append("year=%s")
+            params.append(year)
+        if team_id:
+            fields.append("team_id=%s")
+            params.append(team_id)
+
+        if not fields:
+            return jsonify({"success": False, "error": "No fields to update"}), 400
+
+        params.append(seasonentryid)
+
+        try:
+            db.execute_query(
+                f"UPDATE season SET {', '.join(fields)} WHERE seasonentryid=%s",
+                tuple(params),
+                fetch_all=False
+            )
+            return jsonify({"success": True, "message": "Season updated"})
+        except Exception as e:
+            logger.exception("Error updating season: %s", e)
+            return jsonify({"success": False, "error": "Database error"}), 500
+
+    # DELETE
+    try:
+        db.execute_query("DELETE FROM season WHERE seasonentryid=%s", (seasonentryid,), fetch_all=False)
+        return jsonify({"success": True, "message": "Season deleted"})
+    except Exception as e:
+        logger.exception("Error deleting season: %s", e)
+        return jsonify({"success": False, "error": "Cannot delete"}), 400
+
 
 # --- Authentication Routes --- #
 @app.route("/register", methods=["GET", "POST"])
@@ -1874,14 +2328,6 @@ def api_admin_players_delete(season_player_id):
     except Exception as e:
         logger.exception(f"Error deleting player {season_player_id}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route("/admin/teams")
-@login_required
-def admin_teams():
-    # Fetch teams data
-    sql = "SELECT * FROM teams ORDER BY name ASC"
-    teams = db.execute_query(sql)
-    return render_template("admin_teams.html", teams=teams, username=session.get("username"))
 
 @app.route("/admin/settings")
 @login_required
@@ -2333,8 +2779,8 @@ def match_page(match_id):
                 COALESCE(p.player_name, s.player) AS player_name,
                 p.position,
                 CASE 
-                    WHEN s.h_a = 'h' THEN mi.team_h
-                    WHEN s.h_a = 'a' THEN mi.team_a
+                    WHEN s.h_a = 'h' THEN COALESCE(th.team_name, mi.team_h)
+                    WHEN s.h_a = 'a' THEN COALESCE(ta.team_name, mi.team_a)
                     ELSE COALESCE(s.h_team, s.a_team)
                 END AS team,
                 COUNT(s.shot_id) AS shots_taken,
@@ -2343,12 +2789,17 @@ def match_page(match_id):
                 AVG(s.xG) AS avg_xg_per_shot,
                 p.goals AS season_goals,
                 p.assists AS season_assists,
-                p.year AS season_year
+                p.year AS season_year,
+                (SELECT ROUND(SUM(CASE WHEN sd2.result = 'Goal' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1)
+                 FROM shot_data sd2 
+                 WHERE sd2.player_id = p.player_id AND sd2.season = mi.season) AS season_conversion_rate
             FROM match_info mi
-            INNER JOIN shot_data s ON mi.match_id = s.match_id
+            INNER JOIN shot_data s ON mi.match_id = s.match_id -- inner join to filter only shots in this match
             LEFT JOIN player p ON s.player_id = p.player_id AND p.year = mi.season
+            LEFT JOIN teams th ON mi.h = th.team_id
+            LEFT JOIN teams ta ON mi.a = ta.team_id
             WHERE mi.match_id = %s
-            GROUP BY p.player_id, p.player_name, s.player, p.position, s.h_a, mi.team_h, mi.team_a, s.h_team, s.a_team, p.goals, p.assists, p.year
+            GROUP BY p.player_id, p.player_name, s.player, p.position, s.h_a, mi.team_h, mi.team_a, s.h_team, s.a_team, p.goals, p.assists, p.year, th.team_name, ta.team_name
             HAVING shots_taken > 0
             ORDER BY total_xg DESC, shots_taken DESC
             LIMIT 10
@@ -2360,128 +2811,73 @@ def match_page(match_id):
         ## ("goals conceded" o takimin kac gol yedigi oluyor daha once gormediniz muhtemelen)
         season_comparison_q = """
             SELECT 
-                mi.team_h,
-                mi.team_a,
-                mi.season,
-                h_season.games_played AS h_games_played,
-                h_season.goals_scored AS h_goals_scored,
-                h_season.goals_conceded AS h_goals_conceded,
-                h_season.total_xg AS h_total_xg,
-                h_season.total_xga AS h_total_xga,
-                h_season.points AS h_points,
-                h_season.wins AS h_wins,
-                h_season.draws AS h_draws,
-                h_season.losses AS h_losses,
-                a_season.games_played AS a_games_played,
-                a_season.goals_scored AS a_goals_scored,
-                a_season.goals_conceded AS a_goals_conceded,
-                a_season.total_xg AS a_total_xg,
-                a_season.total_xga AS a_total_xga,
-                a_season.points AS a_points,
-                a_season.wins AS a_wins,
-                a_season.draws AS a_draws,
-                a_season.losses AS a_losses,
-                ht.team_id AS h_team_id,
-                at.team_id AS a_team_id,
-                h_scorer.player_name AS h_top_scorer,
-                h_scorer.player_id AS h_top_scorer_id,
-                h_scorer.goals AS h_top_scorer_goals,
-                a_scorer.player_name AS a_top_scorer,
-                a_scorer.player_id AS a_top_scorer_id,
-                a_scorer.goals AS a_top_scorer_goals,
-                h_assist.player_name AS h_top_assister,
-                h_assist.player_id AS h_top_assister_id,
-                h_assist.assists AS h_top_assister_assists,
-                a_assist.player_name AS a_top_assister,
-                a_assist.player_id AS a_top_assister_id,
-                a_assist.assists AS a_top_assister_assists,
-                h_shots.conversion AS h_shot_conversion,
-                a_shots.conversion AS a_shot_conversion
+                mi.team_h, mi.team_a, mi.season, mi.h as h_team_id, mi.a as a_team_id,
+
+                -- home and away team season stats
+                home.games_played AS h_games_played, home.goals_scored AS h_goals_scored,
+                home.goals_conceded AS h_goals_conceded, home.total_xg AS h_total_xg,
+                home.total_xga AS h_total_xga, home.points AS h_points,
+                home.wins AS h_wins, home.draws AS h_draws, home.losses AS h_losses,
+
+                away.games_played AS a_games_played, away.goals_scored AS a_goals_scored,
+                away.goals_conceded AS a_goals_conceded, away.total_xg AS a_total_xg,
+                away.total_xga AS a_total_xga, away.points AS a_points,
+                away.wins AS a_wins, away.draws AS a_draws, away.losses AS a_losses,
+
+                -- top scorers and assisters for both teams
+                h_scorer.player_name AS h_top_scorer, h_scorer.player_id AS h_top_scorer_id,
+                h_scorer.goals AS h_top_scorer_goals, a_scorer.player_name AS a_top_scorer,
+                a_scorer.player_id AS a_top_scorer_id, a_scorer.goals AS a_top_scorer_goals,
+                h_assist.player_name AS h_top_assister, h_assist.player_id AS h_top_assister_id,
+                h_assist.assists AS h_top_assister_assists, a_assist.player_name AS a_top_assister,
+                a_assist.player_id AS a_top_assister_id, a_assist.assists AS a_top_assister_assists,
+                
+                -- shot conversion rates for home and away teams -- this means goals/shots 
+                h_shots.conversion AS h_shot_conversion, a_shots.conversion AS a_shot_conversion
+
             FROM match_info mi
+
+            -- home team season stat subqueries
             LEFT JOIN (
-                SELECT 
-                    title,
-                    year,
-                    COUNT(*) AS games_played,
-                    COALESCE(SUM(scored), 0) AS goals_scored,
-                    COALESCE(SUM(missed), 0) AS goals_conceded,
-                    COALESCE(SUM(xG), 0) AS total_xg,
-                    COALESCE(SUM(xGA), 0) AS total_xga,
-                    COALESCE(MAX(pts), 0) AS points,
-                    COALESCE(MAX(wins), 0) AS wins,
-                    COALESCE(MAX(draws), 0) AS draws,
-                    COALESCE(MAX(loses), 0) AS losses
-                FROM season
-                GROUP BY title, year
-            ) h_season ON h_season.title = mi.team_h AND h_season.year = mi.season
+                SELECT title, year, COUNT(*) AS games_played, SUM(scored) AS goals_scored,
+                    SUM(missed) AS goals_conceded, SUM(xG) AS total_xg, SUM(xGA) AS total_xga,
+                    MAX(pts) AS points, MAX(wins) AS wins, MAX(draws) AS draws, MAX(loses) AS losses
+                FROM season GROUP BY title, year
+            ) home ON home.title = mi.team_h AND home.year = mi.season
             LEFT JOIN (
-                SELECT 
-                    title,
-                    year,
-                    COUNT(*) AS games_played,
-                    COALESCE(SUM(scored), 0) AS goals_scored,
-                    COALESCE(SUM(missed), 0) AS goals_conceded,
-                    COALESCE(SUM(xG), 0) AS total_xg,
-                    COALESCE(SUM(xGA), 0) AS total_xga,
-                    COALESCE(MAX(pts), 0) AS points,
-                    COALESCE(MAX(wins), 0) AS wins,
-                    COALESCE(MAX(draws), 0) AS draws,
-                    COALESCE(MAX(loses), 0) AS losses
-                FROM season
-                GROUP BY title, year
-            ) a_season ON a_season.title = mi.team_a AND a_season.year = mi.season
-            LEFT JOIN teams ht ON ht.team_name = mi.team_h
-            LEFT JOIN teams at ON at.team_name = mi.team_a
+                SELECT title, year, COUNT(*) AS games_played, SUM(scored) AS goals_scored,
+                    SUM(missed) AS goals_conceded, SUM(xG) AS total_xg, SUM(xGA) AS total_xga,
+                    MAX(pts) AS points, MAX(wins) AS wins, MAX(draws) AS draws, MAX(loses) AS losses
+                FROM season GROUP BY title, year
+            ) away ON away.title = mi.team_a AND away.year = mi.season
+            
             LEFT JOIN player h_scorer ON h_scorer.player_id = (
-                SELECT player_id 
-                FROM player 
-                WHERE team_title = mi.team_h AND year = mi.season 
-                ORDER BY goals DESC 
-                LIMIT 1
+                SELECT player_id FROM player WHERE team_title = mi.team_h AND year = mi.season ORDER BY goals DESC LIMIT 1
             )
             LEFT JOIN player a_scorer ON a_scorer.player_id = (
-                SELECT player_id 
-                FROM player 
-                WHERE team_title = mi.team_a AND year = mi.season 
-                ORDER BY goals DESC 
-                LIMIT 1
+                SELECT player_id FROM player WHERE team_title = mi.team_a AND year = mi.season ORDER BY goals DESC LIMIT 1
             )
             LEFT JOIN player h_assist ON h_assist.player_id = (
-                SELECT player_id 
-                FROM player 
-                WHERE team_title = mi.team_h AND year = mi.season 
-                ORDER BY assists DESC 
-                LIMIT 1
+                SELECT player_id FROM player WHERE team_title = mi.team_h AND year = mi.season ORDER BY assists DESC LIMIT 1
             )
             LEFT JOIN player a_assist ON a_assist.player_id = (
-                SELECT player_id 
-                FROM player 
-                WHERE team_title = mi.team_a AND year = mi.season 
-                ORDER BY assists DESC 
-                LIMIT 1
+                SELECT player_id FROM player WHERE team_title = mi.team_a AND year = mi.season ORDER BY assists DESC LIMIT 1
             )
+            
+            -- shot conversion rates for home and away teams
             LEFT JOIN (
-                SELECT 
-                    m.team_h,
-                    m.team_a,
-                    m.season,
-                    ROUND(SUM(CASE WHEN sd.result = 'Goal' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS conversion  -- goals / total shots
-                FROM shot_data sd
-                INNER JOIN match_info m ON sd.match_id = m.match_id
-                WHERE sd.h_a = 'h'
-                GROUP BY m.team_h, m.team_a, m.season
+                SELECT m.team_h, m.team_a, m.season,
+                    ROUND(SUM(CASE WHEN sd.result = 'Goal' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS conversion
+                FROM shot_data sd JOIN match_info m ON sd.match_id = m.match_id
+                WHERE sd.h_a = 'h' GROUP BY m.team_h, m.team_a, m.season
             ) h_shots ON (h_shots.team_h = mi.team_h OR h_shots.team_a = mi.team_h) AND h_shots.season = mi.season
             LEFT JOIN (
-                SELECT 
-                    m.team_h,
-                    m.team_a,
-                    m.season,
+                SELECT m.team_h, m.team_a, m.season,
                     ROUND(SUM(CASE WHEN sd.result = 'Goal' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS conversion
-                FROM shot_data sd
-                INNER JOIN match_info m ON sd.match_id = m.match_id
-                WHERE sd.h_a = 'a'
-                GROUP BY m.team_h, m.team_a, m.season
+                FROM shot_data sd JOIN match_info m ON sd.match_id = m.match_id
+                WHERE sd.h_a = 'a' GROUP BY m.team_h, m.team_a, m.season
             ) a_shots ON (a_shots.team_h = mi.team_a OR a_shots.team_a = mi.team_a) AND a_shots.season = mi.season
+            
             WHERE mi.match_id = %s
         """
         season_comparison_raw = db.execute_query(season_comparison_q, (match_id,), fetch_all=True)

@@ -12,7 +12,7 @@ CREATE TABLE match_info (
     h_w DOUBLE,
     h_d DOUBLE,
     h_l DOUBLE,
-    -- league VARCHAR(128), -- REMOVED: can be derived from h or a team
+    league VARCHAR(128),
     h_shot INT,
     a_shot INT,
     h_shotOnTarget INT,
@@ -21,7 +21,6 @@ CREATE TABLE match_info (
     a_deep INT,
     a_ppda DOUBLE,
     h_ppda DOUBLE,
-    CONSTRAINT uq_match_home_away_date UNIQUE (h, a, date),
     CONSTRAINT fk_match_home_team
         FOREIGN KEY (h)
         REFERENCES teams(team_id)

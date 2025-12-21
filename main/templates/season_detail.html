@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='season_detail.css') }}">
+
+<div class="season-detail-page" id="seasonDetailRoot" data-season-id="{{ seasonentryid }}">
+
+  <a href="/seasons" class="sd-back">← Back to Seasons</a>
+
+  <div class="sd-header">
+    <h2 id="sd-title">Season Detail</h2>
+    <p id="sd-subtitle"></p>
+  </div>
+
+  <div id="sd-loading">Loading season data...</div>
+  <div id="sd-error" class="hidden"></div>
+
+  <div id="sd-content" class="sd-grid hidden">
+    <div class="sd-card">
+      <h3>Expected Goals</h3>
+      <p>xG: <strong id="sd-xg">-</strong></p>
+      <p>xGA: <strong id="sd-xga">-</strong></p>
+      <p>npxG: <strong id="sd-npxg">-</strong></p>
+      <p>npxGA: <strong id="sd-npxga">-</strong></p>
+      <p>npxGD: <strong id="sd-npxgd">-</strong></p>
+    </div>
+
+    <div class="sd-card">
+      <h3>Shots / Deep / xPTS</h3>
+      <p>Deep: <strong id="sd-deep">-</strong></p>
+      <p>Deep Allowed: <strong id="sd-deep-allowed">-</strong></p>
+      <p>Scored: <strong id="sd-scored">-</strong></p>
+      <p>Missed: <strong id="sd-missed">-</strong></p>
+      <p>xPTS: <strong id="sd-xpts">-</strong></p>
+    </div>
+
+    <div class="sd-card">
+      <h3>Results</h3>
+      <p>Wins: <strong id="sd-wins">-</strong></p>
+      <p>Draws: <strong id="sd-draws">-</strong></p>
+      <p>Loses: <strong id="sd-loses">-</strong></p>
+      <p>Points: <strong id="sd-pts">-</strong></p>
+    </div>
+
+    <div class="sd-card">
+      <h3>PPDA Metrics</h3>
+      <p>PPDA Att: <strong id="sd-ppda-att">-</strong></p>
+      <p>PPDA Def: <strong id="sd-ppda-def">-</strong></p>
+      <p>PPDA Allowed Att: <strong id="sd-ppda-allowed-att">-</strong></p>
+      <p>PPDA Allowed Def: <strong id="sd-ppda-allowed-def">-</strong></p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='season_detail.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,124 @@
+/* =========================
+   BetRivals Theme Tokens
+   ========================= */
+:root {
+    --accent: #2ecc71;
+    --accent-weak: rgba(46, 204, 113, .18);
+    --border: rgba(46, 204, 113, .28);
+    --card: rgba(15, 20, 25, 0.88);
+    --card-strong: rgba(15, 20, 25, 0.94);
+    --text: #e8f0ea;
+    --muted: rgba(232, 240, 234, .78);
+    --muted2: rgba(232, 240, 234, .62);
+    --danger: #fecaca;
+    --shadow: 0 0 18px rgba(0, 0, 0, .45);
+}
+
+/* =========================
+   Page Layout
+   ========================= */
+.season-detail-page {
+    max-width: 1000px;
+    margin: 2rem auto;
+    color: var(--text);
+}
+
+/* Back link */
+.sd-back {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin-bottom: 1rem;
+    font-size: .92rem;
+    color: var(--accent);
+    text-decoration: none;
+    padding: .35rem .6rem;
+    border-radius: 10px;
+    border: 1px solid rgba(46, 204, 113, .22);
+    background: rgba(0, 0, 0, .18);
+    backdrop-filter: blur(8px);
+}
+
+.sd-back:hover {
+    border-color: rgba(46, 204, 113, .45);
+    background: rgba(46, 204, 113, .08);
+}
+
+/* Header */
+.sd-header {
+    margin-bottom: 1.2rem;
+}
+
+.sd-header h2 {
+    font-size: 1.75rem;
+    margin-bottom: .25rem;
+    letter-spacing: .2px;
+}
+
+.sd-header p {
+    color: var(--muted);
+    opacity: 1;
+}
+
+/* States */
+#sd-loading {
+    margin-top: 1rem;
+    color: var(--muted2);
+}
+
+#sd-error {
+    margin-top: 1rem;
+    color: var(--danger);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Cards grid */
+.sd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.2rem;
+    margin-top: 1rem;
+}
+
+/* Card */
+.sd-card {
+    background: var(--card);
+    padding: 1.1rem 1.2rem;
+    border-radius: 14px;
+    border: 1px solid rgba(46, 204, 113, .22);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.sd-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(46, 204, 113, .45);
+    box-shadow: 0 0 20px rgba(46, 204, 113, 0.16);
+}
+
+.sd-card h3 {
+    font-size: 1rem;
+    margin-bottom: .6rem;
+    color: var(--text);
+    font-weight: 850;
+    letter-spacing: .15px;
+}
+
+/* Values */
+.sd-card p {
+    margin: .18rem 0;
+    font-size: .9rem;
+    color: var(--muted);
+}
+
+/* Highlight numbers/labels */
+.sd-card strong {
+    color: rgba(210, 255, 225, 0.95);
+    font-weight: 850;
+}
+
+/* Optional: section-like ca*
