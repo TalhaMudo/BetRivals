@@ -14,16 +14,91 @@
   <!-- Search + Filters -->
   <div class="filter-card">
     <div class="row">
-      <input id="searchTeam" type="text" placeholder="Search by team name...">
-      <button id="btnSearch">Search</button>
-      <button id="btnReset" class="secondary">Reset</button>
-      <button id="btnViewAll" class="outline">View All</button>
+      <div class="typeahead">
+        <input id="searchTeam" type="text" placeholder="Search by team name..." autocomplete="off">
+        <div id="teamSuggest" class="typeahead-list" hidden></div>
+      </div>
+
+      <button id="btnSearch" type="button">Search</button>
+      <button id="btnReset" type="button" class="secondary">Reset</button>
+      <button id="btnViewAll" type="button" class="outline">View All</button>
     </div>
   </div>
+  &nbsp;
+  <!-- Team Summary (Accordion) -->
+  <div class="acc" id="teamSummaryAcc">
+    <button class="acc-head" id="toggleTeamSummary" type="button" aria-expanded="false">
+      <div class="acc-head-left">
+        <span class="acc-icon"></span>
 
+        <div class="acc-titles">
+          <div class="acc-title">Team Summary</div>
+          <div class="acc-sub">Aggregated season metrics across all years.</div>
+        </div>
+
+        <span class="acc-pill" id="teamSummaryPill">Min seasons: 3</span>
+      </div>
+
+      <span class="acc-chevron" aria-hidden="true">▾</span>
+    </button>
+
+    <div class="acc-panel" id="teamSummaryPanel" hidden>
+      <div class="acc-toolbar">
+        <label class="pager-label" for="minSeasonsSelect">Min seasons</label>
+
+        <select id="minSeasonsSelect">
+          <option value="1">1+</option>
+          <option value="2">2+</option>
+          <option value="3" selected>3+</option>
+          <option value="5">5+</option>
+          <option value="10">10+</option>
+        </select>
+
+        <button id="btnRefreshSummary" class="acc-btn" type="button">Refresh</button>
+        <span id="teamSummaryStatus" class="acc-status">Click to load summary.</span>
+      </div>
+
+      <div class="acc-table-wrap">
+        <table class="acc-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th>Team</th>
+              <th class="col-num">Seasons</th>
+              <th class="col-num">Avg xG</th>
+              <th class="col-num">Avg xGA</th>
+              <th class="col-num">Avg xG Diff</th>
+              <th class="col-num">Total Pts</th>
+              <th class="col-num">Avg Pts</th>
+            </tr>
+          </thead>
+          <tbody id="teamSummaryBody">
+            <tr>
+              <td colspan="8" class="acc-empty">Click the header to expand and load.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  &nbsp;
   <!-- Results -->
   <div id="teamsGrid" class="teams-grid"></div>
 
-</div>
+  <!-- TABLE VIEW (View All Mode) -->
+  <div id="teamsTableContainer" style="display:none;">
+    <table class="team-table">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th>Team</th>
+          <th class="col-num">Team ID</th>
+          <th class="col-actions">Action</th>
+        </tr>
+      </thead>
+      <tbody id="teamsTableBody"></tbody>
+    </table>
+  </div>
 
+</div>
 {% endblock %}

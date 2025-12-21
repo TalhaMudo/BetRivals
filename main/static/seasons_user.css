@@ -1,6 +1,26 @@
+/* =========================
+   THEME TOKENS (single source of truth)
+   ========================= */
+:root {
+    --accent: #2ecc71;
+    /* BetRivals green */
+    --accent-2: rgba(46, 204, 113, .18);
+    --border: rgba(46, 204, 113, .28);
+    --card: rgba(15, 20, 25, 0.90);
+    --card-2: rgba(10, 14, 18, 0.55);
+    --text: #e8f0ea;
+    --muted: rgba(232, 240, 234, .78);
+    --muted2: rgba(232, 240, 234, .62);
+    --shadow: 0 0 18px rgba(0, 0, 0, .45);
+}
+
+/* =========================
+   Layout
+   ========================= */
 .seasons-page {
     max-width: 1200px;
     margin: 2rem auto;
+    color: var(--text);
 }
 
 .hero-section {
@@ -13,17 +33,22 @@
 }
 
 .hero-section p {
-    opacity: 0.8;
+    opacity: 0.85;
+    color: var(--muted);
 }
 
-/* Filter card */
+/* =========================
+   Filter card
+   ========================= */
 .filter-card {
-    background: rgba(15, 20, 25, 0.9);
+    background: var(--card);
     padding: 1.2rem;
-    margin-bottom: 1.5rem;
-    border-radius: 12px;
-    border: 1px solid rgba(46, 204, 113, 0.3);
+    margin-bottom: 1rem;
+    /* biraz sıkılaştırdım */
+    border-radius: 14px;
+    border: 1px solid var(--border);
     backdrop-filter: blur(8px);
+    box-shadow: var(--shadow);
 }
 
 .row {
@@ -35,35 +60,54 @@
 select,
 input {
     flex: 1;
-    padding: .65rem;
-    border-radius: 6px;
-    background: #121212;
-    border: 1px solid #2ecc71;
-    color: #eee;
+    padding: .7rem .8rem;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, .35);
+    border: 1px solid rgba(46, 204, 113, .35);
+    color: var(--text);
+    outline: none;
+}
+
+select:focus,
+input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, .16);
 }
 
 button {
-    padding: .65rem 1.2rem;
-    border-radius: 6px;
-    border: none;
+    padding: .7rem 1.2rem;
+    border-radius: 10px;
+    border: 1px solid transparent;
     cursor: pointer;
-    font-weight: 600;
-    background: #2ecc71;
-    color: #111;
+    font-weight: 700;
+    background: var(--accent);
+    color: #08110b;
+    transition: transform .08s ease, background .15s ease, border-color .15s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
 }
 
 button.secondary {
-    background: #444;
-    color: #ddd;
+    background: rgba(255, 255, 255, .10);
+    border-color: rgba(255, 255, 255, .14);
+    color: var(--text);
 }
 
 button.outline {
     background: transparent;
-    border: 1px solid #2ecc71;
-    color: #2ecc71;
+    border: 1px solid var(--accent);
+    color: var(--accent);
 }
 
-/* Grid cards */
+/* =========================
+   Grid cards
+   ========================= */
 .seasons-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -71,37 +115,42 @@ button.outline {
 }
 
 .season-card {
-    background: rgba(15, 20, 25, 0.95);
+    background: rgba(15, 20, 25, 0.92);
     padding: 1.5rem;
-    border-radius: 12px;
+    border-radius: 14px;
     text-align: left;
-    border: 1px solid rgba(46, 204, 113, 0.25);
-    box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
-    transition: 0.3s;
+    border: 1px solid rgba(46, 204, 113, 0.22);
+    box-shadow: var(--shadow);
+    transition: 0.25s;
 }
 
 .season-card:hover {
     transform: translateY(-4px);
-    border-color: #2ecc71;
-    box-shadow: 0 0 18px rgba(46, 204, 113, 0.3);
+    border-color: rgba(46, 204, 113, .45);
+    box-shadow: 0 0 20px rgba(46, 204, 113, 0.18);
 }
 
 .season-card h3 {
-    color: #2ecc71;
+    color: var(--accent);
     margin-bottom: .3rem;
     font-size: 1.2rem;
 }
 
 .season-field {
     margin: .2rem 0;
-    color: #ccc;
+    color: var(--muted);
 }
 
-/* Table */
+/* =========================
+   Table (View All mode)
+   ========================= */
 #seasonsTableContainer {
     max-height: 600px;
     overflow-y: auto;
-    margin-top: 2rem;
+    margin-top: 1.5rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    background: rgba(0, 0, 0, .18);
 }
 
 .season-table {
@@ -115,19 +164,213 @@ button.outline {
     padding: 12px 16px;
     text-align: center;
     white-space: nowrap;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .season-table thead {
-    background: #0a2e1f;
+    background: rgba(0, 0, 0, .35);
     position: sticky;
     top: 0;
     z-index: 2;
-    color: white;
+    color: var(--text);
+    border-bottom: 1px solid rgba(255, 255, 255, .10);
 }
 
 .season-table tr:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(46, 204, 113, 0.06);
+}
+
+/* =========================
+   Season Insights Accordion (theme-aligned)
+   ========================= */
+.acc {
+    margin-top: 12px;
+    /* search'in hemen altına daha yakın dursun */
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--card-2);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.acc-head {
+    width: 100%;
+    border: 0;
+    cursor: pointer;
+    text-align: left;
+    padding: 14px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--text);
+    background: linear-gradient(90deg,
+            rgba(46, 204, 113, 0.10),
+            rgba(0, 0, 0, 0.20) 55%);
+}
+
+.acc-head:hover {
+    background: linear-gradient(90deg,
+            rgba(46, 204, 113, 0.14),
+            rgba(0, 0, 0, 0.20) 55%);
+}
+
+.acc-head-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.acc-icon {
+    font-size: 1.1rem;
+    opacity: 0.95;
+}
+
+.acc-titles {
+    min-width: 0;
+}
+
+.acc-title {
+    font-weight: 850;
+    letter-spacing: .2px;
+    font-size: 1.05rem;
+}
+
+.acc-sub {
+    margin-top: 4px;
+    color: var(--muted2);
+    font-size: .92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 58vw;
+}
+
+.acc-pill {
+    margin-left: 10px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: .85rem;
+    border: 1px solid rgba(46, 204, 113, 0.35);
+    background: rgba(46, 204, 113, 0.10);
+    color: rgba(210, 255, 225, 0.95);
+    white-space: nowrap;
+}
+
+.acc-chevron {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    transition: transform 180ms ease;
+}
+
+.acc.open .acc-chevron {
+    transform: rotate(180deg);
+}
+
+.acc-panel {
+    padding: 12px 14px 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.acc-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.acc-btn {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(46, 204, 113, 0.35);
+    background: rgba(46, 204, 113, 0.12);
+    color: var(--text);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.acc-btn:hover {
+    background: rgba(46, 204, 113, 0.18);
+}
+
+.acc-status {
+    color: var(--muted2);
+    font-size: 0.92rem;
+}
+
+/* ===== Table wrap + alignment (kayma hissini azaltır) ===== */
+.acc-table-wrap {
+    overflow: auto;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.acc-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    /* önemli */
+    min-width: 860px;
+    /* dar ekranda kırılmasın */
+}
+
+.acc-table th,
+.acc-table td {
+    padding: 12px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+.acc-table thead th {
+    position: sticky;
+    top: 0;
+    background: rgba(8, 10, 12, 0.88);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    font-size: 0.92rem;
+    letter-spacing: 0.2px;
+    text-align: left;
+    z-index: 1;
+}
+
+.acc-table tbody tr:hover {
+    background: rgba(46, 204, 113, 0.07);
+}
+
+.acc-table .col-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.acc-table .col-rank {
+    width: 56px;
+}
+
+.acc-table .col-actions {
+    width: 96px;
+}
+
+.acc-link {
+    color: var(--accent);
+    font-weight: 850;
+    text-decoration: none;
+    border-bottom: 1px dashed rgba(46, 204, 113, 0.45);
+}
+
+.acc-link:hover {
+    border-bottom-style: solid;
+}
+
+.acc-empty {
+    text-align: center;
+    color: var(--muted2);
+    padding: 18px 12px;
 }
 
 /* Responsive */
@@ -139,4 +382,48 @@ button.outline {
     .row {
         flex-direction: column;
     }
+
+    .acc-sub {
+        max-width: 80vw;
+    }
+}
+
+.table-pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 14px 0 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(46, 204, 113, 0.25);
+    background: rgba(15, 20, 25, 0.75);
+    backdrop-filter: blur(8px);
+}
+
+.pager-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.pager-info {
+    opacity: .85;
+    font-size: .92rem;
+}
+
+.pager-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pager-label {
+    opacity: .8;
+    font-size: .92rem;
+}
+
+#tblPerPage {
+    max-width: 120px;
 }

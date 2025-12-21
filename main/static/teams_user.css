@@ -3,10 +3,24 @@
     margin: 2rem auto;
 }
 
+.hero-section {
+    margin-bottom: 1.2rem;
+}
+
+.hero-section h2 {
+    font-size: 1.8rem;
+    margin-bottom: .3rem;
+}
+
+.hero-section p {
+    opacity: .8;
+}
+
+/* Filter card */
 .filter-card {
     background: rgba(15, 20, 25, 0.9);
     padding: 1.2rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.2rem;
     border-radius: 12px;
     border: 1px solid rgba(46, 204, 113, 0.3);
     backdrop-filter: blur(8px);
@@ -15,12 +29,14 @@
 .row {
     display: flex;
     gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 input {
-    flex: 1;
+    width: 100%;
     padding: .65rem;
-    border-radius: 6px;
+    border-radius: 10px;
     background: #121212;
     border: 1px solid #2ecc71;
     color: #eee;
@@ -28,12 +44,13 @@ input {
 
 button {
     padding: .65rem 1.2rem;
-    border-radius: 6px;
+    border-radius: 10px;
     border: none;
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 700;
     background: #2ecc71;
     color: #111;
+    white-space: nowrap;
 }
 
 button.secondary {
@@ -47,60 +64,402 @@ button.outline {
     color: #2ecc71;
 }
 
+.muted {
+    opacity: .75;
+}
+
+.mono {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Grid cards */
 .teams-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 1.5rem;
+    gap: 1.2rem;
 }
 
 .team-card {
     background: rgba(15, 20, 25, 0.95);
-    padding: 1.5rem;
-    border-radius: 12px;
-    text-align: center;
+    padding: 1.2rem;
+    border-radius: 14px;
+    text-align: left;
     border: 1px solid rgba(46, 204, 113, 0.25);
-    box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
-    transition: 0.3s;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.35);
+    transition: 0.25s;
 }
 
 .team-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     border-color: #2ecc71;
-    box-shadow: 0 0 18px rgba(46, 204, 113, 0.3);
+    box-shadow: 0 0 18px rgba(46, 204, 113, 0.25);
 }
 
 .team-card h3 {
     color: #2ecc71;
-    margin-bottom: .3rem;
+    margin-bottom: .35rem;
 }
 
 .team-card button {
-    margin-top: 1rem;
+    margin-top: .9rem;
     width: 100%;
 }
 
-#seasonsTableContainer {
-    max-height: 600px;
-    overflow-y: auto;
+/* ---- typeahead ---- */
+.typeahead {
+    position: relative;
+    flex: 1;
+    min-width: 240px;
 }
 
-#seasonsTable {
+.typeahead-list {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 50;
+
+    border-radius: 12px;
+    border: 1px solid rgba(46, 204, 113, 0.28);
+    background: rgba(10, 14, 18, 0.92);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .35);
+}
+
+.typeahead-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: #e5e7eb;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.typeahead-item:first-child {
+    border-top: 0;
+}
+
+.typeahead-item:hover {
+    background: rgba(46, 204, 113, 0.10);
+}
+
+.typeahead-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.typeahead-id {
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- teams table ---- */
+#teamsTableContainer {
+    margin-top: 12px;
+    max-height: 650px;
+    overflow: auto;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.12);
+    padding: 10px;
+}
+
+.team-table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 680px;
+    table-layout: fixed;
 }
 
-#seasonsTable th,
-#seasonsTable td {
-    padding: 12px;
+.team-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: rgba(8, 10, 12, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    padding: 12px 12px;
     text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.92rem;
+    letter-spacing: 0.2px;
 }
 
-#seasonsTable th {
-    background: #0f3f1a;
-    color: white;
+.team-table td {
+    padding: 12px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.96rem;
+    vertical-align: middle;
 }
 
-#seasonsTable tr:hover {
-    background: rgba(255, 255, 255, 0.05);
+.team-table tbody tr:hover {
+    background: rgba(46, 204, 113, 0.07);
+}
+
+/* column alignment */
+.team-table .col-rank {
+    width: 56px;
+    text-align: center;
+}
+
+.team-table .col-num {
+    width: 120px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.team-table .col-actions {
+    width: 200px;
+    text-align: center;
+}
+
+.team-table td.col-actions {
+    text-align: center;
+}
+
+.table-action-btn {
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(46, 204, 113, 0.45);
+    background: rgba(46, 204, 113, 0.12);
+    color: rgba(220, 255, 235, 0.95);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.table-action-btn:hover {
+    background: rgba(46, 204, 113, 0.18);
+}
+
+/* =========================
+   Accordion (Team Summary)
+   ========================= */
+.acc {
+    margin-top: 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(46, 204, 113, 0.22);
+    background: rgba(10, 14, 18, 0.55);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+}
+
+.acc-head {
+    width: 100%;
+    border: 0;
+    cursor: pointer;
+    text-align: left;
+    padding: 14px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: inherit;
+    background: linear-gradient(90deg, rgba(46, 204, 113, 0.10), rgba(10, 14, 18, 0.25) 55%);
+}
+
+.acc-head-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.acc-icon {
+    font-size: 1.1rem;
+    opacity: 0.95;
+}
+
+.acc-titles {
+    min-width: 0;
+}
+
+.acc-title {
+    font-weight: 800;
+    font-size: 1.05rem;
+    line-height: 1.1;
+}
+
+.acc-sub {
+    margin-top: 4px;
+    opacity: 0.78;
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 58vw;
+}
+
+.acc-pill {
+    margin-left: 10px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    border: 1px solid rgba(46, 204, 113, 0.35);
+    background: rgba(46, 204, 113, 0.10);
+    color: rgba(210, 255, 225, 0.95);
+    white-space: nowrap;
+}
+
+.acc-chevron {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    transition: transform 180ms ease;
+}
+
+.acc.open .acc-chevron {
+    transform: rotate(180deg);
+}
+
+.acc-panel {
+    padding: 12px 14px 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.acc-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.acc-btn {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(46, 204, 113, 0.38);
+    background: rgba(46, 204, 113, 0.12);
+    color: rgba(220, 255, 235, 0.95);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.acc-btn:hover {
+    background: rgba(46, 204, 113, 0.18);
+}
+
+.acc-status {
+    opacity: 0.75;
+    font-size: 0.92rem;
+}
+
+#minSeasonsSelect {
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(15, 20, 25, 0.9);
+    border: 1px solid rgba(46, 204, 113, 0.35);
+    color: #e5e7eb;
+}
+
+.acc-table-wrap {
+    overflow: auto;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.acc-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.acc-table thead th {
+    position: sticky;
+    top: 0;
+    background: rgba(8, 10, 12, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    font-size: 0.92rem;
+    padding: 12px 12px;
+    text-align: left;
+}
+
+.acc-table td {
+    padding: 12px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.96rem;
+}
+
+.acc-table tbody tr:hover {
+    background: rgba(46, 204, 113, 0.07);
+}
+
+.acc-table .col-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.acc-table .col-rank {
+    width: 44px;
+    text-align: center;
+}
+
+.acc-empty {
+    text-align: center;
+    opacity: 0.75;
+    padding: 18px 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .teams-page {
+        margin: 1rem;
+    }
+
+    .row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    button {
+        width: 100%;
+    }
+}
+
+/* Autocomplete üstte kalsın */
+.filter-card {
+    position: relative;
+    z-index: 2000;
+    /* accordion'dan büyük */
+    overflow: visible;
+}
+
+.typeahead {
+    position: relative;
+    z-index: 2100;
+}
+
+.typeahead-list {
+    z-index: 9999;
+    /* garanti */
+}
+
+.team-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.team-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    object-fit: contain;
+    background: rgba(0, 0, 0, .25);
+    border: 1px solid rgba(46, 204, 113, .30);
+    box-shadow: 0 0 12px rgba(0, 0, 0, .35);
+}
+
+.team-meta h3 {
+    margin: 0;
+    color: #2ecc71;
+}
+
+.team-id {
+    margin: 4px 0 0;
+    opacity: .75;
+    font-variant-numeric: tabular-nums;
 }

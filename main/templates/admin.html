@@ -101,40 +101,6 @@
         text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
     }
 
-    .stat-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-
-    .stat-card {
-        background: rgba(46, 204, 113, 0.05);
-        border: 2px solid rgba(46, 204, 113, 0.2);
-        border-radius: 12px;
-        padding: 25px;
-        text-align: center;
-        transition: all 0.3s;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-3px);
-        border-color: #2ecc71;
-        background: rgba(46, 204, 113, 0.1);
-    }
-
-    .stat-value {
-        font-size: 2.5em;
-        color: #2ecc71;
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
-
-    .stat-label {
-        color: #b8b8b8;
-        font-size: 0.95em;
-    }
-
     .action-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -205,10 +171,6 @@
         .content-card {
             padding: 25px;
         }
-
-        .stat-grid {
-            grid-template-columns: 1fr;
-        }
     }
 </style>
 
@@ -226,41 +188,24 @@
         <a href="/admin/shots" class="nav-tab">⚽ Shots</a>
         <a href="/admin/matches" class="nav-tab">⚽ Matches</a>
         <a href="/admin/players" class="nav-tab" onclick="switchTab(event, 'players')">👥 Players</a>
-        <a href="/admin/teams" class="nav-tab" onclick="switchTab(event, 'teams')">🏆 Teams</a>
-        <a href="/admin/seasons" class="nav-tab" onclick="switchTab(event, 'seasons')">📅 Seasons</a>
+        <a href="/admin/teams" class="nav-tab">🏆 Teams</a>
+        <a href="/admin/seasons" class="nav-tab">📅 Seasons</a>
+        {# REMOVED:
+        <a href="/admin/reports/complex" class="nav-tab">🧠 Complex Queries</a>
         <a href="/admin/settings" class="nav-tab" onclick="switchTab(event, 'settings')">⚙️ Settings</a>
+        #}
     </div>
 
-    <!-- Overview Tab -->
+    <!-- Overview Tab (ONLY Quick Actions now) -->
     <div id="overview" class="content-card">
-        <h3>Dashboard Overview</h3>
-        <div class="stat-grid">
-            <div class="stat-card">
-                <div class="stat-value">1,247 </div>
-                <div class="stat-label">Total Shots(dummy veri)</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">156</div>
-                <div class="stat-label">Players(dummy veri)</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">42</div>
-                <div class="stat-label">Teams(dummy veri)</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">8.5</div>
-                <div class="stat-label">Avg xG(dummy veri)</div>
-            </div>
-        </div>
-
-        <div style="margin-top: 40px;">
-            <h4 style="color: #2ecc71; margin-bottom: 20px;">Quick Actions</h4>
-            <div class="action-grid">
-                <a href="/admin/shots" class="action-btn">🔍 View All Shots</a>
-                <a href="/admin/players" class="action-btn">➕ Add Player</a>
-                <a href="/admin/teams" class="action-btn">➕ Add Team</a>
-                <a href="/admin/settings" class="action-btn">⚙️ Manage Settings</a>
-            </div>
+        <h3>Quick Actions</h3>
+        <div class="action-grid">
+            <a href="/admin/shots" class="action-btn">🔍 View All Shots</a>
+            <a href="/admin/players" class="action-btn">➕ Add Player</a>
+            <a href="/admin/teams" class="action-btn">➕ Add Team</a>
+            {# REMOVED:
+            <a href="/admin/settings" class="action-btn">⚙️ Manage Settings</a>
+            #}
         </div>
     </div>
 
@@ -312,19 +257,7 @@
         </div>
     </div>
 
-
-
-    <!-- Settings Tab -->
-    <div id="settings" class="content-card" style="display: none;">
-        <h3>Settings</h3>
-        <div class="empty-state">
-            <div class="empty-state-icon">⚙️</div>
-            <h4>Settings Module</h4>
-            <p>Manage application settings and preferences</p>
-            <p style="margin-top: 20px; font-size: 0.9em;">This section will display settings and configuration options.
-            </p>
-        </div>
-    </div>
+    {# REMOVED Settings Tab block entirely #}
 </div>
 
 <script>
@@ -332,7 +265,7 @@
         event.preventDefault();
 
         // Hide all tabs
-        const tabs = document.querySelectorAll('[id="overview"], [id="shots"], [id="players"], [id="teams"], [id="settings"]');
+        const tabs = document.querySelectorAll('[id="overview"], [id="shots"], [id="players"], [id="teams"], [id="seasons"]');
         tabs.forEach(tab => tab.style.display = 'none');
 
         // Remove active class from all nav tabs
@@ -345,6 +278,7 @@
         event.target.classList.add('active');
     }
 </script>
+
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const current = window.location.pathname;
