@@ -1434,6 +1434,73 @@ def api_players_complex_top_goals_with_rating():
         logger.exception("Error fetching top goals with rating: %s", e)
         return jsonify({"error": "Database error", "players": []}), 500
 
+@app.route("/api/players/complex/comprehensive-stats", methods=['GET'])
+def api_players_complex_comprehensive_stats():
+    """
+    COMPLEX QUERY 5: All Features Combined - Nested Query, Complex Join (4+ tables), GROUP BY, Outer Join
+    
+    This query demonstrates:
+    - Nested Query: Uses a correlated subquery to calculate average goals for players in the same position and year
+    - Complex Join (4+ tables): Joins player, fut23, teams, match_info, match_data, and shot_data (6 tables)
+    - GROUP BY: Groups by player attributes to aggregate statistics and calculate goals per game
+    - Outer Join (LEFT JOIN): Uses LEFT JOINs to include players even without FIFA ratings, team info, matches, or shot data
+    
+    Returns top players with their performance metrics and position average goals for comparison.
+    """
+    try:
+        query = """
+            SELECT 
+                p.player_name,
+                t.team_name AS team_title,
+                f.Position AS position,
+                p.goals,
+                p.assists,
+                p.games,
+                p.xG,
+                CASE WHEN p.games > 0 THEN p.goals / p.games ELSE 0 END AS goals_per_game,
+                (
+                    SELECT AVG(p2.goals)
+                    FROM player p2
+                    LEFT JOIN fut23 f2 ON p2.player_id = f2.player_id
+                    WHERE f2.Position = f.Position 
+                    AND p2.year = p.year
+                    AND p2.games > 0
+                    AND f2.Position IS NOT NULL
+                    AND p2.goals IS NOT NULL
+                ) AS position_avg_goals,
+                f.Rating AS fifa_rating,
+                f.Pace,
+                f.Shoot,
+                f.Pass,
+                f.Defense,
+                f.Physical,
+                p.year,
+                (
+                    SELECT COUNT(DISTINCT sd2.shot_id)
+                    FROM shot_data sd2
+                    WHERE sd2.player_id = p.player_id
+                ) AS total_shots
+            FROM player p
+            LEFT JOIN fut23 f ON p.player_id = f.player_id
+            LEFT JOIN teams t ON f.team_id = t.team_id
+            LEFT JOIN match_info mi ON (mi.h = f.team_id OR mi.a = f.team_id) AND mi.season = p.year
+            LEFT JOIN match_data md ON md.match_id = mi.match_id
+            WHERE p.games > 0 AND p.goals > 0 AND f.Position IS NOT NULL
+            GROUP BY p.season_player_id, p.player_id, p.player_name, p.games, p.goals, p.assists, p.xG, 
+                     f.Rating, f.Position, t.team_name, f.Pace, f.Shoot, f.Pass, f.Defense, f.Physical, p.year
+            ORDER BY p.goals DESC, f.Rating DESC
+            LIMIT 50
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [],
+            "count": len(results) if results else 0,
+            "description": "Top players with stats vs position averages (Nested Query, 4+ Table Joins, GROUP BY, Outer Join)"
+        })
+    except Exception as e:
+        logger.exception("Error fetching comprehensive player stats: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
 #--------------TALHA-END-------------------------------
 
 
