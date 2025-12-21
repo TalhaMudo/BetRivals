@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Disable all query buttons
             queryButtons.forEach(b => b.disabled = true);
             this.textContent = 'Loading...';
-            resultsDiv.innerHTML = '<div class="loading">Executing query</div>';
+            resultsDiv.innerHTML = '<div class="loading">Executing query and building dashboard</div>';
 
             try {
                 const response = await fetch(endpoint);
@@ -194,7 +194,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 // Use displayAnalysisResults for complex queries
-                displayAnalysisResults(data);
+                // Pass endpoint to detect Query 5
+                displayAnalysisResults(data, endpoint);
 
             } catch (error) {
                 console.error('Error:', error);
@@ -471,11 +472,20 @@ async function loadTopGoals() {
     }
 }
 
-function displayAnalysisResults(data) {
+function displayAnalysisResults(data, endpoint = '') {
     const resultsDiv = document.getElementById('results');
 
     if (!data.players || data.players.length === 0) {
         resultsDiv.innerHTML = '<div class="error-message">No players found in the database.</div>';
+        return;
+    }
+
+    // Check if this is Query 5 (comprehensive-stats)
+    const isQuery5 = endpoint.includes('comprehensive-stats') ||
+        (data.players[0] && 'position_avg_goals' in data.players[0] && 'total_shots' in data.players[0]);
+
+    if (isQuery5) {
+        displayQuery5Dashboard(data);
         return;
     }
 
@@ -641,6 +651,582 @@ function displayAnalysisResults(data) {
 
     // Initial render
     renderTable();
+}
+
+// Query 5 Dashboard Visualization
+function displayQuery5Dashboard(data) {
+    const resultsDiv = document.getElementById('results');
+    const players = data.players || [];
+
+    if (players.length === 0) {
+        resultsDiv.innerHTML = '<div class="error-message">No players found in the database.</div>';
+        return;
+    }
+
+    // Prepare data
+    const playersData = players.map((p, idx) => ({
+        ...p,
+        goals: parseFloat(p.goals) || 0,
+        assists: parseFloat(p.assists) || 0,
+        games: parseFloat(p.games) || 0,
+        xG: parseFloat(p.xG) || 0,
+        goals_per_game: parseFloat(p.goals_per_game) || 0,
+        position_avg_goals: parseFloat(p.position_avg_goals) || 0,
+        fifa_rating: parseFloat(p.fifa_rating) || 0,
+        Pace: parseFloat(p.Pace) || 0,
+        Shoot: parseFloat(p.Shoot) || 0,
+        Pass: parseFloat(p.Pass) || 0,
+        Defense: parseFloat(p.Defense) || 0,
+        Physical: parseFloat(p.Physical) || 0,
+        total_shots: parseFloat(p.total_shots) || 0,
+        performance_ratio: p.position_avg_goals > 0 ? (p.goals / p.position_avg_goals) : 0
+    }));
+
+    // Create dashboard HTML
+    const dashboardHTML = `
+        <div class="query5-dashboard">
+            <div class="dashboard-header">
+                <h2>📊 Comprehensive Player Stats Dashboard</h2>
+                <p class="dashboard-description">${data.description || 'Top players with stats vs position averages'}</p>
+                <div class="dashboard-stats-summary">
+                    <span class="stat-badge">${data.count} Players</span>
+                    <span class="stat-badge">${new Set(playersData.map(p => p.position)).size} Positions</span>
+                    <span class="stat-badge">${new Set(playersData.map(p => p.team_title)).size} Teams</span>
+                </div>
+            </div>
+
+            <div class="dashboard-controls">
+                <div class="control-group">
+                    <label>Filter by Position:</label>
+                    <select id="position-filter" class="dashboard-select">
+                        <option value="">All Positions</option>
+                        ${Array.from(new Set(playersData.map(p => p.position).filter(Boolean))).sort().map(pos =>
+        `<option value="${pos}">${pos}</option>`
+    ).join('')}
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>View:</label>
+                    <div class="view-toggle">
+                        <button class="view-btn active" data-view="scatter">Scatter</button>
+                        <button class="view-btn" data-view="radar">Radar</button>
+                        <button class="view-btn" data-view="bar">Bar Chart</button>
+                        <button class="view-btn" data-view="cards">Cards</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="chart-container active" id="scatter-chart-container">
+                    <div class="chart-header">
+                        <h3>Performance vs Position Average</h3>
+                        <p>Goals vs Position Average Goals (colored by FIFA Rating, sized by Total Shots)</p>
+                    </div>
+                    <canvas id="scatter-chart"></canvas>
+                </div>
+
+                <div class="chart-container" id="radar-chart-container">
+                    <div class="chart-header">
+                        <h3>FIFA Attributes Comparison</h3>
+                        <p>Compare FIFA attributes across top players</p>
+                        <div class="radar-controls">
+                            <label>Select Players (max 5):</label>
+                            <div id="radar-player-selector"></div>
+                        </div>
+                    </div>
+                    <canvas id="radar-chart"></canvas>
+                </div>
+
+                <div class="chart-container" id="bar-chart-container">
+                    <div class="chart-header">
+                        <h3>Top Performers by Goals</h3>
+                        <p>Top 20 players with position average reference line</p>
+                    </div>
+                    <canvas id="bar-chart"></canvas>
+                </div>
+
+                <div class="chart-container" id="cards-container">
+                    <div class="chart-header">
+                        <h3>Player Performance Cards</h3>
+                        <p>Detailed view of each player's performance metrics</p>
+                    </div>
+                    <div id="player-cards-grid" class="player-cards-grid"></div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    resultsDiv.innerHTML = dashboardHTML;
+
+    // Initialize charts
+    initializeScatterChart(playersData);
+    initializeRadarChart(playersData);
+    initializeBarChart(playersData);
+    renderPlayerCards(playersData);
+
+    // Setup controls
+    setupDashboardControls(playersData);
+}
+
+// Initialize Scatter Plot
+function initializeScatterChart(playersData) {
+    const ctx = document.getElementById('scatter-chart');
+    if (!ctx) return;
+
+    // Prepare scatter data
+    const scatterData = playersData.map(p => ({
+        x: p.position_avg_goals,
+        y: p.goals,
+        label: p.player_name,
+        rating: p.fifa_rating,
+        shots: p.total_shots,
+        team: p.team_title,
+        position: p.position,
+        goals_per_game: p.goals_per_game
+    }));
+
+    // Color scale based on FIFA rating
+    const maxRating = Math.max(...scatterData.map(d => d.rating));
+    const minRating = Math.min(...scatterData.map(d => d.rating));
+
+    new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Players',
+                data: scatterData,
+                backgroundColor: scatterData.map(d => {
+                    const ratio = (d.rating - minRating) / (maxRating - minRating || 1);
+                    const hue = ratio * 120; // Green to red
+                    return `hsla(${hue}, 70%, 50%, 0.7)`;
+                }),
+                borderColor: scatterData.map(d => {
+                    const ratio = (d.rating - minRating) / (maxRating - minRating || 1);
+                    const hue = ratio * 120;
+                    return `hsla(${hue}, 80%, 40%, 1)`;
+                }),
+                borderWidth: 2,
+                pointRadius: scatterData.map(d => Math.max(5, Math.min(15, d.shots / 10))),
+                pointHoverRadius: scatterData.map(d => Math.max(8, Math.min(20, d.shots / 8)))
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                title: {
+                    display: false
+                },
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const point = context.raw;
+                            return [
+                                `Player: ${point.label}`,
+                                `Team: ${point.team || 'N/A'}`,
+                                `Position: ${point.position || 'N/A'}`,
+                                `Goals: ${point.y}`,
+                                `Position Avg: ${point.x.toFixed(2)}`,
+                                `FIFA Rating: ${point.rating}`,
+                                `Goals/Game: ${point.goals_per_game.toFixed(2)}`,
+                                `Total Shots: ${point.shots}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Position Average Goals',
+                        color: '#2ecc71',
+                        font: { size: 14, weight: 'bold' }
+                    },
+                    ticks: { color: '#b8b8b8' },
+                    grid: { color: 'rgba(46, 204, 113, 0.1)' }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Player Goals',
+                        color: '#2ecc71',
+                        font: { size: 14, weight: 'bold' }
+                    },
+                    ticks: { color: '#b8b8b8' },
+                    grid: { color: 'rgba(46, 204, 113, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+// Initialize Radar Chart
+function initializeRadarChart(playersData) {
+    const ctx = document.getElementById('radar-chart');
+    if (!ctx) return;
+
+    // Select top 5 players by goals for default display
+    const topPlayers = [...playersData]
+        .sort((a, b) => b.goals - a.goals)
+        .slice(0, 5)
+        .filter(p => p.fifa_rating > 0);
+
+    if (topPlayers.length === 0) {
+        ctx.parentElement.innerHTML = '<p class="no-data">No FIFA rating data available</p>';
+        return;
+    }
+
+    const radarData = {
+        labels: ['Pace', 'Shoot', 'Pass', 'Defense', 'Physical', 'Rating'],
+        datasets: topPlayers.map((player, idx) => {
+            const colors = [
+                'rgba(46, 204, 113, 0.6)',
+                'rgba(52, 152, 219, 0.6)',
+                'rgba(155, 89, 182, 0.6)',
+                'rgba(241, 196, 15, 0.6)',
+                'rgba(231, 76, 60, 0.6)'
+            ];
+            return {
+                label: player.player_name,
+                data: [
+                    player.Pace || 0,
+                    player.Shoot || 0,
+                    player.Pass || 0,
+                    player.Defense || 0,
+                    player.Physical || 0,
+                    player.fifa_rating || 0
+                ],
+                backgroundColor: colors[idx % colors.length],
+                borderColor: colors[idx % colors.length].replace('0.6', '1'),
+                borderWidth: 2,
+                pointBackgroundColor: colors[idx % colors.length],
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: colors[idx % colors.length]
+            };
+        })
+    };
+
+    // Create player selector
+    const selector = document.getElementById('radar-player-selector');
+    if (selector) {
+        selector.innerHTML = playersData
+            .filter(p => p.fifa_rating > 0)
+            .slice(0, 10)
+            .map((p, idx) => `
+                <label class="radar-checkbox-label">
+                    <input type="checkbox" class="radar-player-check" 
+                           value="${idx}" data-player-idx="${idx}" 
+                           ${idx < 5 ? 'checked' : ''}>
+                    <span>${p.player_name}</span>
+                </label>
+            `).join('');
+    }
+
+    const radarChart = new Chart(ctx, {
+        type: 'radar',
+        data: radarData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#b8b8b8',
+                        font: { size: 12 },
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return `${context.dataset.label}: ${context.parsed.r}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        stepSize: 20,
+                        color: '#b8b8b8',
+                        backdropColor: 'transparent'
+                    },
+                    grid: {
+                        color: 'rgba(46, 204, 113, 0.2)'
+                    },
+                    pointLabels: {
+                        color: '#2ecc71',
+                        font: { size: 12, weight: 'bold' }
+                    }
+                }
+            }
+        }
+    });
+
+    // Update radar chart when checkboxes change
+    if (selector) {
+        selector.addEventListener('change', (e) => {
+            if (e.target.classList.contains('radar-player-check')) {
+                updateRadarChart(radarChart, playersData, e);
+            }
+        });
+    }
+}
+
+// Update Radar Chart based on selected players
+function updateRadarChart(chart, playersData, event = null) {
+    const checkboxes = document.querySelectorAll('.radar-player-check:checked');
+    if (checkboxes.length === 0 || checkboxes.length > 5) {
+        if (checkboxes.length > 5 && event) {
+            alert('Maximum 5 players can be compared at once');
+            event.target.checked = false;
+        }
+        return;
+    }
+
+    const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.playerIdx));
+    const selectedPlayers = playersData
+        .filter(p => p.fifa_rating > 0)
+        .filter((p, idx) => selectedIndices.includes(idx))
+        .slice(0, 5);
+
+    const colors = [
+        'rgba(46, 204, 113, 0.6)',
+        'rgba(52, 152, 219, 0.6)',
+        'rgba(155, 89, 182, 0.6)',
+        'rgba(241, 196, 15, 0.6)',
+        'rgba(231, 76, 60, 0.6)'
+    ];
+
+    chart.data.datasets = selectedPlayers.map((player, idx) => ({
+        label: player.player_name,
+        data: [
+            player.Pace || 0,
+            player.Shoot || 0,
+            player.Pass || 0,
+            player.Defense || 0,
+            player.Physical || 0,
+            player.fifa_rating || 0
+        ],
+        backgroundColor: colors[idx % colors.length],
+        borderColor: colors[idx % colors.length].replace('0.6', '1'),
+        borderWidth: 2,
+        pointBackgroundColor: colors[idx % colors.length],
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: colors[idx % colors.length]
+    }));
+
+    chart.update();
+}
+
+// Initialize Bar Chart
+function initializeBarChart(playersData) {
+    const ctx = document.getElementById('bar-chart');
+    if (!ctx) return;
+
+    // Top 20 players by goals
+    const top20 = [...playersData]
+        .sort((a, b) => b.goals - a.goals)
+        .slice(0, 20);
+
+    const avgGoals = top20.reduce((sum, p) => sum + p.position_avg_goals, 0) / top20.length;
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: top20.map(p => p.player_name),
+            datasets: [
+                {
+                    label: 'Player Goals',
+                    data: top20.map(p => p.goals),
+                    backgroundColor: top20.map(p => {
+                        const ratio = p.goals_per_game / Math.max(...top20.map(t => t.goals_per_game));
+                        return `rgba(46, 204, 113, ${0.5 + ratio * 0.5})`;
+                    }),
+                    borderColor: '#2ecc71',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Position Average Goals',
+                    data: top20.map(p => p.position_avg_goals),
+                    type: 'line',
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#b8b8b8',
+                        font: { size: 12 },
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const player = top20[context.dataIndex];
+                            if (context.datasetIndex === 0) {
+                                return [
+                                    `Goals: ${context.parsed.x}`,
+                                    `Goals/Game: ${player.goals_per_game.toFixed(2)}`,
+                                    `Team: ${player.team_title || 'N/A'}`,
+                                    `Position: ${player.position || 'N/A'}`
+                                ];
+                            } else {
+                                return `Position Avg: ${context.parsed.x.toFixed(2)}`;
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Goals',
+                        color: '#2ecc71',
+                        font: { size: 14, weight: 'bold' }
+                    },
+                    ticks: { color: '#b8b8b8' },
+                    grid: { color: 'rgba(46, 204, 113, 0.1)' }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Players',
+                        color: '#2ecc71',
+                        font: { size: 14, weight: 'bold' }
+                    },
+                    ticks: { color: '#b8b8b8' },
+                    grid: { color: 'rgba(46, 204, 113, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+// Render Player Cards
+function renderPlayerCards(playersData) {
+    const container = document.getElementById('player-cards-grid');
+    if (!container) return;
+
+    const cardsHTML = playersData.map(player => {
+        const overPerformer = player.goals > player.position_avg_goals;
+        const performanceDiff = ((player.goals - player.position_avg_goals) / (player.position_avg_goals || 1) * 100).toFixed(1);
+
+        return `
+            <div class="player-performance-card" onclick="window.location.href='/players/${player.player_id || '#'}'">
+                <div class="card-header">
+                    <h4 class="card-player-name">${player.player_name || 'Unknown'}</h4>
+                    ${player.fifa_rating ? `<span class="card-rating-badge">${player.fifa_rating}</span>` : ''}
+                </div>
+                <div class="card-team-position">
+                    <span class="card-team">${player.team_title || 'N/A'}</span>
+                    <span class="card-position">${player.position || 'N/A'}</span>
+                </div>
+                <div class="card-stats-grid">
+                    <div class="card-stat">
+                        <span class="stat-label">Goals</span>
+                        <span class="stat-value goals-value">${player.goals}</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="stat-label">Assists</span>
+                        <span class="stat-value">${player.assists}</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="stat-label">Games</span>
+                        <span class="stat-value">${player.games}</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="stat-label">Goals/Game</span>
+                        <span class="stat-value">${player.goals_per_game.toFixed(2)}</span>
+                    </div>
+                </div>
+                <div class="card-position-comparison">
+                    <div class="comparison-label">
+                        <span>Position Avg: ${player.position_avg_goals.toFixed(2)}</span>
+                        <span class="comparison-indicator ${overPerformer ? 'over' : 'under'}">
+                            ${overPerformer ? '↑' : '↓'} ${Math.abs(performanceDiff)}%
+                        </span>
+                    </div>
+                    <div class="comparison-bar">
+                        <div class="comparison-bar-fill" style="width: ${Math.min(100, (player.goals / Math.max(player.position_avg_goals, player.goals) * 100))}%"></div>
+                    </div>
+                </div>
+                ${player.total_shots > 0 ? `
+                    <div class="card-shots">
+                        <span>Total Shots: ${player.total_shots}</span>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = cardsHTML;
+}
+
+// Setup Dashboard Controls
+function setupDashboardControls(playersData) {
+    // View toggle
+    const viewButtons = document.querySelectorAll('.view-btn');
+    const chartContainers = document.querySelectorAll('.chart-container');
+
+    viewButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const view = btn.dataset.view;
+
+            // Update active button
+            viewButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Show/hide containers
+            chartContainers.forEach(container => {
+                container.classList.remove('active');
+            });
+
+            const targetContainer = document.getElementById(`${view}-chart-container`) ||
+                document.getElementById(`${view}-container`);
+            if (targetContainer) {
+                targetContainer.classList.add('active');
+            }
+        });
+    });
+
+    // Position filter
+    const positionFilter = document.getElementById('position-filter');
+    if (positionFilter) {
+        positionFilter.addEventListener('change', (e) => {
+            const selectedPosition = e.target.value;
+            const filtered = selectedPosition
+                ? playersData.filter(p => p.position === selectedPosition)
+                : playersData;
+
+            // Re-render charts with filtered data
+            initializeScatterChart(filtered);
+            initializeBarChart(filtered);
+            renderPlayerCards(filtered);
+        });
+    }
 }
 
 function displayResults(data) {

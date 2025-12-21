@@ -1680,3 +1680,440 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ====== Query 5 Dashboard Styles ====== */
+.query5-dashboard {
+    background: rgba(15, 20, 25, 0.95);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-top: 2rem;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.dashboard-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid rgba(46, 204, 113, 0.3);
+}
+
+.dashboard-header h2 {
+    color: #2ecc71;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
+.dashboard-description {
+    color: #b8b8b8;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dashboard-stats-summary {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.stat-badge {
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+    border: 1px solid rgba(46, 204, 113, 0.4);
+    color: #2ecc71;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.dashboard-controls {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: rgba(46, 204, 113, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(46, 204, 113, 0.2);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.control-group label {
+    color: #b8b8b8;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.dashboard-select {
+    background: rgba(15, 20, 25, 0.8);
+    border: 1px solid rgba(46, 204, 113, 0.4);
+    color: #e8e8e8;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dashboard-select:hover {
+    border-color: #2ecc71;
+    background: rgba(46, 204, 113, 0.1);
+}
+
+.dashboard-select:focus {
+    outline: none;
+    border-color: #2ecc71;
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+}
+
+.view-toggle {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.view-btn {
+    background: rgba(15, 20, 25, 0.8);
+    border: 1px solid rgba(46, 204, 113, 0.4);
+    color: #b8b8b8;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.view-btn:hover {
+    border-color: #2ecc71;
+    color: #2ecc71;
+    background: rgba(46, 204, 113, 0.1);
+}
+
+.view-btn.active {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    border-color: #2ecc71;
+    color: #0f1419;
+    font-weight: 700;
+}
+
+.dashboard-content {
+    position: relative;
+}
+
+.chart-container {
+    display: none;
+    background: rgba(15, 20, 25, 0.6);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+.chart-container.active {
+    display: block;
+    animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chart-header {
+    margin-bottom: 1.5rem;
+}
+
+.chart-header h3 {
+    color: #2ecc71;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.chart-header p {
+    color: #b8b8b8;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+.chart-container canvas {
+    max-height: 500px;
+}
+
+.radar-controls {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(46, 204, 113, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+.radar-controls label {
+    color: #b8b8b8;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+#radar-player-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.radar-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #e8e8e8;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background 0.3s ease;
+}
+
+.radar-checkbox-label:hover {
+    background: rgba(46, 204, 113, 0.1);
+}
+
+.radar-checkbox-label input[type="checkbox"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    accent-color: #2ecc71;
+}
+
+.no-data {
+    color: #b8b8b8;
+    text-align: center;
+    padding: 2rem;
+    font-style: italic;
+}
+
+/* Player Performance Cards */
+.player-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.player-performance-card {
+    background: rgba(15, 20, 25, 0.8);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.player-performance-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.player-performance-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(46, 204, 113, 0.3);
+    border-color: #2ecc71;
+}
+
+.player-performance-card:hover::before {
+    transform: scaleX(1);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.card-player-name {
+    color: #e8e8e8;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.card-rating-badge {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: #fff;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+}
+
+.card-team-position {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.card-team {
+    color: #b8b8b8;
+}
+
+.card-position {
+    color: #2ecc71;
+    font-weight: 600;
+}
+
+.card-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.card-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat-label {
+    color: #9aa0a6;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.stat-value {
+    color: #e8e8e8;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.goals-value {
+    color: #2ecc71;
+    font-size: 1.4rem;
+}
+
+.card-position-comparison {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+.comparison-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #b8b8b8;
+}
+
+.comparison-indicator {
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.comparison-indicator.over {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+
+.comparison-indicator.under {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+}
+
+.comparison-bar {
+    height: 8px;
+    background: rgba(46, 204, 113, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.comparison-bar-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.card-shots {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(46, 204, 113, 0.1);
+    color: #b8b8b8;
+    font-size: 0.85rem;
+}
+
+/* Responsive Dashboard */
+@media (max-width: 1024px) {
+    .dashboard-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .player-cards-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .query5-dashboard {
+        padding: 1.5rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .dashboard-controls {
+        padding: 1rem;
+    }
+
+    .chart-container {
+        padding: 1rem;
+    }
+
+    .chart-container canvas {
+        max-height: 400px;
+    }
+
+    .player-cards-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .view-toggle {
+        width: 100%;
+    }
+
+    .view-btn {
+        flex: 1;
+    }
+
+    #radar-player-selector {
+        flex-direction: column;
+    }
+}
