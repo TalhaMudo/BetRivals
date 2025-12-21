@@ -21,7 +21,7 @@ db = DatabaseConnector()
 @app.route("/")
 def home():
     """Ana sayfa rotası"""
-    return render_template("index.html", title="Home Page")
+    return render_template("index.html", title="BetRivals - Football Analytics")
 
 
 @app.route("/about")
