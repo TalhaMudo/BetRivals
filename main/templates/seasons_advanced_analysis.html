@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .aa-wrap {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .aa-topbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    .aa-title {
+        margin: 0;
+        font-size: 1.6rem;
+        color: #2ecc71;
+        text-shadow: 0 0 10px rgba(46, 204, 113, .15);
+    }
+
+    .aa-sub {
+        margin: 6px 0 0 0;
+        color: #b8b8b8;
+        font-size: .95rem;
+    }
+
+    .aa-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .aa-select {
+        background: rgba(0, 0, 0, .25);
+        border: 1px solid rgba(46, 204, 113, .25);
+        color: #e8e8e8;
+        border-radius: 10px;
+        padding: 10px 12px;
+        outline: none;
+        min-width: 160px;
+    }
+
+    .aa-btn {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(46, 204, 113, .35);
+        background: rgba(46, 204, 113, .12);
+        color: #2ecc71;
+        font-weight: 800;
+        cursor: pointer;
+        transition: .2s;
+    }
+
+    .aa-btn:hover {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: #0f1419;
+        border-color: #2ecc71;
+    }
+
+    .aa-back {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, .12);
+        background: rgba(255, 255, 255, .06);
+        color: #e8e8e8;
+        font-weight: 800;
+        text-decoration: none;
+        transition: .2s;
+    }
+
+    .aa-back:hover {
+        background: rgba(255, 255, 255, .10);
+    }
+
+    .aa-card {
+        background: rgba(15, 20, 25, 0.95);
+        border: 1px solid rgba(46, 204, 113, 0.25);
+        border-radius: 18px;
+        padding: 18px;
+        margin: 12px 0 18px 0;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, .35);
+    }
+
+    .aa-metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 12px;
+        margin-top: 10px;
+    }
+
+    .aa-metric {
+        border: 1px solid rgba(46, 204, 113, .18);
+        background: rgba(46, 204, 113, .06);
+        border-radius: 14px;
+        padding: 14px;
+    }
+
+    .aa-metric .k {
+        color: #b8b8b8;
+        font-size: .88rem;
+        margin-bottom: 6px;
+    }
+
+    .aa-metric .v {
+        color: #e8ffe8;
+        font-weight: 900;
+        font-size: 1.15rem;
+    }
+
+    .aa-metric .s {
+        color: #9adbb2;
+        font-size: .88rem;
+        margin-top: 6px;
+    }
+
+    .aa-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .aa-panel {
+        border: 1px solid rgba(46, 204, 113, .18);
+        background: rgba(0, 0, 0, .18);
+        border-radius: 14px;
+        padding: 14px;
+    }
+
+    .aa-panel-wide {
+        grid-column: 1 / -1;
+    }
+
+    .aa-panel-title {
+        color: #b8b8b8;
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
+
+    .aa-table-wrap {
+        margin-top: 14px;
+    }
+
+    .aa-table-scroll {
+        overflow: auto;
+        border-radius: 12px;
+        border: 1px solid rgba(46, 204, 113, .16);
+    }
+
+    .aa-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 980px;
+    }
+
+    .aa-table thead th {
+        position: sticky;
+        top: 0;
+        background: rgba(15, 20, 25, .98);
+        color: #b8b8b8;
+        font-weight: 900;
+        text-align: left;
+        padding: 12px 12px;
+        border-bottom: 1px solid rgba(46, 204, 113, .15);
+        white-space: nowrap;
+    }
+
+    .aa-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, .06);
+        color: #e6e6e6;
+        white-space: nowrap;
+    }
+
+    .aa-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(46, 204, 113, .25);
+        background: rgba(46, 204, 113, .10);
+        color: #2ecc71;
+        font-weight: 900;
+        font-size: .82rem;
+    }
+
+    @media (max-width: 900px) {
+        .aa-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .aa-panel-wide {
+            grid-column: auto;
+        }
+
+        .aa-topbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+</style>
+
+<div class="aa-wrap">
+    <div class="aa-topbar">
+        <div>
+            <h1 class="aa-title">📈 Seasons Advanced Analysis</h1>
+            <p class="aa-sub">Aggregated team insights using Season + Match + Shot + Player tables</p>
+        </div>
+
+        <div class="aa-actions">
+            <a class="aa-back" href="/seasons">← Back to Seasons</a>
+            <select id="aaYear" class="aa-select">
+                <option value="">Latest year</option>
+            </select>
+            <button id="aaLoadBtn" class="aa-btn">Load</button>
+        </div>
+    </div>
+
+    <section class="aa-card">
+        <div class="aa-metrics" id="aaMetrics"></div>
+
+        <div class="aa-grid">
+            <div class="aa-panel">
+                <div class="aa-panel-title">Total Points (Top Teams)</div>
+                <canvas id="chartPoints" height="120"></canvas>
+            </div>
+            <div class="aa-panel">
+                <div class="aa-panel-title">Avg xG vs Avg xGA (Top Teams)</div>
+                <canvas id="chartXg" height="120"></canvas>
+            </div>
+            <div class="aa-panel aa-panel-wide">
+                <div class="aa-panel-title">Shots vs Goals (Conversion)</div>
+                <canvas id="chartShotsGoals" height="120"></canvas>
+            </div>
+        </div>
+
+        <div class="aa-table-wrap">
+            <div class="aa-panel-title">Team Breakdown</div>
+            <div class="aa-table-scroll">
+                <table class="aa-table">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th>Points</th>
+                            <th>W</th>
+                            <th>D</th>
+                            <th>L</th>
+                            <th>Avg xG</th>
+                            <th>Avg xGA</th>
+                            <th>Goals</th>
+                            <th>Shots</th>
+                            <th>Total xG</th>
+                            <th>Conv.</th>
+                            <th>Top Scorer</th>
+                        </tr>
+                    </thead>
+                    <tbody id="aaTbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let chartPoints, chartXg, chartShotsGoals;
+
+    function safeNum(x, fallback = null) {
+        if (x === undefined || x === null) return fallback;
+        const n = Number(x);
+        return Number.isFinite(n) ? n : fallback;
+    }
+    function fmt(x, digits = 2) {
+        const n = safeNum(x, null);
+        return n === null ? "—" : n.toFixed(digits);
+    }
+    function destroyChart(c) { if (c && typeof c.destroy === "function") c.destroy(); }
+
+    async function loadYears() {
+        const sel = document.getElementById("aaYear");
+        try {
+            const r = await fetch("/api/seasons/years");
+            const j = await r.json();
+            const years = (j.years || []).slice();
+            for (const y of years) {
+                const opt = document.createElement("option");
+                opt.value = y;
+                opt.textContent = y;
+                sel.appendChild(opt);
+            }
+            if (years.length) sel.value = years[0];
+        } catch (e) {
+            console.warn("years load failed", e);
+        }
+    }
+
+    function renderMetrics(items, year) {
+        const sorted = [...items].sort((a, b) => safeNum(b.total_points, -1) - safeNum(a.total_points, -1));
+        const best = sorted[0] || null;
+
+        const bestConv = [...items]
+            .filter(x => safeNum(x.total_shots, 0) > 0 && safeNum(x.conv_rate, null) !== null)
+            .sort((a, b) => safeNum(b.conv_rate, -1) - safeNum(a.conv_rate, -1))[0] || null;
+
+        const leagueAvg = items.length ? items[0].league_avg_xg : null;
+
+        document.getElementById("aaMetrics").innerHTML = `
+      <div class="aa-metric">
+        <div class="k">Selected Season</div>
+        <div class="v">${year || "Latest"}</div>
+        <div class="s">Data aggregated across multiple tables</div>
+      </div>
+
+      <div class="aa-metric">
+        <div class="k">Top Team (Points)</div>
+        <div class="v">${best ? best.team_name : "—"}</div>
+        <div class="s">${best ? `Points: ${best.total_points ?? "—"} | Avg xG: ${fmt(best.avg_xG)} | Avg xGA: ${fmt(best.avg_xGA)}` : ""}</div>
+      </div>
+
+      <div class="aa-metric">
+        <div class="k">Best Conversion</div>
+        <div class="v">${bestConv ? bestConv.team_name : "—"}</div>
+        <div class="s">${bestConv ? `Conv: ${fmt(bestConv.conv_rate, 3)} | Goals: ${bestConv.total_goals ?? "—"} | Shots: ${bestConv.total_shots ?? "—"}` : ""}</div>
+      </div>
+
+      <div class="aa-metric">
+        <div class="k">League Avg Shot xG</div>
+        <div class="v">${fmt(leagueAvg, 3)}</div>
+        <div class="s">Average xG per shot for the selected season</div>
+      </div>
+    `;
+    }
+
+    function renderTable(items) {
+        const tb = document.getElementById("aaTbody");
+        tb.innerHTML = items.map(x => {
+            const conv = safeNum(x.conv_rate, null);
+            const convBadge = conv === null ? "—" : `<span class="aa-badge">${conv.toFixed(3)}</span>`;
+            return `
+        <tr>
+          <td>${x.team_name ?? "—"}</td>
+          <td>${x.total_points ?? "—"}</td>
+          <td>${x.wins ?? "—"}</td>
+          <td>${x.draws ?? "—"}</td>
+          <td>${x.loses ?? "—"}</td>
+          <td>${fmt(x.avg_xG, 2)}</td>
+          <td>${fmt(x.avg_xGA, 2)}</td>
+          <td>${x.total_goals ?? "—"}</td>
+          <td>${x.total_shots ?? "—"}</td>
+          <td>${fmt(x.total_xg, 2)}</td>
+          <td>${convBadge}</td>
+          <td>${x.top_scorer ?? "—"}</td>
+        </tr>
+      `;
+        }).join("");
+    }
+
+    function renderCharts(items) {
+        const top = [...items]
+            .sort((a, b) => safeNum(b.total_points, -1) - safeNum(a.total_points, -1))
+            .slice(0, 10);
+
+        const labels = top.map(x => x.team_name);
+        const points = top.map(x => safeNum(x.total_points, 0));
+        const avgXg = top.map(x => safeNum(x.avg_xG, null));
+        const avgXga = top.map(x => safeNum(x.avg_xGA, null));
+        const shots = top.map(x => safeNum(x.total_shots, 0));
+        const goals = top.map(x => safeNum(x.total_goals, 0));
+        const conv = top.map(x => safeNum(x.conv_rate, null));
+
+        destroyChart(chartPoints); destroyChart(chartXg); destroyChart(chartShotsGoals);
+
+        chartPoints = new Chart(document.getElementById("chartPoints"), {
+            type: "bar",
+            data: { labels, datasets: [{ label: "Points", data: points }] },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: true } },
+                scales: {
+                    x: { ticks: { color: "#b8b8b8" }, grid: { color: "rgba(255,255,255,0.06)" } },
+                    y: { ticks: { color: "#b8b8b8" }, grid: { color: "rgba(255,255,255,0.06)" } }
+                }
+            }
+        });
+
+        chartXg = new Chart(document.getElementById("chartXg"), {
+            type: "line",
+            data: {
+                labels,
+                datasets: [
+                    { label: "Avg xG", data: avgXg, tension: 0.25 },
+                    { label: "Avg xGA", data: avgXga, tension: 0.25 }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: true } },
+                scales: {
+                    x: { ticks: { color: "#b8b8b8" }, grid: { color: "rgba(255,255,255,0.06)" } },
+                    y: { ticks: { color: "#b8b8b8" }, grid: { color: "rgba(255,255,255,0.06)" } }
+                }
+            }
+        });
+
+        chartShotsGoals = new Chart(document.getElementById("chartShotsGoals"), {
+            data: {
+                labels,
+                datasets: [
+                    { type: "bar", label: "Shots", data: shots, yAxisID: "y" },
+                    { type: "bar", label: "Goals", data: goals, yAxisID: "y" },
+                    { type: "line", label: "Conversion", data: conv, yAxisID: "y1", tension: 0.25 }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: true } },
+                scales: {
+                    x: { ticks: { color: "#b8b8b8" }, grid: { color: "rgba(255,255,255,0.06)" } },
+                    y: { position: "left", ticks: { color: "#b8b8b8" }, grid: { color: "rgba(255,255,255,0.06)" } },
+                    y1: { position: "right", ticks: { color: "#b8b8b8" }, grid: { drawOnChartArea: false } }
+                }
+            }
+        });
+    }
+
+    async function loadAdvancedAnalysis() {
+        const year = document.getElementById("aaYear").value;
+        const url = year
+            ? `/api/seasons/advanced_analysis?year=${encodeURIComponent(year)}&limit=50`
+            : `/api/seasons/advanced_analysis?limit=50`;
+
+        const btn = document.getElementById("aaLoadBtn");
+        btn.disabled = true;
+        btn.textContent = "Loading...";
+
+        try {
+            const r = await fetch(url);
+            const j = await r.json();
+            const items = (j.items || []).filter(x => x && x.team_name);
+
+            renderMetrics(items, year);
+            renderCharts(items);
+            renderTable(items);
+        } catch (e) {
+            console.error(e);
+            document.getElementById("aaMetrics").innerHTML = `
+        <div class="aa-metric">
+          <div class="k">Error</div>
+          <div class="v">Failed to load analysis</div>
+          <div class="s">Check server logs and endpoint response.</div>
+        </div>
+      `;
+            document.getElementById("aaTbody").innerHTML = "";
+            destroyChart(chartPoints); destroyChart(chartXg); destroyChart(chartShotsGoals);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Load";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        await loadYears();
+        document.getElementById("aaLoadBtn").addEventListener("click", loadAdvancedAnalysis);
+        loadAdvancedAnalysis();
+    });
+</script>
+
+{% endblock %}

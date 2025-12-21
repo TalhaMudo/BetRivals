@@ -21,7 +21,7 @@ db = DatabaseConnector()
 @app.route("/")
 def home():
     """Ana sayfa rotası"""
-    return render_template("index.html", title="Home Page")
+    return render_template("index.html", title="BetRivals - Football Analytics")
 
 
 @app.route("/about")
@@ -510,6 +510,91 @@ def api_teams_summary():
     except Exception as e:
         logger.exception("Error in /api/teams/summary: %s", e)
         return jsonify({"success": False, "error": "Database error", "items": []}), 500
+@app.route("/api/seasons/advanced_analysis", methods=["GET"])
+def api_seasons_advanced_analysis():
+    """
+    Simplified but still complex query:
+    - Nested Query
+    - 4+ Table Join
+    - Group By
+    - Outer Join
+    GET /api/seasons/advanced_analysis?year=2024
+    """
+    year = request.args.get("year")
+    limit = int(request.args.get("limit", 20))
+    limit = min(max(limit, 1), 50)
+    params = []
+
+    where_clause = ""
+    if year:
+        where_clause = "AND s.year = %s"
+        params.append(year)
+
+    sql = f"""
+        SELECT
+            t.team_id,
+            t.team_name,
+            s.year,
+
+            -- SEASON stats (aggregated)
+            MAX(s.pts) AS total_points,
+            MAX(s.wins) AS wins,
+            MAX(s.draws) AS draws,
+            MAX(s.loses) AS loses,
+            ROUND(AVG(s.xG), 2) AS avg_xG,
+            ROUND(AVG(s.xGA), 2) AS avg_xGA,
+
+            -- MATCH + SHOT summary
+            SUM(CASE WHEN sd.result='Goal' THEN 1 ELSE 0 END) AS total_goals,
+            COUNT(sd.shot_id) AS total_shots,
+            ROUND(SUM(sd.xG), 2) AS total_xg,
+
+            -- Conversion Rate
+            ROUND(
+                SUM(CASE WHEN sd.result='Goal' THEN 1 ELSE 0 END)
+                / NULLIF(COUNT(sd.shot_id), 0), 3
+            ) AS conv_rate,
+
+            -- Nested subquery: top scorer name
+            (
+                SELECT p2.player_name
+                FROM player p2
+                WHERE p2.team_title = t.team_name
+                  AND p2.year = s.year
+                ORDER BY p2.goals DESC
+                LIMIT 1
+            ) AS top_scorer,
+
+            -- Nested subquery: league average xG for that season
+            (
+                SELECT ROUND(AVG(sd2.xG), 3)
+                FROM shot_data sd2
+                INNER JOIN match_info mi2 ON mi2.match_id = sd2.match_id
+                WHERE mi2.season = s.year
+            ) AS league_avg_xg
+
+        FROM teams t
+        LEFT JOIN season s ON s.team_id = t.team_id
+        LEFT JOIN match_info mi ON mi.team_h = t.team_name OR mi.team_a = t.team_name
+        LEFT JOIN shot_data sd ON sd.match_id = mi.match_id
+
+        WHERE s.year IS NOT NULL
+        {where_clause}
+
+        GROUP BY t.team_id, t.team_name, s.year
+        ORDER BY total_points DESC, avg_xG DESC
+        LIMIT %s
+    """
+
+    try:
+        rows = db.execute_query(sql, params + [limit]) or []
+        return jsonify({"success": True, "items": rows})
+    except Exception as e:
+        logger.exception("Error in /api/seasons/advanced_analysis: %s", e)
+        return jsonify({"success": False, "error": "Database error", "items": []}), 500
+@app.route("/seasons/advanced-analysis")
+def seasons_advanced_analysis_page():
+    return render_template("seasons_advanced_analysis.html", title="Seasons Advanced Analysis")
 
 #--------------BILGE-END-------------------------------
 
@@ -3210,3 +3295,4 @@ def api_matches():
 # -------------------------------------------------
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
+

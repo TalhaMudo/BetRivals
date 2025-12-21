@@ -177,9 +177,11 @@
     .content-grid.masonry {
         column-count: 2;
     }
+
     .content-grid.players-grid {
         grid-template-columns: 1fr 1fr;
     }
+
     .content-box-column {
         grid-column: span 2;
     }
@@ -189,12 +191,15 @@
     .content-grid.masonry {
         column-count: 1;
     }
+
     .content-grid.players-grid {
         grid-template-columns: 1fr;
     }
+
     .content-box-column {
         grid-column: span 1;
     }
+
     .complex-queries-grid {
         grid-template-columns: 1fr;
     }
