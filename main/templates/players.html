@@ -11,14 +11,16 @@
         </div>
         <div class="header-right">
             <div class="search-container">
-                <input type="text" id="player-search" class="search-input" placeholder="Search players by name, team, or position..." />
+                <input type="text" id="player-search" class="search-input"
+                    placeholder="Search players by name, team, or position..." />
                 <button id="search-btn" class="search-btn" title="Search">🔍</button>
                 <button id="filter-btn" class="filter-btn" type="button" title="Filter">⚙️</button>
             </div>
             <div id="filter-panel" class="filter-panel hidden">
                 <div class="filter-row">
                     <label for="filter-year">Year</label>
-                    <input id="filter-year" class="filter-input" type="number" min="1900" max="2100" placeholder="e.g., 2023">
+                    <input id="filter-year" class="filter-input" type="number" min="1900" max="2100"
+                        placeholder="e.g., 2023">
                 </div>
                 <div class="filter-row">
                     <label for="filter-team">Team</label>
@@ -35,7 +37,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Quote section -->
     <div class="quote-section">
         <div class="quote-text" id="quote-text">Loading quote...</div>
@@ -61,45 +63,49 @@
             </a>
         </div>
     </div>
-    
+
     <div id="search-results" class="search-results-container"></div>
 
     <div class="buttons-container bottom-buttons">
         <button id="btn-analysis" class="btn-test btn-primary">👥 Show All Players</button>
     </div>
-    
+
     <!-- Complex Queries Grid -->
     <div class="content-grid complex-queries-grid">
         <div class="content-box query-box" id="query-1-box">
             <h3>Complex Join (4+ Tables)</h3>
             <p>Goals per match with GROUP BY & HAVING</p>
-            <button class="btn-test btn-secondary query-btn" data-endpoint="/api/players/complex/goals-per-match">Execute Query</button>
+            <button class="btn-test btn-secondary query-btn"
+                data-endpoint="/api/players/complex/goals-per-match">Execute Query</button>
         </div>
         <div class="content-box query-box" id="query-2-box">
             <h3>Nested Query</h3>
             <p>Players above average goals for their year</p>
-            <button class="btn-test btn-secondary query-btn" data-endpoint="/api/players/complex/above-average-goals">Execute Query</button>
+            <button class="btn-test btn-secondary query-btn"
+                data-endpoint="/api/players/complex/above-average-goals">Execute Query</button>
         </div>
         <div class="content-box query-box" id="query-3-box">
             <h3>Outer Join with GROUP BY</h3>
             <p>Players with less than 5 games and best FIFA rating</p>
-            <button class="btn-test btn-secondary query-btn" data-endpoint="/api/players/complex/low-games-best-rating">Execute Query</button>
+            <button class="btn-test btn-secondary query-btn"
+                data-endpoint="/api/players/complex/low-games-best-rating">Execute Query</button>
         </div>
         <div class="content-box query-box" id="query-4-box">
             <h3>JOIN with GROUP BY</h3>
             <p>Top 10 players by goals with ratings</p>
-            <button class="btn-test btn-secondary query-btn" data-endpoint="/api/players/complex/top-goals-with-rating">Execute Query</button>
+            <button class="btn-test btn-secondary query-btn"
+                data-endpoint="/api/players/complex/top-goals-with-rating">Execute Query</button>
         </div>
         <div class="content-box query-box" id="query-5-box">
             <h3>All Features Combined</h3>
             <p>Top players with stats vs position averages</p>
-            <button class="btn-test btn-secondary query-btn" data-endpoint="/api/players/complex/comprehensive-stats">Execute Query</button>
+            <button class="btn-test btn-secondary query-btn"
+                data-endpoint="/api/players/complex/comprehensive-stats">Execute Query</button>
         </div>
     </div>
-    
+
     <div id="results"></div>
 </section>
 
 <script src="{{ url_for('static', filename='players.js') }}"></script>
 {% endblock %}
-

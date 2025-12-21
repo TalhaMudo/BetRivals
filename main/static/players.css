@@ -177,9 +177,11 @@
     .content-grid.masonry {
         column-count: 2;
     }
+
     .content-grid.players-grid {
         grid-template-columns: 1fr 1fr;
     }
+
     .content-box-column {
         grid-column: span 2;
     }
@@ -189,12 +191,15 @@
     .content-grid.masonry {
         column-count: 1;
     }
+
     .content-grid.players-grid {
         grid-template-columns: 1fr;
     }
+
     .content-box-column {
         grid-column: span 1;
     }
+
     .complex-queries-grid {
         grid-template-columns: 1fr;
     }
@@ -1679,4 +1684,26 @@
     .player-detail-grid {
         grid-template-columns: 1fr;
     }
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+
+    color: #2ecc71;
+    background: rgba(46, 204, 113, 0.10);
+    border: 2px solid rgba(46, 204, 113, 0.25);
+    transition: all .2s ease;
+    margin-bottom: 12px;
+}
+
+.btn-back:hover {
+    background: rgba(46, 204, 113, 0.18);
+    border-color: rgba(46, 204, 113, 0.45);
+    transform: translateY(-1px);
 }
