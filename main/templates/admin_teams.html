@@ -462,6 +462,12 @@
         </div>
 
         <form id="teamForm" onsubmit="saveTeamAction(event)">
+            <!-- ✅ NEW: team_id input-->
+            <div class="form-group">
+                <label>Team ID</label>
+                <input type="number" id="team_id" min="1" placeholder="e.g., 208 (leave empty for auto)">
+            </div>
+
             <div class="form-group">
                 <label>Team Name *</label>
                 <input type="text" id="team_name" required placeholder="e.g., Galatasaray">
@@ -506,6 +512,11 @@
                 if (!data) return;
                 if (data.success) {
                     currentEditId = teamId;
+
+                    // edit modunda ID değiştirmek istersen:
+                    document.getElementById('team_id').value = data.team.team_id;
+                    document.getElementById('team_id').disabled = true; // ✅ genelde PK update yapılmaz
+
                     document.getElementById('team_name').value = data.team.team_name;
                     document.getElementById('modalTitle').textContent = 'Edit Team';
                     document.getElementById('submitBtn').textContent = 'Update Team';
@@ -519,14 +530,24 @@
 
     function closeModal() {
         document.getElementById('teamModal').classList.remove('active');
+        document.getElementById('team_id').disabled = false; // ✅ create için tekrar aç
     }
 
     function saveTeamAction(event) {
         event.preventDefault();
-        const payload = { team_name: document.getElementById('team_name').value.trim() };
-        if (!payload.team_name) {
+
+        const teamName = document.getElementById('team_name').value.trim();
+        if (!teamName) {
             showAlert('team_name is required', 'error');
             return;
+        }
+
+        const teamIdRaw = document.getElementById('team_id').value.trim();
+        const teamId = teamIdRaw ? Number(teamIdRaw) : null;
+
+        const payload = { team_name: teamName };
+        if (!currentEditId && teamId) { // ✅ sadece create'te manuel id kullan
+            payload.team_id = teamId;
         }
 
         const method = currentEditId ? 'PUT' : 'POST';
