@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='players.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='add_player.css') }}">
+
+<section class="content-section">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>Edit Players</h2>
+            <p>Search a player-season row, load its current data, then update.</p>
+        </div>
+        <div class="header-right">
+            <a class="btn-test btn-secondary" href="/players">← Back to Players</a>
+        </div>
+    </div>
+
+    <div id="alertBox" class="form-alert hidden"></div>
+
+    <div class="player-form-card" style="margin-bottom: 1.25rem;">
+        <div class="form-section" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+            <h3>Select Player to Edit</h3>
+            <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label class="required">Search</label>
+                    <input type="text" id="edit-search" class="form-control" placeholder="Type player name, team, or position..." autocomplete="off" required>
+                    <div id="edit-results" class="edit-results"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="editPlayerForm" class="player-form-card hidden">
+        <input type="hidden" id="season_player_id" name="season_player_id">
+
+        <div class="form-section">
+            <h3>Required</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="required">Player Name</label>
+                    <input type="text" id="player_name" name="player_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Player ID</label>
+                    <input type="number" id="player_id" name="player_id" class="form-control" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="required">Year</label>
+                    <input type="number" id="year" name="year" class="form-control" required min="1900" max="2100">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Player Info</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Team Title</label>
+                    <input type="text" id="team_title" name="team_title" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Position</label>
+                    <input type="text" id="position" name="position" class="form-control">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Stats</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>Games</label><input type="number" id="games" name="games" class="form-control" min="0"></div>
+                <div class="form-group"><label>Time (minutes)</label><input type="number" id="time" name="time" class="form-control" min="0"></div>
+                <div class="form-group"><label>Goals</label><input type="number" id="goals" name="goals" class="form-control" min="0"></div>
+                <div class="form-group"><label>xG</label><input type="number" id="xG" name="xG" class="form-control" step="0.0001" min="0"></div>
+                <div class="form-group"><label>Assists</label><input type="number" id="assists" name="assists" class="form-control" min="0"></div>
+                <div class="form-group"><label>xA</label><input type="number" id="xA" name="xA" class="form-control" step="0.0001" min="0"></div>
+                <div class="form-group"><label>Shots</label><input type="number" id="shots" name="shots" class="form-control" min="0"></div>
+                <div class="form-group"><label>Key Passes</label><input type="number" id="key_passes" name="key_passes" class="form-control" min="0"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Cards</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>Yellow Cards</label><input type="number" id="yellow_cards" name="yellow_cards" class="form-control" min="0"></div>
+                <div class="form-group"><label>Red Cards</label><input type="number" id="red_cards" name="red_cards" class="form-control" min="0"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Advanced</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>NPG</label><input type="number" id="npg" name="npg" class="form-control" min="0"></div>
+                <div class="form-group"><label>npxG</label><input type="number" id="npxG" name="npxG" class="form-control" step="0.0001" min="0"></div>
+                <div class="form-group"><label>xGChain</label><input type="number" id="xGChain" name="xGChain" class="form-control" step="0.0001" min="0"></div>
+                <div class="form-group"><label>xGBuildup</label><input type="number" id="xGBuildup" name="xGBuildup" class="form-control" step="0.0001" min="0"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Optional</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Best Shot ID</label>
+                    <input type="number" id="best_shot_id" name="best_shot_id" class="form-control" min="1">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button id="submitBtn" type="submit" class="btn-test btn-primary">💾 Save Changes</button>
+        </div>
+    </form>
+</section>
+
+<script src="{{ url_for('static', filename='edit_player.js') }}"></script>
+{% endblock %}
+
+
