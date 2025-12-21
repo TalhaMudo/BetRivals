@@ -1,5 +1,5 @@
 -- Table 1: Player master data (attributes that don't change across seasons)
-CREATE TABLE players (
+CREATE TABLE player (
     player_id BIGINT PRIMARY KEY,
     Name VARCHAR(255),
     Country VARCHAR(128),
