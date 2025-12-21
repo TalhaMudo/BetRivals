@@ -1,0 +1,4 @@
+CREATE TABLE teams (
+    team_id BIGINT PRIMARY KEY,
+    team_name VARCHAR(255)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
