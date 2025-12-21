@@ -10,7 +10,7 @@ CREATE TABLE players (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table 2: Player seasonal statistics (attributes that change each season)
-CREATE TABLE player_seasons (
+CREATE TABLE fut23 (
     player_id BIGINT,
     year INT,
     team_id BIGINT,
