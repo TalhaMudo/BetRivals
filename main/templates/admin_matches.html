@@ -4,7 +4,11 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='admin_matches.css') }}">
 
 <div class="matches-admin-container">
+
     <div class="admin-header">
+        <!-- ✅ Back to Admin -->
+        <a href="{{ url_for('admin') }}" class="btn-back">⬅ Back to Admin</a>
+
         <h2>⚽ Matches Management</h2>
         <div style="display: flex; gap: 12px;">
             <button class="btn-add" onclick="window.location.href='/admin'" style="background: linear-gradient(135deg, #3498db, #2980b9);">
@@ -94,9 +98,31 @@
                     <div class="form-group"><label>Forecast Draw %</label><input id="field_h_d" name="h_d" type="number" step="0.00001" placeholder="0.00000 - 1.00000" /></div>
                     <div class="form-group"><label>Forecast Lose %</label><input id="field_h_l" name="h_l" type="number" step="0.00001" placeholder="0.00000 - 1.00000" /></div>
                 </div>
+                <div class="form-group"><label>Away Shots</label><input id="field_a_shot" name="a_shot" type="number" />
+                </div>
+                <div class="form-group"><label>Home Shots on Target</label><input id="field_h_shotOnTarget"
+                        name="h_shotOnTarget" type="number" /></div>
+                <div class="form-group"><label>Away Shots on Target</label><input id="field_a_shotOnTarget"
+                        name="a_shotOnTarget" type="number" /></div>
+                <div class="form-group"><label>Home Deep</label><input id="field_h_deep" name="h_deep" type="number" />
+                </div>
+                <div class="form-group"><label>Away Deep</label><input id="field_a_deep" name="a_deep" type="number" />
+                </div>
+                <div class="form-group"><label>Home PPDA</label><input id="field_h_ppda" name="h_ppda" type="number"
+                        step="0.01" /></div>
+                <div class="form-group"><label>Away PPDA</label><input id="field_a_ppda" name="a_ppda" type="number"
+                        step="0.01" /></div>
+                <div class="form-group"><label>Forecast Win %</label><input id="field_h_w" name="h_w" type="number"
+                        step="0.01" placeholder="0.00 - 1.00" /></div>
+                <div class="form-group"><label>Forecast Draw %</label><input id="field_h_d" name="h_d" type="number"
+                        step="0.01" placeholder="0.00 - 1.00" /></div>
+                <div class="form-group"><label>Forecast Lose %</label><input id="field_h_l" name="h_l" type="number"
+                        step="0.01" placeholder="0.00 - 1.00" /></div>
+            </div>
 
             <div class="form-buttons">
-                <button type="button" id="addShotsBtn" class="btn-shots" onclick="addShotsToMatch()" style="display:none;">🎯 Add Shots to Match</button>
+                <button type="button" id="addShotsBtn" class="btn-shots" onclick="addShotsToMatch()"
+                    style="display:none;">🎯 Add Shots to Match</button>
                 <button id="submitBtn" class="btn-submit">Add Match</button>
                 <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
             </div>

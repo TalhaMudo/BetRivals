@@ -510,6 +510,91 @@ def api_teams_summary():
     except Exception as e:
         logger.exception("Error in /api/teams/summary: %s", e)
         return jsonify({"success": False, "error": "Database error", "items": []}), 500
+@app.route("/api/seasons/advanced_analysis", methods=["GET"])
+def api_seasons_advanced_analysis():
+    """
+    Simplified but still complex query:
+    - Nested Query
+    - 4+ Table Join
+    - Group By
+    - Outer Join
+    GET /api/seasons/advanced_analysis?year=2024
+    """
+    year = request.args.get("year")
+    limit = int(request.args.get("limit", 20))
+    limit = min(max(limit, 1), 50)
+    params = []
+
+    where_clause = ""
+    if year:
+        where_clause = "AND s.year = %s"
+        params.append(year)
+
+    sql = f"""
+        SELECT
+            t.team_id,
+            t.team_name,
+            s.year,
+
+            -- SEASON stats (aggregated)
+            MAX(s.pts) AS total_points,
+            MAX(s.wins) AS wins,
+            MAX(s.draws) AS draws,
+            MAX(s.loses) AS loses,
+            ROUND(AVG(s.xG), 2) AS avg_xG,
+            ROUND(AVG(s.xGA), 2) AS avg_xGA,
+
+            -- MATCH + SHOT summary
+            SUM(CASE WHEN sd.result='Goal' THEN 1 ELSE 0 END) AS total_goals,
+            COUNT(sd.shot_id) AS total_shots,
+            ROUND(SUM(sd.xG), 2) AS total_xg,
+
+            -- Conversion Rate
+            ROUND(
+                SUM(CASE WHEN sd.result='Goal' THEN 1 ELSE 0 END)
+                / NULLIF(COUNT(sd.shot_id), 0), 3
+            ) AS conv_rate,
+
+            -- Nested subquery: top scorer name
+            (
+                SELECT p2.player_name
+                FROM player p2
+                WHERE p2.team_title = t.team_name
+                  AND p2.year = s.year
+                ORDER BY p2.goals DESC
+                LIMIT 1
+            ) AS top_scorer,
+
+            -- Nested subquery: league average xG for that season
+            (
+                SELECT ROUND(AVG(sd2.xG), 3)
+                FROM shot_data sd2
+                INNER JOIN match_info mi2 ON mi2.match_id = sd2.match_id
+                WHERE mi2.season = s.year
+            ) AS league_avg_xg
+
+        FROM teams t
+        LEFT JOIN season s ON s.team_id = t.team_id
+        LEFT JOIN match_info mi ON mi.team_h = t.team_name OR mi.team_a = t.team_name
+        LEFT JOIN shot_data sd ON sd.match_id = mi.match_id
+
+        WHERE s.year IS NOT NULL
+        {where_clause}
+
+        GROUP BY t.team_id, t.team_name, s.year
+        ORDER BY total_points DESC, avg_xG DESC
+        LIMIT %s
+    """
+
+    try:
+        rows = db.execute_query(sql, params + [limit]) or []
+        return jsonify({"success": True, "items": rows})
+    except Exception as e:
+        logger.exception("Error in /api/seasons/advanced_analysis: %s", e)
+        return jsonify({"success": False, "error": "Database error", "items": []}), 500
+@app.route("/seasons/advanced-analysis")
+def seasons_advanced_analysis_page():
+    return render_template("seasons_advanced_analysis.html", title="Seasons Advanced Analysis")
 
 #--------------BILGE-END-------------------------------
 
@@ -1202,6 +1287,219 @@ def api_player_detail(player_id):
 def player_detail(player_id):
     """Individual player detail page"""
     return render_template("player_detail.html", title="Player Details", player_id=player_id)
+
+# ========= COMPLEX QUERIES  =========
+
+@app.route("/api/players/complex/goals-per-match", methods=['GET'])
+def api_players_complex_goals_per_match():
+    """
+    COMPLEX QUERY 1: Complex Join of 4+ tables with GROUP BY and HAVING
+    
+    This query demonstrates:
+    - Complex Join: Joins 4 tables (player, fut23, match_data, match_info)
+    - GROUP BY: Groups by player_name and Rating
+    - HAVING: Filters groups with goals_per_match > 0.5
+    - Aggregate functions: SUM and COUNT with DISTINCT
+    
+    Returns players with their FIFA ratings and calculated goals per match,
+    filtered to only show players with more than 0.5 goals per match.
+    """
+    try:
+        query = """
+            SELECT 
+                p.player_name,
+                f.Rating,
+                SUM(p.goals) / COUNT(DISTINCT mi.match_id) AS goals_per_match
+            FROM player p
+            JOIN fut23 f ON p.player_id = f.player_id
+            JOIN match_data md ON md.h_id = f.team_id OR md.a_id = f.team_id
+            JOIN match_info mi ON mi.match_id = md.match_id
+            GROUP BY p.player_name, f.Rating
+            HAVING goals_per_match > 0.5
+            ORDER BY goals_per_match DESC
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [],
+            "count": len(results) if results else 0,
+            "description": "Players with goals per match > 0.5 (Complex Join of 4+ tables, GROUP BY, HAVING)"
+        })
+    except Exception as e:
+        logger.exception("Error fetching goals per match: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/api/players/complex/above-average-goals", methods=['GET'])
+def api_players_complex_above_average_goals():
+    """
+    COMPLEX QUERY 2: Nested Query (Correlated Subquery)
+    
+    This query demonstrates:
+    - Nested Query: Uses a correlated subquery in the WHERE clause
+    - Subquery calculates AVG(goals) for each year
+    - Main query filters players whose goals exceed the year's average
+    
+    Returns players who scored more goals than the average for their year.
+    """
+    try:
+        query = """
+            SELECT 
+                p.player_name,
+                p.goals,
+                p.year
+            FROM player p
+            WHERE p.goals > (
+                SELECT AVG(goals)
+                FROM player
+                WHERE year = p.year
+            )
+            ORDER BY p.goals DESC
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [],
+            "count": len(results) if results else 0,
+            "description": "Players with goals above year average (Nested Query)"
+        })
+    except Exception as e:
+        logger.exception("Error fetching above average goals: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/api/players/complex/low-games-best-rating", methods=['GET'])
+def api_players_complex_low_games_best_rating():
+    """
+    COMPLEX QUERY 3: LEFT JOIN (Outer Join) with GROUP BY and HAVING
+    
+    This query demonstrates:
+    - LEFT JOIN: Outer join between fut23 and player tables
+    - GROUP BY: Groups by player name and rating
+    - HAVING: Filters groups with total_games < 5
+    - Aggregate functions: SUM and COALESCE
+    
+    Returns players who have played less than 5 games, ordered by best FIFA rating.
+    """
+    try:
+        query = """
+            SELECT 
+                f.Name AS player_name,
+                f.Rating,
+                COALESCE(SUM(p.games), 0) AS total_games
+            FROM fut23 f
+            LEFT JOIN player p ON f.player_id = p.player_id
+            GROUP BY f.Name, f.Rating
+            HAVING total_games < 5
+            ORDER BY f.Rating DESC
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [],
+            "count": len(results) if results else 0,
+            "description": "Players with less than 5 games and best FIFA rating (Outer Join with GROUP BY and HAVING)"
+        })
+    except Exception as e:
+        logger.exception("Error fetching players with less than 5 games and best FIFA rating: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/api/players/complex/top-goals-with-rating", methods=['GET'])
+def api_players_complex_top_goals_with_rating():
+    """
+    COMPLEX QUERY 4: JOIN with GROUP BY
+    
+    This query demonstrates:
+    - JOIN: Inner join between player and fut23 tables
+    - GROUP BY: Groups by player_name and Rating
+    - Aggregate functions: SUM to calculate total goals
+    - ORDER BY and LIMIT: Orders by total goals descending, limits to top 10
+    
+    Returns the top 10 players by total goals who have FIFA ratings.
+    """
+    try:
+        query = """
+            SELECT 
+                p.player_name,
+                SUM(p.goals) AS total_goals,
+                f.Rating
+            FROM player p
+            JOIN fut23 f ON p.player_id = f.player_id
+            GROUP BY p.player_name, f.Rating
+            ORDER BY total_goals DESC
+            LIMIT 10
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [],
+            "count": len(results) if results else 0,
+            "description": "Top 10 players by goals with FIFA ratings (JOIN with GROUP BY)"
+        })
+    except Exception as e:
+        logger.exception("Error fetching top goals with rating: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
+
+@app.route("/api/players/complex/comprehensive-stats", methods=['GET'])
+def api_players_complex_comprehensive_stats():
+    """
+    COMPLEX QUERY 5: All Features Combined - Nested Query, Complex Join (4+ tables), GROUP BY, Outer Join
+    
+    This query demonstrates:
+    - Nested Query: Uses a correlated subquery to calculate average goals for players in the same position and year
+    - Complex Join (4+ tables): Joins player, fut23, teams, match_info, match_data, and shot_data (6 tables)
+    - GROUP BY: Groups by player attributes to aggregate statistics and calculate goals per game
+    - Outer Join (LEFT JOIN): Uses LEFT JOINs to include players even without FIFA ratings, team info, matches, or shot data
+    
+    Returns top players with their performance metrics and position average goals for comparison.
+    """
+    try:
+        query = """
+            SELECT 
+                p.player_name,
+                t.team_name AS team_title,
+                f.Position AS position,
+                p.goals,
+                p.assists,
+                p.games,
+                p.xG,
+                CASE WHEN p.games > 0 THEN p.goals / p.games ELSE 0 END AS goals_per_game,
+                (
+                    SELECT AVG(p2.goals)
+                    FROM player p2
+                    LEFT JOIN fut23 f2 ON p2.player_id = f2.player_id
+                    WHERE f2.Position = f.Position 
+                    AND p2.year = p.year
+                    AND p2.games > 0
+                    AND f2.Position IS NOT NULL
+                    AND p2.goals IS NOT NULL
+                ) AS position_avg_goals,
+                f.Rating AS fifa_rating,
+                f.Pace,
+                f.Shoot,
+                f.Pass,
+                f.Defense,
+                f.Physical,
+                p.year,
+                (
+                    SELECT COUNT(DISTINCT sd2.shot_id)
+                    FROM shot_data sd2
+                    WHERE sd2.player_id = p.player_id
+                ) AS total_shots
+            FROM player p
+            LEFT JOIN fut23 f ON p.player_id = f.player_id
+            LEFT JOIN teams t ON f.team_id = t.team_id
+            LEFT JOIN match_info mi ON (mi.h = f.team_id OR mi.a = f.team_id) AND mi.season = p.year
+            LEFT JOIN match_data md ON md.match_id = mi.match_id
+            WHERE p.games > 0 AND p.goals > 0 AND f.Position IS NOT NULL
+            GROUP BY p.season_player_id, p.player_id, p.player_name, p.games, p.goals, p.assists, p.xG, 
+                     f.Rating, f.Position, t.team_name, f.Pace, f.Shoot, f.Pass, f.Defense, f.Physical, p.year
+            ORDER BY p.goals DESC, f.Rating DESC
+            LIMIT 50
+        """
+        results = db.execute_query(query)
+        return jsonify({
+            "players": results or [],
+            "count": len(results) if results else 0,
+            "description": "Top players with stats vs position averages (Nested Query, 4+ Table Joins, GROUP BY, Outer Join)"
+        })
+    except Exception as e:
+        logger.exception("Error fetching comprehensive player stats: %s", e)
+        return jsonify({"error": "Database error", "players": []}), 500
 
 #--------------TALHA-END-------------------------------
 
@@ -2995,3 +3293,4 @@ def api_matches():
 # -------------------------------------------------
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
+

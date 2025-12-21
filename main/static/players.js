@@ -172,6 +172,44 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     }
+
+    // Complex Query Buttons
+    const queryButtons = document.querySelectorAll('.query-btn');
+    queryButtons.forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const endpoint = this.getAttribute('data-endpoint');
+            const originalText = this.textContent;
+
+            // Disable all query buttons
+            queryButtons.forEach(b => b.disabled = true);
+            this.textContent = 'Loading...';
+            resultsDiv.innerHTML = '<div class="loading">Executing query</div>';
+
+            try {
+                const response = await fetch(endpoint);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to execute query');
+                }
+
+                // Use displayAnalysisResults for complex queries
+                displayAnalysisResults(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultsDiv.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            } finally {
+                // Re-enable all query buttons
+                queryButtons.forEach(b => b.disabled = false);
+                this.textContent = originalText;
+            }
+        });
+    });
 });
 
 // --- Comparison helpers ---
@@ -243,19 +281,19 @@ async function refreshCompareUI() {
         const list = await getCompareList();
         countEl.textContent = list.length;
         listEl.innerHTML = list.length === 0 ? '<div class="empty">No players added</div>' : '';
-        
+
         if (list.length > 0) {
             // Fetch player data to get names
             const dataResp = await fetch('/api/players/compare/data');
             const data = await dataResp.json();
             const players = data.players || [];
-            
+
             // Create a map of player_id to player_name
             const playerMap = {};
             players.forEach(p => {
                 playerMap[p.player_id] = p.player_name || `Player #${p.player_id}`;
             });
-            
+
             list.forEach(pid => {
                 const row = document.createElement('div');
                 row.className = 'compare-row';
@@ -266,7 +304,7 @@ async function refreshCompareUI() {
                 `;
                 listEl.appendChild(row);
             });
-            
+
             listEl.querySelectorAll('.compare-remove').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
@@ -277,7 +315,7 @@ async function refreshCompareUI() {
                 });
             });
         }
-        
+
         goBtn.disabled = list.length === 0;
     } catch (e) {
         listEl.innerHTML = '<div class="empty">Error loading list</div>';
@@ -448,24 +486,58 @@ function displayAnalysisResults(data) {
     }));
     let currentSort = { column: null, direction: null };
 
-    // Column definitions for sorting
-    const columns = [
-        { key: 'originalIndex', label: 'Rank', type: 'number' },
-        { key: 'player_name', label: 'Player Name', type: 'string' },
-        { key: 'team_title', label: 'Team', type: 'string' },
-        { key: 'position', label: 'Position', type: 'string' },
-        { key: 'goals', label: 'Goals', type: 'number' },
-        { key: 'assists', label: 'Assists', type: 'number' },
-        { key: 'games', label: 'Games', type: 'number' },
-        { key: 'xG', label: 'xG', type: 'number' },
-        { key: 'fifa_rating', label: 'FIFA Rating', type: 'number' },
-        { key: 'Pace', label: 'Pace', type: 'number' },
-        { key: 'Shoot', label: 'Shoot', type: 'number' },
-        { key: 'Pass', label: 'Pass', type: 'number' },
-        { key: 'Defense', label: 'Defense', type: 'number' },
-        { key: 'Physical', label: 'Physical', type: 'number' },
-        { key: 'year', label: 'Year', type: 'number' }
+    // Column definitions for sorting - dynamically detect columns from data
+    const firstPlayer = data.players[0] || {};
+    const allKeys = Object.keys(firstPlayer);
+
+    // Define preferred column order
+    const preferredOrder = [
+        'originalIndex', 'player_name', 'team_title', 'position',
+        'goals', 'assists', 'games', 'xG', 'goals_per_game', 'position_avg_goals',
+        'fifa_rating', 'Pace', 'Shoot', 'Pass', 'Defense', 'Physical', 'year', 'total_shots'
     ];
+
+    // Map keys to labels
+    const keyToLabel = {
+        'originalIndex': 'Rank',
+        'player_name': 'Player Name',
+        'team_title': 'Team',
+        'position': 'Position',
+        'goals': 'Goals',
+        'assists': 'Assists',
+        'games': 'Games',
+        'xG': 'xG',
+        'goals_per_game': 'Goals/Game',
+        'position_avg_goals': 'Position Avg Goals',
+        'fifa_rating': 'FIFA Rating',
+        'Pace': 'Pace',
+        'Shoot': 'Shoot',
+        'Pass': 'Pass',
+        'Defense': 'Defense',
+        'Physical': 'Physical',
+        'year': 'Year',
+        'total_shots': 'Total Shots'
+    };
+
+    // Build columns array
+    const columns = preferredOrder
+        .filter(key => allKeys.includes(key))
+        .map(key => ({
+            key: key,
+            label: keyToLabel[key] || key,
+            type: typeof firstPlayer[key] === 'number' ? 'number' : 'string'
+        }));
+
+    // Add any remaining columns not in preferred order
+    allKeys.forEach(key => {
+        if (!preferredOrder.includes(key) && key !== 'originalIndex') {
+            columns.push({
+                key: key,
+                label: keyToLabel[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                type: typeof firstPlayer[key] === 'number' ? 'number' : 'string'
+            });
+        }
+    });
 
     // Sort function
     function sortTable(columnKey, columnType) {
@@ -531,25 +603,24 @@ function displayAnalysisResults(data) {
                             </tr>
                         </thead>
                         <tbody>
-                            ${playersData.map((player) => `
-                                <tr>
-                                    <td><strong>#${player.originalIndex}</strong></td>
-                                    <td><strong>${player.player_name || '-'}</strong></td>
-                                    <td>${player.team_title || '-'}</td>
-                                    <td>${player.position || '-'}</td>
-                                    <td><span style="color: #2ecc71; font-weight: 700;">${player.goals || 0}</span></td>
-                                    <td>${player.assists || 0}</td>
-                                    <td>${player.games || 0}</td>
-                                    <td>${player.xG ? player.xG.toFixed(2) : '-'}</td>
-                                    <td><span style="color: #e74c3c; font-weight: 700;">${player.fifa_rating || '-'}</span></td>
-                                    <td>${player.Pace || '-'}</td>
-                                    <td>${player.Shoot || '-'}</td>
-                                    <td>${player.Pass || '-'}</td>
-                                    <td>${player.Defense || '-'}</td>
-                                    <td>${player.Physical || '-'}</td>
-                                    <td>${player.year || '-'}</td>
-                                </tr>
-                            `).join('')}
+                            ${playersData.map((player) => {
+            const formatValue = (key, value) => {
+                if (value === null || value === undefined) return '-';
+                if (key === 'originalIndex') return `<strong>#${value}</strong>`;
+                if (key === 'player_name') return `<strong>${value}</strong>`;
+                if (key === 'goals') return `<span style="color: #2ecc71; font-weight: 700;">${value}</span>`;
+                if (key === 'fifa_rating') return `<span style="color: #e74c3c; font-weight: 700;">${value}</span>`;
+                if (key === 'xG' || key === 'goals_per_game' || key === 'position_avg_goals') {
+                    return typeof value === 'number' ? value.toFixed(2) : value;
+                }
+                return value;
+            };
+            return `
+                                    <tr>
+                                        ${columns.map(col => `<td>${formatValue(col.key, player[col.key])}</td>`).join('')}
+                                    </tr>
+                                `;
+        }).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -592,7 +663,7 @@ function displayResults(data) {
 
     // Get all column names from the first player object
     const allColumns = Object.keys(data.players[0]);
-    
+
     // Reorder columns: preferred first, then any remaining columns
     const columns = [
         ...preferredOrder.filter(col => allColumns.includes(col)),
