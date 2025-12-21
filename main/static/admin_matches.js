@@ -51,13 +51,119 @@ function renderMatchesTable(matches) {
 }
 
 function renderMatchesPagination(total, limit) {
-    const pages = Math.max(1, Math.ceil((total || 0) / limit));
+    const totalPages = Math.ceil(total / limit);
     const container = document.getElementById('paginationContainer');
-    let html = '';
-    for (let i=1;i<=pages;i++) {
-        html += `<button class="page-btn ${i===matchCurrentPage? 'active':''}" onclick="loadMatches(${i})">${i}</button>`;
+    const infoContainer = document.getElementById('paginationInfo');
+    const pageInput = document.getElementById('pageInput');
+    
+    // Update max attribute for input
+    if (pageInput) {
+        pageInput.setAttribute('max', totalPages);
     }
+    
+    // Calculate range for pagination info
+    const startItem = ((matchCurrentPage - 1) * limit) + 1;
+    const endItem = Math.min(matchCurrentPage * limit, total);
+    
+    // Update info text
+    infoContainer.innerHTML = `
+        Showing <strong>${startItem.toLocaleString()}</strong> - <strong>${endItem.toLocaleString()}</strong> 
+        of <strong>${total.toLocaleString()}</strong> matches
+        (Page <strong>${matchCurrentPage}</strong> of <strong>${totalPages.toLocaleString()}</strong>)
+    `;
+    
+    let html = '';
+    
+    // Previous button
+    html += `
+        <button class="page-btn nav-btn" 
+                onclick="loadMatches(${matchCurrentPage - 1})" 
+                ${matchCurrentPage === 1 ? 'disabled' : ''}>
+            ← Prev
+        </button>
+    `;
+    
+    // Smart pagination logic
+    if (totalPages <= 7) {
+        // Show all pages if total is 7 or less
+        for (let i = 1; i <= totalPages; i++) {
+            html += createMatchPageButton(i);
+        }
+    } else {
+        // Always show first page
+        html += createMatchPageButton(1);
+        
+        if (matchCurrentPage > 3) {
+            html += `<button class="page-btn ellipsis" disabled>...</button>`;
+        }
+        
+        // Show pages around current page
+        const startPage = Math.max(2, matchCurrentPage - 1);
+        const endPage = Math.min(totalPages - 1, matchCurrentPage + 1);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            html += createMatchPageButton(i);
+        }
+        
+        if (matchCurrentPage < totalPages - 2) {
+            html += `<button class="page-btn ellipsis" disabled>...</button>`;
+        }
+        
+        // Always show last page
+        html += createMatchPageButton(totalPages);
+    }
+    
+    // Next button
+    html += `
+        <button class="page-btn nav-btn" 
+                onclick="loadMatches(${matchCurrentPage + 1})" 
+                ${matchCurrentPage === totalPages ? 'disabled' : ''}>
+            Next →
+        </button>
+    `;
+    
     container.innerHTML = html;
+}
+
+function createMatchPageButton(pageNum) {
+    return `
+        <button class="page-btn ${pageNum === matchCurrentPage ? 'active' : ''}" 
+                onclick="loadMatches(${pageNum})">
+            ${pageNum}
+        </button>
+    `;
+}
+
+function goToInputPage() {
+    const pageInput = document.getElementById('pageInput');
+    const targetPage = parseInt(pageInput.value);
+    
+    if (isNaN(targetPage)) {
+        showAlert('Please enter a valid page number', 'error');
+        return;
+    }
+    
+    if (targetPage < 1) {
+        showAlert('Page number must be at least 1', 'error');
+        return;
+    }
+    
+    // Get total pages from the last rendered pagination
+    const maxPage = parseInt(pageInput.getAttribute('max')) || 1;
+    
+    if (targetPage > maxPage) {
+        showAlert(`Page number cannot exceed ${maxPage}`, 'error');
+        return;
+    }
+    
+    loadMatches(targetPage);
+    pageInput.value = '';
+}
+
+function handleGoToKeyPress(event) {
+    if (event.key === 'Enter') {
+        goToInputPage();
+    }
 }
 
 function openCreateModal() {
