@@ -1,5 +1,5 @@
 /* =========================
-   THEME TOKENS (single source of truth)
+   THEME TOKENS 
    ========================= */
 :root {
     --accent: #2ecc71;
@@ -181,11 +181,10 @@ button.outline {
 }
 
 /* =========================
-   Season Insights Accordion (theme-aligned)
+   Season Insights Accordion 
    ========================= */
 .acc {
     margin-top: 12px;
-    /* search'in hemen altına daha yakın dursun */
     border-radius: 16px;
     border: 1px solid var(--border);
     background: var(--card-2);
@@ -300,7 +299,7 @@ button.outline {
     font-size: 0.92rem;
 }
 
-/* ===== Table wrap + alignment (kayma hissini azaltır) ===== */
+/* ===== Table wrap + alignment ===== */
 .acc-table-wrap {
     overflow: auto;
     border-radius: 14px;

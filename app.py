@@ -598,6 +598,9 @@ def seasons_advanced_analysis_page():
 
 #--------------BILGE-END-------------------------------
 
+
+#--------------TALHA-START-----------------------------
+
 # --- TALHA: Authentication Middleware --- #
 def talha_login_required(f):
     @wraps(f)
@@ -630,8 +633,7 @@ def players_add_page():
 def players_edit_page():
     """Edit player form page (requires login)"""
     return render_template("edit_player.html", title="Edit Players")
-#--------------TALHA-START-----------------------------
-
+    
 @app.route("/api/players/fut23", methods=['GET'])
 def api_fut23_all():
     """Get all rows from fut23 table"""
@@ -2046,7 +2048,6 @@ def admin_teams_page():
     # Shots gibi: sayfa render, veriyi JS çeker
     return render_template("admin_teams.html", username=session.get("username"))
 
-
 @app.route("/api/admin/teams", methods=["GET", "POST"])
 @login_required
 def admin_teams_list_or_add():
@@ -2091,12 +2092,41 @@ def admin_teams_list_or_add():
     # POST: add
     data = request.get_json(silent=True) or {}
     name = (data.get("team_name") or "").strip()
+    team_id = data.get("team_id", None)  
+
     if not name:
         return jsonify({"success": False, "error": "team_name is required"}), 400
+
+    # validate team_id
+    if team_id is not None and str(team_id).strip() != "":
+        try:
+            team_id = int(team_id)
+        except Exception:
+            return jsonify({"success": False, "error": "team_id must be an integer"}), 400
+        if team_id <= 0:
+            return jsonify({"success": False, "error": "team_id must be positive"}), 400
+
     try:
-        db.execute_query("INSERT INTO teams (team_name) VALUES (%s)", (name,), fetch_all=False)
+        if team_id is None or str(team_id).strip() == "":
+            db.execute_query(
+                "INSERT INTO teams (team_name) VALUES (%s)",
+                (name,),
+                fetch_all=False
+            )
+        else:
+            db.execute_query(
+                "INSERT INTO teams (team_id, team_name) VALUES (%s, %s)",
+                (team_id, name),
+                fetch_all=False
+            )
+
         return jsonify({"success": True, "message": "Team added successfully"})
     except Exception as e:
+        msg = str(e).lower()
+        # MySQL duplicate key (1062) gibi durumlar
+        if "1062" in msg or "duplicate" in msg:
+            return jsonify({"success": False, "error": "Team id or team name already exists"}), 409
+
         logger.exception("Error adding team: %s", e)
         return jsonify({"success": False, "error": "Database error"}), 500
 
@@ -2168,7 +2198,6 @@ def admin_seasons_page():
     # Shots gibi: sayfa render, veriyi JS çeker
     return render_template("admin_seasons.html", username=session.get("username"))
 
-
 @app.route("/api/admin/seasons", methods=["GET", "POST"])
 @login_required
 def admin_seasons_list_or_add():
@@ -2220,19 +2249,30 @@ def admin_seasons_list_or_add():
             logger.exception("Error listing seasons: %s", e)
             return jsonify({"success": False, "error": "Database error"}), 500
 
-    # POST: add season
+    # POST: add season (MANUAL seasonentryid)
     data = request.get_json(silent=True) or {}
+
+    seasonentryid = data.get("seasonentryid")
     team_id = data.get("team_id")
-    title = data.get("title")
+    title = (data.get("title") or "").strip()
     year = data.get("year")
 
-    if not (team_id and year):
-        return jsonify({"success": False, "error": "team_id and year required"}), 400
+    # ✅ seasonentryid/team_id/year zorunlu
+    if seasonentryid is None or team_id is None or year is None:
+        return jsonify({"success": False, "error": "seasonentryid, team_id and year required"}), 400
+
+    # ✅ int cast + validasyon
+    try:
+        seasonentryid = int(seasonentryid)
+        team_id = int(team_id)
+        year = int(year)
+    except Exception:
+        return jsonify({"success": False, "error": "seasonentryid, team_id and year must be integers"}), 400
 
     try:
         db.execute_query(
-            "INSERT INTO season (team_id, title, year) VALUES (%s,%s,%s)",
-            (team_id, title, year),
+            "INSERT INTO season (seasonentryid, team_id, title, year) VALUES (%s,%s,%s,%s)",
+            (seasonentryid, team_id, title, year),
             fetch_all=False
         )
         return jsonify({"success": True, "message": "Season added successfully"})

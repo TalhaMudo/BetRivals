@@ -418,11 +418,9 @@ button.outline {
     }
 }
 
-/* Autocomplete üstte kalsın */
 .filter-card {
     position: relative;
     z-index: 2000;
-    /* accordion'dan büyük */
     overflow: visible;
 }
 
@@ -433,7 +431,6 @@ button.outline {
 
 .typeahead-list {
     z-index: 9999;
-    /* garanti */
 }
 
 .team-head {
