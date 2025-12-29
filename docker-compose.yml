@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
-    container_name: betrivals_mysql
+    container_name: osman_betrivals_mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootroot
@@ -14,16 +12,18 @@ services:
       - mysql_data:/var/lib/mysql
       - ./csv_files:/csv_files
     healthcheck:
+      # We use 'mysqladmin ping' but increase the start_period
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootroot"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s  # Gives MySQL 30 seconds to initialize before checking health
     networks:
       - betrivals_network
 
   flask_app:
     build: .
-    container_name: betrivals_flask
+    container_name: osman_betrivals_flask
     restart: always
     depends_on:
       mysql:
@@ -36,18 +36,17 @@ services:
       MYSQL_PORT: 3306
       FLASK_ENV: production
     ports:
-      - "5000:5000"
+      - "5031:5000"
     volumes:
       - ./csv_files:/app/csv_files
       - ./.env:/app/.env
     networks:
       - betrivals_network
+    # Removed the 'sleep 10' since healthcheck handles it now
     command: >
       sh -c "
-        echo 'Waiting for MySQL to be ready...' &&
-        sleep 10 &&
         python kickstarter.py &&
-        python app.py
+        gunicorn app:app --workers=4 --threads=4 --bind=0.0.0.0:5000
       "
 
 volumes:
