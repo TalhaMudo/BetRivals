@@ -2968,12 +2968,11 @@ def match_page(match_id):
         top_performers_q = """
             SELECT 
                 p.player_id,
-                COALESCE(p.player_name, s.player) AS player_name,
+                p.player_name,
                 p.position,
                 CASE 
-                    WHEN s.h_a = 'h' THEN COALESCE(th.team_name, mi.team_h)
-                    WHEN s.h_a = 'a' THEN COALESCE(ta.team_name, mi.team_a)
-                    ELSE COALESCE(s.h_team, s.a_team)
+                    WHEN s.h_a = 'h' THEN th.team_name
+                    WHEN s.h_a = 'a' THEN ta.team_name
                 END AS team,
                 COUNT(s.shot_id) AS shots_taken,
                 SUM(s.xG) AS total_xg,
@@ -2991,7 +2990,7 @@ def match_page(match_id):
             LEFT JOIN teams th ON mi.h = th.team_id
             LEFT JOIN teams ta ON mi.a = ta.team_id
             WHERE mi.match_id = %s
-            GROUP BY p.player_id, p.player_name, s.player, p.position, s.h_a, mi.team_h, mi.team_a, s.h_team, s.a_team, p.goals, p.assists, p.year, th.team_name, ta.team_name
+            GROUP BY p.player_id, p.player_name, p.position, s.h_a, p.goals, p.assists, p.year, th.team_name, ta.team_name
             HAVING shots_taken > 0
             ORDER BY total_xg DESC, shots_taken DESC
             LIMIT 10
