@@ -262,6 +262,64 @@ def enable_autoincrement_for_shot_data():
         cur.close()
         conn.close()
 
+
+def add_match_foreign_keys():
+    """Add foreign key constraints for match tables after table creation"""
+    conn = connect_db(True)
+    cur = conn.cursor()
+    
+    constraints = [
+        # match_info.h -> teams.team_id
+        (
+            "fk_match_info_home_team",
+            """
+            ALTER TABLE match_info
+            ADD CONSTRAINT fk_match_info_home_team
+            FOREIGN KEY (h) REFERENCES teams(team_id)
+                ON UPDATE CASCADE ON DELETE RESTRICT;
+            """
+        ),
+        # match_info.a -> teams.team_id
+        (
+            "fk_match_info_away_team",
+            """
+            ALTER TABLE match_info
+            ADD CONSTRAINT fk_match_info_away_team
+            FOREIGN KEY (a) REFERENCES teams(team_id)
+                ON UPDATE CASCADE ON DELETE RESTRICT;
+            """
+        ),
+        # match_data.match_id -> match_info.match_id
+        (
+            "fk_match_data_match_info",
+            """
+            ALTER TABLE match_data
+            ADD CONSTRAINT fk_match_data_match_info
+            FOREIGN KEY (match_id) REFERENCES match_info(match_id)
+                ON UPDATE CASCADE ON DELETE CASCADE;
+            """
+        ),
+    ]
+    
+    for constraint_name, ddl in constraints:
+        try:
+            print(f"🔗 Adding FK constraint: {constraint_name}")
+            cur.execute(ddl)
+            conn.commit()
+            print(f"   ✅ {constraint_name} created successfully.")
+        except mysql.connector.Error as err:
+            if err.errno == 1061:  # Duplicate key name
+                print(f"   ⚠️ {constraint_name} already exists, skipping.")
+            elif err.errno == 1452:  # Cannot add FK - data integrity issue
+                print(f"   ❌ {constraint_name} failed: orphan records exist. Clean data first.")
+            else:
+                print(f"   ❌ Error adding {constraint_name}: {err}")
+            conn.rollback()
+    
+    cur.close()
+    conn.close()
+    print("✅ Match table FK constraints processed.")
+
 def insert_from_csv(table, filename):
     path = CSV_DIR / filename
     if not path.exists():
@@ -370,6 +428,10 @@ Process will continue in 10 seconds, stop with CTRL+C if wanted.
         insert_from_csv(table, file)
     
     enable_autoincrement_for_shot_data()
+    
+    # Add FK constraints for match tables
+    add_match_foreign_keys()
+    
     # Verify foreign keys were created
     verify_foreign_keys()
     

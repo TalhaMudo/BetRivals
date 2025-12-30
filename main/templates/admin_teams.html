@@ -487,11 +487,11 @@
     let lastTotal = 0;
     const limit = 20;
 
-    function showAlert(message, type = 'success') {
+    function showAlert(message, type = 'success', duration = 3000) {
         const alert = document.getElementById('alert');
         alert.textContent = message;
         alert.className = `alert show alert-${type}`;
-        setTimeout(() => alert.classList.remove('show'), 3000);
+        setTimeout(() => alert.classList.remove('show'), duration);
     }
 
     function openCreateModal() {
@@ -580,7 +580,12 @@
                     showAlert(data.message || 'Deleted', 'success');
                     loadTeams(currentPage);
                 } else {
-                    showAlert(data.error || 'Delete failed (FK?)', 'error');
+                    // Check for FK_RESTRICT error type
+                    if (data.error_type === 'FK_RESTRICT') {
+                        showAlert(data.error, 'error', 6000);  // Show longer for important message
+                    } else {
+                        showAlert(data.error || 'Delete failed', 'error');
+                    }
                 }
             })
             .catch(() => showAlert('Error deleting team', 'error'));

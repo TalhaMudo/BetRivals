@@ -259,10 +259,8 @@ async function editMatch(id) {
         document.getElementById('field_match_id').value = m.match_id || '';
         document.getElementById('field_date').value = m.date ? new Date(m.date).toISOString().slice(0,16) : '';
         document.getElementById('field_season').value = m.season || '';
-        document.getElementById('field_league').value = m.league || '';
-        document.getElementById('field_league_id').value = m.league_id != null ? m.league_id : '';
-        document.getElementById('field_team_h').value = m.team_h || '';
-        document.getElementById('field_team_a').value = m.team_a || '';
+        document.getElementById('field_h').value = m.h || '';
+        document.getElementById('field_a').value = m.a || '';
         document.getElementById('field_h_goals').value = m.h_goals != null ? m.h_goals : '';
         document.getElementById('field_a_goals').value = m.a_goals != null ? m.a_goals : '';
         document.getElementById('field_h_xg').value = m.h_xg != null ? m.h_xg : '';
@@ -298,18 +296,18 @@ async function saveMatch(e) {
     
     // check required fields before sending to backend. other fields may be added later
     const matchId = document.getElementById('field_match_id').value.trim();
-    const teamH = document.getElementById('field_team_h').value.trim();
-    const teamA = document.getElementById('field_team_a').value.trim();
+    const homeTeamId = document.getElementById('field_h').value;
+    const awayTeamId = document.getElementById('field_a').value;
     
     if (!matchId || matchId === '') {
         showAlert('Match ID is required', 'error');
         return;
     }
-    if (!teamH || teamH === '') {
+    if (!homeTeamId || homeTeamId === '') {
         showAlert('Home Team is required', 'error');
         return;
     }
-    if (!teamA || teamA === '') {
+    if (!awayTeamId || awayTeamId === '') {
         showAlert('Away Team is required', 'error');
         return;
     }
@@ -318,10 +316,10 @@ async function saveMatch(e) {
         match_id: parseInt(matchId) || null,
         date: document.getElementById('field_date').value || null,
         season: parseInt(document.getElementById('field_season').value) || null,
-        league: document.getElementById('field_league').value || null,
-        league_id: document.getElementById('field_league_id').value !== '' ? parseInt(document.getElementById('field_league_id').value) : null,
-        team_h: teamH,
-        team_a: teamA,
+        league: 'La Liga',
+        league_id: 4,
+        h: parseInt(homeTeamId),
+        a: parseInt(awayTeamId),
         h_goals: document.getElementById('field_h_goals').value !== '' ? parseInt(document.getElementById('field_h_goals').value) : null,
         a_goals: document.getElementById('field_a_goals').value !== '' ? parseInt(document.getElementById('field_a_goals').value) : null,
         h_xg: document.getElementById('field_h_xg').value !== '' ? parseFloat(document.getElementById('field_h_xg').value) : null,
@@ -360,20 +358,28 @@ async function deleteMatchAction(matchId) {
     try {
         const res = await fetch(`/api/admin/matches/${matchId}`, { method: 'DELETE' });
         const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Delete failed');
+        if (!data.success) {
+            // Check for FK_RESTRICT error type - show more informative message
+            if (data.error_type === 'FK_RESTRICT') {
+                showAlert(data.error, 'error', 6000);  // Show longer for important message
+            } else {
+                throw new Error(data.error || 'Delete failed');
+            }
+            return;
+        }
         showAlert('Match deleted');
         loadMatches(matchCurrentPage);
     } catch (err) { showAlert(err.message || 'Delete failed', 'error'); }
 }
 
-function showAlert(message, type = 'success') {
+function showAlert(message, type = 'success', duration = 4000) {
     // close modal first so the alert will be visible
     closeModal();
     
     const el = document.getElementById('alert');
     el.textContent = message; 
     el.className = `alert show alert-${type}`;
-    setTimeout(() => el.classList.remove('show'), 4000);
+    setTimeout(() => el.classList.remove('show'), duration);
 }
 
 async function loadSeasons() {
@@ -393,5 +399,25 @@ async function loadSeasons() {
     }
 }
 
+let teamsCache = [];
+
+async function loadTeams() {
+    try {
+        const res = await fetch('/api/admin/teams/options');
+        const data = await res.json();
+        if (data.success && data.teams) {
+            teamsCache = data.teams;
+            const homeSelect = document.getElementById('field_h');
+            const awaySelect = document.getElementById('field_a');
+            const teamsHtml = '<option value="">-- select team --</option>' + 
+                data.teams.map(t => `<option value="${t.team_id}">${t.team_name}</option>`).join('');
+            if (homeSelect) homeSelect.innerHTML = teamsHtml;
+            if (awaySelect) awaySelect.innerHTML = teamsHtml;
+        }
+    } catch (e) {
+        console.warn('Could not load teams', e);
+    }
+}
+
 // load initial
-document.addEventListener('DOMContentLoaded', async () => { await loadSeasons(); await loadMatches(); });
+document.addEventListener('DOMContentLoaded', async () => { await loadSeasons(); await loadTeams(); await loadMatches(); });

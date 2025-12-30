@@ -2184,8 +2184,18 @@ def admin_team_get_update_delete(team_id):
         db.execute_query("DELETE FROM teams WHERE team_id=%s", (team_id,), fetch_all=False)
         return jsonify({"success": True, "message": "Team deleted"})
     except Exception as e:
+        error_msg = str(e).lower()
         logger.exception("Error deleting team: %s", e)
-        return jsonify({"success": False, "error": "Cannot delete (FK in use?)"}), 400
+        
+        # Check for foreign key constraint violation (MySQL error 1451)
+        if "1451" in str(e) or "foreign key constraint" in error_msg or "cannot delete or update a parent row" in error_msg:
+            return jsonify({
+                "success": False, 
+                "error": "Cannot delete this team because it is referenced by matches. Please delete or reassign the related matches first.",
+                "error_type": "FK_RESTRICT"
+            }), 409  # 409 Conflict
+        
+        return jsonify({"success": False, "error": "Cannot delete team"}), 400
 
 
 # ==============================
@@ -2874,8 +2884,13 @@ def match_page(match_id):
     """Detailed match page with matches between two teams and their recent matches"""
     try:
         query = """
-            SELECT mi.*, md.isResult, md.xG_h, md.xG_a, md.forecast_w, md.forecast_d, md.forecast_l
+            SELECT mi.*, 
+                   COALESCE(th.team_name, mi.team_h) AS team_h,
+                   COALESCE(ta.team_name, mi.team_a) AS team_a,
+                   md.isResult, md.xG_h, md.xG_a, md.forecast_w, md.forecast_d, md.forecast_l
             FROM match_info mi
+            LEFT JOIN teams th ON mi.h = th.team_id
+            LEFT JOIN teams ta ON mi.a = ta.team_id
             LEFT JOIN match_data md ON mi.match_id = md.match_id
             WHERE mi.match_id = %s
             LIMIT 1
@@ -3134,27 +3149,42 @@ def api_get_matches():
 
         offset = (page - 1) * limit
 
-        count_sql = "SELECT COUNT(*) as total FROM match_info WHERE 1=1"
-        base_sql = "SELECT match_id, date, season, league, team_h, team_a, h_goals, a_goals, h_xg, a_xg FROM match_info WHERE 1=1"
+        # Join with teams table to get team names
+        count_sql = """
+            SELECT COUNT(*) as total FROM match_info mi
+            LEFT JOIN teams th ON mi.h = th.team_id
+            LEFT JOIN teams ta ON mi.a = ta.team_id
+            WHERE 1=1
+        """
+        base_sql = """
+            SELECT mi.match_id, mi.date, mi.season, mi.league, mi.h, mi.a,
+                   COALESCE(th.team_name, mi.team_h) AS team_h,
+                   COALESCE(ta.team_name, mi.team_a) AS team_a,
+                   mi.h_goals, mi.a_goals, mi.h_xg, mi.a_xg
+            FROM match_info mi
+            LEFT JOIN teams th ON mi.h = th.team_id
+            LEFT JOIN teams ta ON mi.a = ta.team_id
+            WHERE 1=1
+        """
         params = []
         count_params = []
 
         if team:
-            base_sql += " AND (team_h LIKE %s OR team_a LIKE %s)"
-            count_sql += " AND (team_h LIKE %s OR team_a LIKE %s)"
-            params.extend([f"%{team}%", f"%{team}%"])
-            count_params.extend([f"%{team}%", f"%{team}%"])
+            base_sql += " AND (th.team_name LIKE %s OR ta.team_name LIKE %s OR mi.team_h LIKE %s OR mi.team_a LIKE %s)"
+            count_sql += " AND (th.team_name LIKE %s OR ta.team_name LIKE %s OR mi.team_h LIKE %s OR mi.team_a LIKE %s)"
+            params.extend([f"%{team}%", f"%{team}%", f"%{team}%", f"%{team}%"])
+            count_params.extend([f"%{team}%", f"%{team}%", f"%{team}%", f"%{team}%"])
 
         if season:
-            base_sql += " AND season = %s"
-            count_sql += " AND season = %s"
+            base_sql += " AND mi.season = %s"
+            count_sql += " AND mi.season = %s"
             params.append(season)
             count_params.append(season)
 
         count_result = db.execute_query(count_sql, tuple(count_params), fetch_all=True)
         total = count_result[0]['total'] if count_result else 0
 
-        base_sql += " ORDER BY date DESC LIMIT %s OFFSET %s"
+        base_sql += " ORDER BY mi.date DESC LIMIT %s OFFSET %s"
         params.extend([limit, offset])
 
         matches = db.execute_query(base_sql, tuple(params), fetch_all=True)
@@ -3170,17 +3200,36 @@ def api_get_matches():
 def api_create_match():
     try:
         data = request.get_json() or {}
-        required = ['match_id', 'team_h', 'team_a']
+        # Now require h (home team id) and a (away team id) instead of team names
+        required = ['match_id', 'h', 'a']
         if not all(k in data and data[k] for k in required):
-            return jsonify({'success': False, 'error': 'Missing required fields (match_id, team_h, team_a)'}), 400
+            return jsonify({'success': False, 'error': 'Missing required fields (match_id, home team, away team)'}), 400
+
+        # Get team names from teams table for the varchar columns (for backwards compatibility)
+        home_team_id = data.get('h')
+        away_team_id = data.get('a')
+        
+        team_names = db.execute_query(
+            "SELECT team_id, team_name FROM teams WHERE team_id IN (%s, %s)",
+            (home_team_id, away_team_id), fetch_all=True
+        ) or []
+        
+        team_name_map = {t['team_id']: t['team_name'] for t in team_names}
+        team_h_name = team_name_map.get(int(home_team_id), '')
+        team_a_name = team_name_map.get(int(away_team_id), '')
+
+        # Fixed league values for La Liga
+        league = 'La Liga'
+        league_id = 140
 
         sql = """INSERT INTO match_info 
-                 (match_id, date, season, league, league_id, team_h, team_a, h_goals, a_goals, h_xg, a_xg,
+                 (match_id, date, season, league, league_id, h, a, team_h, team_a, h_goals, a_goals, h_xg, a_xg,
                   h_shot, a_shot, h_shotOnTarget, a_shotOnTarget, h_deep, a_deep, h_ppda, a_ppda, h_w, h_d, h_l) 
-                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
         params = (
-            data.get('match_id'), data.get('date'), data.get('season'), data.get('league'), data.get('league_id'),
-            data.get('team_h'), data.get('team_a'), data.get('h_goals'), data.get('a_goals'),
+            data.get('match_id'), data.get('date'), data.get('season'), league, league_id,
+            home_team_id, away_team_id, team_h_name, team_a_name,
+            data.get('h_goals'), data.get('a_goals'),
             data.get('h_xg'), data.get('a_xg'), data.get('h_shot'), data.get('a_shot'),
             data.get('h_shotOnTarget'), data.get('a_shotOnTarget'), data.get('h_deep'), data.get('a_deep'),
             data.get('h_ppda'), data.get('a_ppda'), data.get('h_w'), data.get('h_d'), data.get('h_l')
@@ -3197,7 +3246,16 @@ def api_create_match():
 @login_required
 def api_get_match(match_id):
     try:
-        sql = "SELECT * FROM match_info WHERE match_id = %s"
+        # Join with teams to get current team names
+        sql = """
+            SELECT mi.*, 
+                   COALESCE(th.team_name, mi.team_h) AS team_h_display,
+                   COALESCE(ta.team_name, mi.team_a) AS team_a_display
+            FROM match_info mi
+            LEFT JOIN teams th ON mi.h = th.team_id
+            LEFT JOIN teams ta ON mi.a = ta.team_id
+            WHERE mi.match_id = %s
+        """
         result = db.execute_query(sql, (match_id,), fetch_all=True)
         if not result:
             return jsonify({'success': False, 'error': 'Match not found'}), 404
@@ -3212,13 +3270,36 @@ def api_get_match(match_id):
 def api_update_match(match_id):
     try:
         data = request.get_json() or {}
-        updatable = ['date','season','league','league_id','team_h','team_a','h_goals','a_goals','h_xg','a_xg',
+        # Removed league and league_id from updatable - they are fixed
+        # Added h and a for team IDs
+        updatable = ['date','season','h','a','h_goals','a_goals','h_xg','a_xg',
                      'h_shot','a_shot','h_shotOnTarget','a_shotOnTarget','h_deep','a_deep','h_ppda','a_ppda',
                      'h_w','h_d','h_l']
         fields = []
         params = []
+        
+        # If team IDs are being updated, also update the team name varchar columns
+        if 'h' in data and data['h']:
+            fields.append('h = %s')
+            params.append(data['h'])
+            # Get team name for varchar column
+            team_result = db.execute_query("SELECT team_name FROM teams WHERE team_id = %s", (data['h'],), fetch_all=True)
+            if team_result:
+                fields.append('team_h = %s')
+                params.append(team_result[0]['team_name'])
+        
+        if 'a' in data and data['a']:
+            fields.append('a = %s')
+            params.append(data['a'])
+            # Get team name for varchar column
+            team_result = db.execute_query("SELECT team_name FROM teams WHERE team_id = %s", (data['a'],), fetch_all=True)
+            if team_result:
+                fields.append('team_a = %s')
+                params.append(team_result[0]['team_name'])
+        
+        # Process other updatable fields (excluding h and a which we handled above)
         for f in updatable:
-            if f in data:
+            if f not in ['h', 'a'] and f in data:
                 fields.append(f + ' = %s')
                 params.append(data[f])
 
@@ -3243,7 +3324,17 @@ def api_delete_match(match_id):
         db.execute_query('DELETE FROM match_info WHERE match_id = %s', (match_id,), fetch_all=False)
         return jsonify({'success': True, 'message': 'Match deleted successfully'})
     except Exception as e:
+        error_msg = str(e).lower()
         logger.exception(f"Error deleting match {match_id}: {e}")
+        
+        # Check for foreign key constraint violation (MySQL error 1451)
+        if "1451" in str(e) or "foreign key constraint" in error_msg or "cannot delete or update a parent row" in error_msg:
+            return jsonify({
+                'success': False, 
+                'error': 'Cannot delete this match because it has related data (shots, match_data). Please delete the related records first.',
+                'error_type': 'FK_RESTRICT'
+            }), 409  # 409 Conflict
+        
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -3268,17 +3359,21 @@ def api_matches():
     # Build parameterized query
     sql = [
         "SELECT mi.match_id, mi.date, mi.season, mi.league,",
-        "       mi.team_h, mi.team_a, mi.h_goals, mi.a_goals,",
+        "       COALESCE(th.team_name, mi.team_h) AS team_h,",
+        "       COALESCE(ta.team_name, mi.team_a) AS team_a,",
+        "       mi.h_goals, mi.a_goals,",
         "       mi.h_xg, mi.a_xg, mi.h_shot, mi.a_shot,",
         "       md.isResult, md.xG_h, md.xG_a, md.forecast_w, md.forecast_d, md.forecast_l",
         "FROM match_info mi",
+        "LEFT JOIN teams th ON mi.h = th.team_id",
+        "LEFT JOIN teams ta ON mi.a = ta.team_id",
         "LEFT JOIN match_data md ON mi.match_id = md.match_id",
         "WHERE 1=1"
     ]
     params = []
 
     if filters.get('q'):
-        sql.append("AND (LOWER(mi.team_h) LIKE %s OR LOWER(mi.team_a) LIKE %s OR mi.match_id = %s)")
+        sql.append("AND (LOWER(COALESCE(th.team_name, mi.team_h)) LIKE %s OR LOWER(COALESCE(ta.team_name, mi.team_a)) LIKE %s OR CAST(mi.match_id AS CHAR) = %s)")
         q = f"%{filters['q'].lower()}%"
         params.extend([q, q, filters['q']])
     
@@ -3287,12 +3382,12 @@ def api_matches():
         params.append(filters['season'])
     
     if filters.get('team_home'):
-        sql.append("AND mi.team_h = %s")
-        params.append(filters['team_home'])
+        sql.append("AND (th.team_name = %s OR mi.team_h = %s)")
+        params.extend([filters['team_home'], filters['team_home']])
     
     if filters.get('team_away'):
-        sql.append("AND mi.team_a = %s")
-        params.append(filters['team_away'])
+        sql.append("AND (ta.team_name = %s OR mi.team_a = %s)")
+        params.extend([filters['team_away'], filters['team_away']])
     
     if filters.get('date_from'):
         sql.append("AND mi.date >= %s")
