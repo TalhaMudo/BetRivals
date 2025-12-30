@@ -50,13 +50,7 @@ TABLES = {
             h_shot INT, a_shot INT,
             h_shotOnTarget INT, a_shotOnTarget INT,
             h_deep INT, a_deep INT,
-            a_ppda DOUBLE, h_ppda DOUBLE,
-            FOREIGN KEY (h) REFERENCES teams(team_id)
-                ON UPDATE CASCADE ON DELETE SET NULL,
-            FOREIGN KEY (a) REFERENCES teams(team_id)
-                ON UPDATE CASCADE ON DELETE SET NULL,
-            FOREIGN KEY (match_id) REFERENCES match_data(match_id)
-                ON UPDATE CASCADE ON DELETE CASCADE
+            a_ppda DOUBLE, h_ppda DOUBLE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
 
@@ -133,11 +127,7 @@ TABLES = {
             a_id BIGINT, a_title VARCHAR(255), a_short_title VARCHAR(32),
             goals_h INT, goals_a INT,
             xG_h DOUBLE, xG_a DOUBLE,
-            forecast_w DOUBLE, forecast_d DOUBLE, forecast_l DOUBLE,
-            FOREIGN KEY (h_id) REFERENCES teams(team_id)
-                ON UPDATE CASCADE ON DELETE SET NULL,
-            FOREIGN KEY (a_id) REFERENCES teams(team_id)
-                ON UPDATE CASCADE ON DELETE SET NULL
+            forecast_w DOUBLE, forecast_d DOUBLE, forecast_l DOUBLE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
 

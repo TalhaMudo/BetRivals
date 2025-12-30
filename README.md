@@ -1,158 +1,129 @@
-# 🏆 BetRivals — ITU BLG 317E Database Project
+# BetRivals ⚽📊  
+**Advanced Football Analytics Platform**
 
-Welcome to our humble repository 👋  
-We are using a **multibranch structure** for development.
-
-.
-.
-├── Osman
-│   ├── osman_sub_branches
-│
-├── Bilge
-│   ├── bilge_sub_branches
-│
-├── Abdullah
-│   ├── abdullah_sub_branches
-│
-├── Talha
-│   ├── talha_sub_branches
-│
-└── main
-
-### 👨‍💻 Contributors
-
-- **Osman Yahya Akıncı** — `osman-yahya`  
-- **Bilge Bostanbaşı** — `bilgebos`  
-- **Abdullah Akcan** — `itu-itis23-akcana22`  
-- **Talha Müderrisoğlu** — `TalhaMudo`
-
-# About Datasets
-
-## 📦 1) player_cleaned.csv
-### Columns
-- season_player_id (PK)
-- player_id
-- player_name
-- games, time, goals, xG, assists, shots, key_passes, cards, position...
-- team_title
-- year
-
-### Foreign Keys
-| Column | → Table.Column |
-|--------|----------------|
-| player_id | fut23_cleaned.player_id |
-| player_id | shot_data_cleaned.player_id |
-| team_title | teams_cleaned.team_name |
+BetRivals is a web-based football analytics platform designed to provide deep, data-driven insights beyond traditional match results.  
+The project integrates multiple football datasets into a **fully normalized relational database** and exposes them through **advanced analytical SQL queries** and an **interactive user interface**.
 
 ---
 
-## ⚽ 2) match_info_cleaned.csv
-### Columns
-- match_id
-- h, a (team ids text form)
-- date, league, season
-- h_goals, a_goals
-- h_xg, a_xg
-- h_ppda, a_ppda
+## 🌐 Live & Presentation Links
 
-### Foreign Keys
-| Column | → Table.Column |
-|--------|----------------|
-| match_id | match_data_cleaned.match_id |
-| team_h / team_a | teams_cleaned.team_name |
+- **Project Website:** https://www.betrivals.com.tr  
+- **Project Presentation (Canva):**  
+  https://www.canva.com/design/DAG7_EE4mMo/joKvrUyNHt8dJz5ef7QshQ/edit
 
 ---
 
-## 🏟️ 3) teams_cleaned.csv
-### Columns
-- team_id (PK)
-- team_name
+## 🎯 Project Motivation
 
-### References (other tables refer here)
-| From Table | Column |
-|------------|--------|
-| season_cleaned | team_id |
-| match_data_cleaned | h_id, a_id |
-| match_info_cleaned | team_h, team_a |
-| shot_data_cleaned | h_team, a_team |
-| player_cleaned | team_title |
+Football performance cannot be fully explained by final scores alone.  
+Metrics such as **Expected Goals (xG)**, **Shot Quality**, **Defensive Pressure (PPDA)**, and **Form Analysis** provide deeper tactical and strategic understanding.
+
+**BetRivals** was developed to:
+- Centralize football data into a unified schema
+- Enable complex analytical queries
+- Offer meaningful insights through filtering and aggregation
+- Ensure data integrity and security
 
 ---
 
-## 🧾 4) match_data_cleaned.csv
-### Columns
-- match_id (PK)
-- h_id, a_id (team IDs)
-- goals_h, goals_a
-- xG_h, xG_a
+## 🧠 Key Objectives
 
-### Foreign Keys
-| Column | → Table.Column |
-|--------|----------------|
-| match_id | match_info_cleaned.match_id |
-| match_id | shot_data_cleaned.match_id |
-| h_id / a_id | teams_cleaned.team_id |
+- Design and implement a **3NF-normalized relational database**
+- Integrate multiple football datasets (shots, matches, teams, players, seasons)
+- Support **complex SQL queries** (joins, subqueries, aggregations)
+- Provide advanced filtering and analytical capabilities
+- Protect against **SQL Injection** via parameterized queries
 
 ---
 
-## 🎮 5) fut23_cleaned.csv
-### Columns
-- player_id (PK)
-- Name
-- team_id, Team
-- Rating, Pace, Shoot, Pass, Dribble, Defense, Physical, etc.
+## 🗄️ Dataset Overview
 
-### Foreign Keys
-| Column | → Table.Column |
-|--------|----------------|
-| player_id | player_cleaned.player_id |
-| player_id | shot_data_cleaned.player_id |
-| team_id | teams_cleaned.team_id |
+| Table Name     | Description |
+|---------------|-------------|
+| `players`     | Static player attributes (name, country, body type, height, weight) |
+| `fut23`       | Season-dependent player attributes and FIFA-based ratings |
+| `shot_data`   | Event-level shot data including xG values |
+| `match_info`  | Match-level statistics and results |
+| `season`      | Season-long team performance metrics |
+| `teams`       | Team identifiers and league information |
+| `users`       | User data with integrity constraints |
 
 ---
 
-## 📊 6) season_cleaned.csv
-### Columns
-- seasonentryid (PK)
-- team_id
-- year
-- xG, xGA, npxG, npxGA, pts, wins, draws, losses...
+## 🧱 Database Design
 
-### Foreign Keys
-| Column | → Table.Column |
-|--------|----------------|
-| team_id | teams_cleaned.team_id |
+- **Normalization:**  
+  - 1NF → 2NF → **3NF**
+  - Removed partial and transitive dependencies
+  - Derived attributes computed dynamically (e.g. points from wins & draws)
+
+- **ER Diagram → Relational Mapping:**  
+  Carefully mapped entities and relationships to relational tables with proper primary and foreign keys.
 
 ---
 
-## 🎯 7) shot_data_cleaned.csv
-### Columns
-- shot_id (PK)
-- match_id
-- player_id
-- minute
-- X, Y
-- xG
-- h_team, a_team
-- result, situation, season, date
+## 🔍 Complex Analytical Queries
 
-### Foreign Keys
-| Column | → Table.Column |
-|--------|----------------|
-| player_id | player_cleaned.player_id |
-| player_id | fut23_cleaned.player_id |
-| match_id | match_data_cleaned.match_id |
-| h_team / a_team | teams_cleaned.team_name |
+BetRivals supports advanced football analytics queries such as:
+
+- Player shot efficiency and xG overperformance
+- Team attacking and defensive context
+- Opposition defensive quality analysis
+- Recent form analysis using subqueries
+- Match-level and season-level aggregations
+
+These queries leverage:
+- Multi-table joins
+- Nested subqueries
+- Conditional aggregations
+- Derived metrics
 
 ---
 
-## 🔗 ERD Summary
-| Table | Connects To |
-|-------|-------------|
-| player_cleaned | fut23_cleaned, shot_data_cleaned, teams_cleaned |
-| match_info_cleaned | match_data_cleaned, teams_cleaned |
-| match_data_cleaned | match_info_cleaned, shot_data_cleaned, teams_cleaned |
-| fut23_cleaned | player_cleaned, shot_data_cleaned, teams_cleaned |
-| season_cleaned | teams_cleaned |
-| shot_data_cleaned | player_cleaned, fut23_cleaned, match_data_cleaned, teams_cleaned |
-| teams_cleaned | **central reference table** |
+## 🔐 Security
+
+- **SQL Injection Protection**  
+  All database interactions use **parameterized queries**, ensuring that user inputs are treated strictly as data and never executable SQL code.
+
+---
+
+## 🚀 Features
+
+- Advanced filtering and autocomplete
+- Interactive player, team, match, and season pages
+- Complex statistical insights
+- Clean, scalable relational schema
+- Secure query execution
+
+---
+
+## 👥 Team Members
+
+- **Osman Yahya Akıncı**
+- **Talha Müderrisoğlu**
+- **Bilge Bostanbaşı**
+- **Abdullah Akcan**
+
+---
+
+## 🏫 Academic Context
+
+This project was developed as part of:
+
+**BLG 317E – Database Systems  
+Term Project**
+
+---
+
+## 📌 License
+
+This project is developed for academic and educational purposes.  
+Please contact the authors for reuse or extension beyond this scope.
+
+---
+
+## 📣 Feedback
+
+Questions, suggestions, or contributions are welcome.  
+Feel free to explore the platform and presentation for deeper insights.
