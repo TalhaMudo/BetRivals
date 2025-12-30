@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function fetchLogoForTeam(teamName) {
-        const key = "3df255896f2f4090feb3722421a65c08"; // zaten bedava kalsin burda :D
+        const key = "fbe8396e92f7375570519c8682ac9351"; // zaten bedava kalsin burda :D
 
         const base = 'https://v3.football.api-sports.io/teams';
         const params = `?name=${encodeURIComponent(teamName)}`;
