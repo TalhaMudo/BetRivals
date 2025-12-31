@@ -2978,7 +2978,7 @@ def match_page(match_id):
         """
         shots = db.execute_query(shots_q, (match_id,), fetch_all=True) or []
 
-        # Top performers in this match
+        # Top performers in this match # abdullah complex
         # 4 table join: match_info, shot_data, player, teams
         top_performers_q = """
             SELECT 
@@ -3194,18 +3194,17 @@ def api_get_matches():
         logger.exception(f"Error fetching matches API: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# abdullah create
 @app.route('/api/admin/matches', methods=['POST'])
 @login_required
 def api_create_match():
     try:
         data = request.get_json() or {}
-        # Now require h (home team id) and a (away team id) instead of team names
         required = ['match_id', 'h', 'a']
         if not all(k in data and data[k] for k in required):
             return jsonify({'success': False, 'error': 'Missing required fields (match_id, home team, away team)'}), 400
 
-        # Get team names from teams table for the varchar columns (for backwards compatibility)
+        # Get team names from teams table for the varchar columns
         home_team_id = data.get('h')
         away_team_id = data.get('a')
         
@@ -3220,7 +3219,7 @@ def api_create_match():
 
         # Fixed league values for La Liga
         league = 'La Liga'
-        league_id = 140
+        league_id = 4
 
         sql = """INSERT INTO match_info 
                  (match_id, date, season, league, league_id, h, a, team_h, team_a, h_goals, a_goals, h_xg, a_xg,
@@ -3246,7 +3245,6 @@ def api_create_match():
 @login_required
 def api_get_match(match_id):
     try:
-        # Join with teams to get current team names
         sql = """
             SELECT mi.*, 
                    COALESCE(th.team_name, mi.team_h) AS team_h_display,
@@ -3264,25 +3262,22 @@ def api_get_match(match_id):
         logger.exception(f"Error fetching match {match_id}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# abdullah update
 @app.route('/api/admin/matches/<int:match_id>', methods=['PUT'])
 @login_required
 def api_update_match(match_id):
     try:
         data = request.get_json() or {}
-        # Removed league and league_id from updatable - they are fixed
-        # Added h and a for team IDs
         updatable = ['date','season','h','a','h_goals','a_goals','h_xg','a_xg',
                      'h_shot','a_shot','h_shotOnTarget','a_shotOnTarget','h_deep','a_deep','h_ppda','a_ppda',
                      'h_w','h_d','h_l']
         fields = []
         params = []
         
-        # If team IDs are being updated, also update the team name varchar columns
+        # if team IDs are being updated, also update the team name varchar columns
         if 'h' in data and data['h']:
             fields.append('h = %s')
             params.append(data['h'])
-            # Get team name for varchar column
             team_result = db.execute_query("SELECT team_name FROM teams WHERE team_id = %s", (data['h'],), fetch_all=True)
             if team_result:
                 fields.append('team_h = %s')
@@ -3291,13 +3286,12 @@ def api_update_match(match_id):
         if 'a' in data and data['a']:
             fields.append('a = %s')
             params.append(data['a'])
-            # Get team name for varchar column
             team_result = db.execute_query("SELECT team_name FROM teams WHERE team_id = %s", (data['a'],), fetch_all=True)
             if team_result:
                 fields.append('team_a = %s')
                 params.append(team_result[0]['team_name'])
         
-        # Process other updatable fields (excluding h and a which we handled above)
+        # Process other updatable fields (excluding h and a which are handled above)
         for f in updatable:
             if f not in ['h', 'a'] and f in data:
                 fields.append(f + ' = %s')
@@ -3313,7 +3307,7 @@ def api_update_match(match_id):
         logger.exception(f"Error updating match {match_id}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# abdullah delete
 @app.route('/api/admin/matches/<int:match_id>', methods=['DELETE'])
 @login_required
 def api_delete_match(match_id):
@@ -3349,7 +3343,7 @@ def api_match_seasons():
         logger.exception(f"Error fetching match seasons: {e}")
         return jsonify({'seasons': []}), 500
 
-
+# Abdullah read search
 @app.route("/api/matches", methods=['POST'])
 def api_matches():
     """Return matches filtered by supplied JSON filters."""
