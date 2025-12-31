@@ -1520,6 +1520,7 @@ def index():
     """Homepage with search interface"""
     return render_template('shot_search.html')
 
+#OSMAN_READ
 @app.route('/shot/<int:shot_id>')
 def shot_detail(shot_id):
     """Display detailed shot information"""
@@ -1640,7 +1641,7 @@ def shot_detail(shot_id):
         
         season_stats = season_stats_results[0] if season_stats_results else None
         
-        # NEW: Get contextual statistics - complex query with 4 joins
+        # OSMAN_COMPLEX_QUERY
         context_stats_query = """
             SELECT 
                 -- Player's performance in similar situations
@@ -2623,6 +2624,8 @@ def api_create_shot():
         if not all(field in data for field in required_fields):
             return jsonify({'success': False, 'error': 'Missing required fields'}), 400
         
+        #OSMAN_ADD
+        #OSMAN_CREATE
         sql = """
             INSERT INTO shot_data 
             (player, player_id, match_id, minute, result, xG, X, Y, 
@@ -2710,7 +2713,7 @@ def api_update_shot(shot_id):
             return jsonify({'success': False, 'error': 'No fields to update'}), 400
         
         params.append(shot_id)
-        
+        #OSMAN_UPDATE
         sql = f"UPDATE shot_data SET {', '.join(update_fields)} WHERE shot_id = %s"
         db.execute_query(sql, tuple(params), fetch_all=False)
         
@@ -2728,7 +2731,7 @@ def api_update_shot(shot_id):
 def api_delete_shot(shot_id):
     """API endpoint to delete a shot"""
     try:
-        # Check if shot exists
+        # OSMAN_DELETE
         check_sql = "SELECT shot_id FROM shot_data WHERE shot_id = %s"
         result = db.execute_query(check_sql, (shot_id,), fetch_all=True)
         
